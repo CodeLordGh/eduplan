@@ -1,0 +1,20 @@
+{
+  "name": "@eduflow/shared-deps",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "fastify": "^4.29.0",
+    "@fastify/jwt": "^7.2.4",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/swagger": "^8.8.0",
+    "pino": "^8.21.0",
+    "zod": "^3.24.1",
+    "@prisma/client": "^5.2.0",
+    "argon2": "^0.31.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.12",
+    "typescript": "^5.7.3",
+    "prisma": "^5.2.0"
+  }
+} 

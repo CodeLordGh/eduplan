@@ -1,0 +1,28 @@
+{
+  "name": "@eduflow/common",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@eduflow/types": "workspace:*",
+    "@eduflow/validators": "workspace:*",
+    "argon2": "^0.31.0",
+    "jsonwebtoken": "^9.0.2",
+    "fp-ts": "^2.16.1",
+    "pino": "^8.16.0",
+    "fastify": "^4.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.17.12",
+    "@types/jsonwebtoken": "^9.0.2",
+    "@types/argon2": "^0.15.0",
+    "@types/pino": "^7.0.5",
+    "typescript": "^5.2.2",
+    "jest": "^29.6.4",
+    "@types/jest": "^29.5.4"
+  }
+}

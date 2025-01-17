@@ -1,0 +1,9 @@
+{
+  "name": "@eduflow/tsconfig",
+  "version": "1.0.0",
+  "files": [
+    "base.json",
+    "library.json",
+    "service.json"
+  ]
+} 

@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@eduflow/*": ["../../libs/*/src"]
+    },
+    "types": ["node", "jest", "ioredis"],
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../libs/common" },
+    { "path": "../../libs/constants" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/types" },
+    { "path": "../../libs/validators" }
+  ]
+} 

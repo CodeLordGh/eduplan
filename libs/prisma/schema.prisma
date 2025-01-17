@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SYSTEM_ADMIN
+  SCHOOL_OWNER
+  SCHOOL_HEAD
+  SCHOOL_ADMIN
+  TEACHER
+  PARENT
+  STUDENT
+  ACCOUNTANT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum OTPStatus {
+  PENDING
+  USED
+  EXPIRED
+}
+
+enum KYCStatus {
+  NOT_SUBMITTED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum EmploymentEligibilityStatus {
+  NOT_CHECKED
+  ELIGIBLE
+  INELIGIBLE
+  PENDING_REVIEW
+}
+
+enum DocumentType {
+  IDENTITY
+  SCHOOL_LICENSE
+  EMPLOYMENT_PROOF
+  QUALIFICATION
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum EntityType {
+  USER
+  SCHOOL
+}
+
+enum GradeStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+enum ReportCardStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+  AVAILABLE
+}
+
+model User {
+  id                    String                    @id @default(uuid())
+  email                 String                    @unique
+  password              String
+  role                  Role
+  status                UserStatus
+  kycStatus             VerificationStatus?
+  kycVerifiedAt         DateTime?
+  kycDocumentIds        String[]
+  employmentStatus      EmploymentEligibilityStatus @default(NOT_CHECKED)
+  employmentVerifiedAt  DateTime?
+  employmentDocumentIds String[]
+  socialAccessEnabled   Boolean                   @default(false)
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  documents             KYCDocument[]
+  verifications         VerificationHistory[] @relation("verifier")
+
+  @@map("users")
+}
+
+model OTP {
+  id        String     @id @default(uuid())
+  code      String
+  userId    String
+  expiresAt DateTime
+  status    OTPStatus
+  createdAt DateTime   @default(now())
+
+  @@map("otps")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model KYCDocument {
+  id           String            @id @default(uuid())
+  userId       String
+  type         DocumentType
+  status       VerificationStatus
+  documentUrls String[]
+  verifiedAt   DateTime?
+  metadata     Json
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+model VerificationHistory {
+  id         String            @id @default(uuid())
+  entityId   String
+  entityType EntityType
+  status     VerificationStatus
+  verifiedBy String?
+  notes      String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  verifier   User?             @relation("verifier", fields: [verifiedBy], references: [id])
+
+  @@index([entityId])
+  @@index([entityType])
+  @@index([status])
+}
+
+model School {
+  id              String            @id @default(uuid())
+  name            String
+  staffAssignments StaffAssignment[]
+  reportCards     ReportCard[]
+  classSubjects   ClassSubject[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("schools")
+}
+
+model StaffAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  schoolId  String
+  role      Role
+  school    School   @relation(fields: [schoolId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, schoolId])
+  @@map("staff_assignments")
+}
+
+model ParentStudentRelation {
+  id        String   @id @default(uuid())
+  parentId  String
+  studentId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([parentId, studentId])
+  @@map("parent_student_relations")
+}
+
+model ClassSubject {
+  id        String   @id @default(uuid())
+  schoolId  String
+  teacherId String
+  subjectId String
+  school    School   @relation(fields: [schoolId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+  classId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([classId, subjectId])
+  @@map("class_subjects")
+}
+
+model Class {
+  id            String         @id @default(uuid())
+  name          String
+  classSubjects ClassSubject[]
+  students      ClassStudent[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("classes")
+}
+
+model ClassStudent {
+  id        String   @id @default(uuid())
+  classId   String
+  studentId String
+  class     Class    @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([classId, studentId])
+  @@map("class_students")
+}
+
+model ReportCard {
+  id          String           @id @default(uuid())
+  schoolId    String
+  studentId   String
+  status      ReportCardStatus
+  grades      Grade[]
+  school      School           @relation(fields: [schoolId], references: [id])
+  availableAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("report_cards")
+}
+
+model Grade {
+  id           String      @id @default(uuid())
+  reportCardId String
+  subjectId    String
+  teacherId    String
+  grade        Float
+  status       GradeStatus
+  reportCard   ReportCard  @relation(fields: [reportCardId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("grades")
+}

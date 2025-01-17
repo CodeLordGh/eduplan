@@ -1,0 +1,19 @@
+{
+  "extends": "@eduflow/tsconfig/service.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@eduflow/*": ["../../libs/*/src"]
+    }
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../libs/types" },
+    { "path": "../../libs/common" },
+    { "path": "../../libs/constants" },
+    { "path": "../../libs/validators" },
+    { "path": "../../libs/middleware" }
+  ]
+} 

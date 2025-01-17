@@ -1,0 +1,16 @@
+{
+  "name": "@eduflow/types",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@eduflow/tsconfig": "workspace:*",
+    "@types/node": "^20.17.12",
+    "typescript": "^5.7.3",
+    "rimraf": "^5.0.1"
+  }
+}

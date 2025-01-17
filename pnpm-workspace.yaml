@@ -1,0 +1,11 @@
+packages:
+  # all packages in subdirs of apps/ and their descendants
+  - 'apps/**'
+  # all packages in subdirs of libs/ and their descendants
+  - 'libs/**'
+  # all packages in subdirs of packages/
+  - 'packages/**'
+  # exclude files marked as private
+  - '!**/node_modules/**'
+  - '!**/test/**'
+  - '!**/dist/**' 

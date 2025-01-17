@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createInvalidOTPError = exports.createOTPExpiredError = exports.createOTPError = exports.createUnauthorizedError = exports.createInvalidTokenError = exports.createTokenExpiredError = exports.createInvalidCredentialsError = exports.createAuthenticationError = void 0;
+const base_error_1 = require("./base.error");
+const createAuthenticationError = (message, details) => (0, base_error_1.createError)(message, 'AUTH_ERROR', 401, details);
+exports.createAuthenticationError = createAuthenticationError;
+const createInvalidCredentialsError = (details) => (0, exports.createAuthenticationError)('Invalid email or password', details);
+exports.createInvalidCredentialsError = createInvalidCredentialsError;
+const createTokenExpiredError = (details) => (0, exports.createAuthenticationError)('Token has expired', details);
+exports.createTokenExpiredError = createTokenExpiredError;
+const createInvalidTokenError = (details) => (0, exports.createAuthenticationError)('Invalid token provided', details);
+exports.createInvalidTokenError = createInvalidTokenError;
+const createUnauthorizedError = (message, details) => (0, base_error_1.createError)(message, 'UNAUTHORIZED', 403, details);
+exports.createUnauthorizedError = createUnauthorizedError;
+const createOTPError = (message, details) => (0, base_error_1.createError)(message, 'OTP_ERROR', 400, details);
+exports.createOTPError = createOTPError;
+const createOTPExpiredError = (details) => (0, exports.createOTPError)('OTP has expired', details);
+exports.createOTPExpiredError = createOTPExpiredError;
+const createInvalidOTPError = (details) => (0, exports.createOTPError)('Invalid OTP provided', details);
+exports.createInvalidOTPError = createInvalidOTPError;
+//# sourceMappingURL=auth.error.js.map
