@@ -1,9 +1,10 @@
 import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
 import { v4 as uuidv4 } from 'uuid';
-import { User, Role, VerificationStatus, EmploymentEligibilityStatus } from '@eduflow/prisma';
+import { User, Role as PrismaRole, VerificationStatus, EmploymentEligibilityStatus } from '@eduflow/prisma';
 import { FastifyRedis } from '@fastify/redis';
 import { hashPassword, verifyPassword, generateJWT } from '@eduflow/common';
+import { Role, ROLE_PERMISSIONS } from '@eduflow/types';
 import { CreateUserInput, validateCreateUserInput } from '../domain/user';
 import { AuthErrors, createInvalidCredentialsError, createUserNotFoundError, createDatabaseError, createDuplicateEmailError, createValidationError } from '../errors/auth';
 import * as userRepo from '../repository/user.repository';
@@ -30,9 +31,9 @@ export interface RefreshTokenPayload {
 
 const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
-const STAFF_ROLES = [Role.TEACHER, Role.SCHOOL_ADMIN, Role.SCHOOL_HEAD] as const;
+const STAFF_ROLES = [PrismaRole.TEACHER, PrismaRole.SCHOOL_ADMIN, PrismaRole.SCHOOL_HEAD] as const;
 
-const isStaffRole = (role: Role): boolean => 
+const isStaffRole = (role: PrismaRole): boolean => 
   STAFF_ROLES.includes(role as typeof STAFF_ROLES[number]);
 
 export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User> =>
@@ -196,10 +197,8 @@ const generateAuthTokens = (
         const accessToken = generateJWT({
           userId: user.id,
           email: user.email,
-          role: user.role,
-          kycVerified: user.kycStatus === VerificationStatus.VERIFIED,
-          employmentEligible: user.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE,
-          socialAccessEnabled: user.socialAccessEnabled
+          role: user.role as unknown as Role,
+          permissions: ROLE_PERMISSIONS[user.role as unknown as Role] || []
         });
         const refreshToken = uuidv4();
 

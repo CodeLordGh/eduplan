@@ -14,9 +14,22 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./errors/base.error"), exports);
-__exportStar(require("./errors/auth.error"), exports);
-__exportStar(require("./logger"), exports);
-__exportStar(require("./auth"), exports);
-__exportStar(require("./errors"), exports);
+exports.errorHandler = void 0;
+const base_error_1 = require("./base.error");
+const errorHandler = (error, request, reply) => {
+    if (error instanceof base_error_1.BaseError) {
+        return reply.status(error.statusCode || 500).send({
+            error: error.name,
+            message: error.message,
+            statusCode: error.statusCode || 500,
+        });
+    }
+    return reply.status(500).send({
+        error: 'InternalServerError',
+        message: error.message,
+        statusCode: 500,
+    });
+};
+exports.errorHandler = errorHandler;
+__exportStar(require("./base.error"), exports);
 //# sourceMappingURL=index.js.map
