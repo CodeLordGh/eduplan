@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
-import { PrismaClient } from '@eduflow/prisma'
-import { ReportCardStatus, Grade, UserRole, GradeStatus } from '@eduflow/types'
+import { PrismaClient, Role } from '@eduflow/prisma'
 import { RouteGenericInterface } from 'fastify/types/route'
 
 interface DatabaseRequest<T extends RouteGenericInterface = RouteGenericInterface> extends FastifyRequest<T> {
@@ -8,7 +7,7 @@ interface DatabaseRequest<T extends RouteGenericInterface = RouteGenericInterfac
   user: {
     id: string
     email: string
-    role: UserRole
+    role: Role
   }
 }
 
@@ -31,34 +30,44 @@ export async function reportCardAccessGuard(
   }
 
   // Check if user is headmaster or teacher
-  const isStaff = await request.db.staffAssignment.findFirst({
+  const staffAssignment = await request.db.staffAssignment.findFirst({
     where: {
       schoolId: reportCard.schoolId,
-      userId,
       role: { in: ['SCHOOL_HEAD', 'TEACHER'] }
     }
   })
 
-  if (isStaff) {
+  if (staffAssignment) {
     return // Allow access for staff
   }
 
   // Check if user is parent and report card is available
-  const isParent = await request.db.parentStudentRelation.findFirst({
+  const parentProfile = await request.db.parentProfile.findFirst({
     where: {
-      parentId: userId,
-      studentId: reportCard.studentId
+      profile: {
+        userId
+      }
     }
   })
 
-  if (!isParent) {
+  if (!parentProfile) {
     return reply.status(403).send({ message: 'Access denied' })
   }
 
-  if (reportCard.status !== ReportCardStatus.AVAILABLE) {
+  const parentStudentRelation = await request.db.parentStudentRelation.findFirst({
+    where: {
+      parentProfileId: parentProfile.id,
+      studentProfileId: reportCard.studentProfileId
+    }
+  })
+
+  if (!parentStudentRelation) {
+    return reply.status(403).send({ message: 'Access denied' })
+  }
+
+  if (reportCard.status !== 'AVAILABLE') {
     return reply.status(403).send({ 
-      message: 'Report card is not yet available for viewing',
-      availableAt: reportCard.availableAt
+      message: 'Report card is not yet available for viewing'
     })
   }
 }
@@ -70,16 +79,30 @@ export async function gradeRecordingGuard(
   reply: FastifyReply
 ) {
   const { studentId, subjectId } = request.params
-  const teacherId = request.user.id
+  const userId = request.user.id
 
   // Check if teacher is assigned to this subject for this student
+  const staffProfile = await request.db.staffProfile.findFirst({
+    where: {
+      profile: {
+        userId
+      }
+    }
+  })
+
+  if (!staffProfile) {
+    return reply.status(403).send({ message: 'Access denied' })
+  }
+
   const assignment = await request.db.classSubject.findFirst({
     where: {
-      teacherId,
       subjectId,
+      staffProfileId: staffProfile.id,
       class: {
         students: {
-          some: { studentId }
+          some: { 
+            studentProfileId: studentId 
+          }
         }
       }
     }
@@ -101,15 +124,28 @@ export async function reportCardPrintGuard(
   const { reportCardId } = request.params
   const userId = request.user.id
 
-  // Check if user is headmaster
-  const isHeadmaster = await request.db.staffAssignment.findFirst({
+  // Get staff profile
+  const staffProfile = await request.db.staffProfile.findFirst({
     where: {
-      userId,
+      profile: {
+        userId
+      }
+    }
+  })
+
+  if (!staffProfile) {
+    return reply.status(403).send({ message: 'Access denied' })
+  }
+
+  // Check if user is headmaster
+  const staffAssignment = await request.db.staffAssignment.findFirst({
+    where: {
+      staffProfileId: staffProfile.id,
       role: 'SCHOOL_HEAD'
     }
   })
 
-  if (!isHeadmaster) {
+  if (!staffAssignment) {
     return reply.status(403).send({ 
       message: 'Only headmasters can print report cards' 
     })
@@ -126,7 +162,7 @@ export async function reportCardPrintGuard(
   }
 
   const hasUnapprovedGrades = reportCard.grades.some(
-    (grade) => grade.status !== GradeStatus.APPROVED
+    (grade) => grade.status !== 'APPROVED'
   )
 
   if (hasUnapprovedGrades) {

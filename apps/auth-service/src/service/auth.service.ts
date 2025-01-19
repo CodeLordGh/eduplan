@@ -41,7 +41,7 @@ export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User
     validateCreateUserInput(input),
     TE.chain((validInput) =>
       pipe(
-        userRepo.findUserByEmail(validInput.email),
+        userRepo.findUserByEmail(validInput.email as string),
         TE.chain((existingUser) =>
           existingUser
             ? TE.left(createDuplicateEmailError())
@@ -52,8 +52,9 @@ export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User
                 ),
                 TE.chain((hashedPassword) =>
                   userRepo.createUser({
-                    ...validInput,
-                    password: hashedPassword
+                    email: validInput.email as string,
+                    password: hashedPassword,
+                    role: validInput.role
                   })
                 )
               )
@@ -101,7 +102,7 @@ export const login = (redis: FastifyRedis, input: LoginInput): TE.TaskEither<Aut
                         sessionService.createSession(
                           redis,
                           user.id,
-                          user.email,
+                          user.email || '',
                           user.role,
                           input.ipAddress,
                           input.userAgent
@@ -194,11 +195,17 @@ const generateAuthTokens = (
   pipe(
     TE.tryCatch(
       async () => {
+        if (!user.email) {
+          throw new Error('User email is required for token generation');
+        }
         const accessToken = generateJWT({
           userId: user.id,
           email: user.email,
           role: user.role as unknown as Role,
-          permissions: ROLE_PERMISSIONS[user.role as unknown as Role] || []
+          permissions: ROLE_PERMISSIONS[user.role as unknown as Role] || [],
+          kycVerified: user.kycStatus === VerificationStatus.VERIFIED,
+          employmentEligible: user.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE,
+          socialAccessEnabled: user.socialAccessEnabled || false
         });
         const refreshToken = uuidv4();
 

@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@eduflow/prisma';
+import type { PrismaClient } from '@eduflow/types';
 import { EVENTS, ERROR_CODES } from '../utils/constants';
 import { validateProfile, validatePartialProfile } from '../validators/profile.validator';
 import * as profileRepo from '../repositories/profile.repository';

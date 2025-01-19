@@ -4,24 +4,36 @@ import { SYSTEM_OCCUPATIONS } from '../utils/constants';
 // Validation regex patterns
 const NAME_PATTERN = /^[a-zA-Z\s-]{2,50}$/;
 const OCCUPATION_PATTERN = /^[a-zA-Z\s-]{2,100}$/;
+const PHONE_PATTERN = /^\+?[1-9]\d{1,14}$/;
+
+// Address schema
+const addressSchema = z.object({
+  street: z.string(),
+  city: z.string(),
+  state: z.string(),
+  country: z.string(),
+  postalCode: z.string()
+});
+
+// Emergency contact schema
+const emergencyContactSchema = z.object({
+  name: z.string(),
+  relationship: z.string(),
+  phoneNumber: z.string().regex(PHONE_PATTERN, 'Invalid phone number format')
+});
 
 // Base profile schema
 export const profileSchema = z.object({
   firstName: z.string().regex(NAME_PATTERN, 'Invalid first name format'),
   lastName: z.string().regex(NAME_PATTERN, 'Invalid last name format'),
-  contact: z.object({
-    email: z.string().email('Invalid email format'),
-    phone: z.string().optional(),
-    address: z.object({
-      street: z.string(),
-      city: z.string(),
-      state: z.string(),
-      country: z.string(),
-      postalCode: z.string()
-    }).optional()
-  }),
-  occupation: z.string().regex(OCCUPATION_PATTERN, 'Invalid occupation format'),
-  metadata: z.record(z.unknown()).optional()
+  middleName: z.string().regex(NAME_PATTERN, 'Invalid middle name format').optional(),
+  dateOfBirth: z.string().transform(str => new Date(str)),
+  phoneNumber: z.string().regex(PHONE_PATTERN, 'Invalid phone number format').optional(),
+  address: addressSchema,
+  gender: z.string().optional(),
+  nationality: z.string().optional(),
+  emergencyContact: emergencyContactSchema.optional(),
+  occupation: z.string().regex(OCCUPATION_PATTERN, 'Invalid occupation format').optional()
 });
 
 // Type inference

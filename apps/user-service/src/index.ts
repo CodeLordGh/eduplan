@@ -1,54 +1,50 @@
-import fastify from 'fastify';
-import cors from '@fastify/cors';
-import jwt from '@fastify/jwt';
-import swagger from '@fastify/swagger';
-import { PrismaClient } from '@eduflow/prisma';
+import { FastifyInstance } from 'fastify';
 import { createLogger } from '@eduflow/common';
-
+import { authenticate, authorize } from '@eduflow/middleware';
+import type { PrismaClient } from '@eduflow/types';
 import * as profileHandlers from './handlers/profile.handler';
-import * as profileEvents from './events/profile.events';
+import { prisma } from '@eduflow/prisma';
 
 // Initialize logger
-const logger = createLogger({
-  service: 'user-service',
-  level: process.env.LOG_LEVEL || 'info'
-});
+const logger = createLogger('user-service');
 
-// Initialize Prisma
-const prisma = new PrismaClient();
-
-// Initialize event publisher (mock for now)
-const publishEvent = async (event: string, data: unknown): Promise<void> => {
-  logger.info({ event, data }, 'Publishing event');
+// Dependencies
+const deps: {
+  prisma: PrismaClient;
+  publishEvent: (event: string, data: unknown) => Promise<void>;
+} = {
+  prisma: prisma as unknown as PrismaClient,
+  publishEvent: async (event: string, data: unknown) => {
+    logger.info('Publishing event', { event, data });
+    // TODO: Implement event publishing
+  }
 };
 
-// Create Fastify instance
-const app = fastify({
-  logger
+// Create Fastify app
+const app: FastifyInstance = require('fastify')({
+  logger: true
 });
 
-// Register plugins
-app.register(cors);
-app.register(jwt, {
-  secret: process.env.JWT_SECRET || 'your-secret-key'
+// Add error handler
+app.setErrorHandler((error, request, reply) => {
+  logger.error('Request error', error, { url: request.url, method: request.method });
+  reply.status(500).send({ error: 'Internal Server Error' });
 });
-app.register(swagger, {
-  routePrefix: '/docs',
+
+// Register Swagger
+app.register(require('@fastify/swagger'), {
   swagger: {
     info: {
       title: 'User Service API',
       description: 'API documentation for the User Service',
       version: '1.0.0'
-    }
-  },
-  exposeRoute: true
+    },
+    host: 'localhost',
+    schemes: ['http'],
+    consumes: ['application/json'],
+    produces: ['application/json']
+  }
 });
-
-// Dependencies
-const deps = {
-  prisma,
-  publishEvent
-};
 
 // Register routes
 app.get('/profiles/:userId', profileHandlers.getProfile(deps));
@@ -57,53 +53,16 @@ app.patch('/profiles/:userId', profileHandlers.updateProfile(deps));
 app.delete('/profiles/:userId', profileHandlers.deleteProfile(deps));
 app.get('/profiles', profileHandlers.listProfiles(deps));
 
-// Event handlers
-const setupEventHandlers = () => {
-  // Mock event subscription (replace with actual event system)
-  const events = {
-    USER_CREATED: profileEvents.handleUserCreated,
-    USER_DELETED: profileEvents.handleUserDeleted,
-    KYC_VERIFIED: profileEvents.handleKYCVerified
-  };
-
-  // Log registered event handlers
-  logger.info(
-    { events: Object.keys(events) },
-    'Registered event handlers'
-  );
-};
-
 // Start server
-const start = async (): Promise<void> => {
+const start = async () => {
   try {
-    // Setup event handlers
-    setupEventHandlers();
-
-    // Start server
-    await app.listen({
-      port: Number(process.env.PORT) || 3000,
-      host: '0.0.0.0'
-    });
-
-    logger.info(
-      { port: app.server.address() },
-      'Server started successfully'
-    );
+    const port = process.env.PORT || 3000;
+    await app.listen({ port: Number(port), host: '0.0.0.0' });
+    logger.info('Server started', { port });
   } catch (err) {
-    logger.error(err, 'Error starting server');
+    logger.error('Server start failed', err instanceof Error ? err : new Error('Unknown error'));
     process.exit(1);
   }
 };
 
-// Handle shutdown
-const shutdown = async (): Promise<void> => {
-  await app.close();
-  await prisma.$disconnect();
-  process.exit(0);
-};
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-// Start server
 start(); 

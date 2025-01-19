@@ -1,0 +1,721 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SYSTEM_ADMIN
+  SCHOOL_OWNER
+  SCHOOL_HEAD
+  SCHOOL_ADMIN
+  TEACHER
+  PARENT
+  STUDENT
+  ACCOUNTANT
+  CHEF
+  SECURITY
+  TRANSPORT_OFFICER
+  OTHER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum OTPStatus {
+  PENDING
+  USED
+  EXPIRED
+}
+
+enum KYCStatus {
+  NOT_SUBMITTED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum EmploymentEligibilityStatus {
+  NOT_CHECKED
+  ELIGIBLE
+  INELIGIBLE
+  PENDING_REVIEW
+}
+
+enum DocumentType {
+  IDENTITY
+  SCHOOL_LICENSE
+  EMPLOYMENT_PROOF
+  QUALIFICATION
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum EntityType {
+  USER
+  SCHOOL
+}
+
+enum GradeStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+enum ReportCardStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+  AVAILABLE
+}
+
+enum OccupationType {
+  EDUCATION_SECTOR // For teachers, school heads, etc.
+  HEALTHCARE // For doctors, nurses, etc.
+  TRANSPORTATION // For drivers, pilots, etc.
+  CONSTRUCTION // For builders, contractors, etc.
+  BUSINESS // For business owners, entrepreneurs
+  TECHNOLOGY // For IT professionals, developers
+  GOVERNMENT // For civil servants, public officials
+  SELF_EMPLOYED // For freelancers, independent workers
+  OTHER // For other occupations
+}
+
+model User {
+  id                    String                      @id @default(uuid())
+  email                 String?                     @unique // Optional for students and young learners
+  password              String
+  role                  Role
+  status                UserStatus                  @default(PENDING)
+  kycStatus             VerificationStatus?         @default(PENDING)
+  kycVerifiedAt         DateTime?
+  kycDocumentIds        String[]
+  employmentStatus      EmploymentEligibilityStatus @default(NOT_CHECKED)
+  employmentVerifiedAt  DateTime?
+  employmentDocumentIds String[]
+  socialAccessEnabled   Boolean                     @default(false)
+
+  // Relations
+  profile       Profile?
+  documents     KYCDocument[]
+  verifications VerificationHistory[] @relation("verifier")
+
+  // System Fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([role])
+  @@index([status])
+  @@index([kycStatus])
+  @@index([employmentStatus])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model OTP {
+  id        String    @id @default(uuid())
+  code      String
+  userId    String
+  expiresAt DateTime
+  status    OTPStatus
+  createdAt DateTime  @default(now())
+
+  @@map("otps")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model KYCDocument {
+  id           String             @id @default(uuid())
+  userId       String
+  type         DocumentType
+  status       VerificationStatus
+  documentUrls String[]
+  verifiedAt   DateTime?
+  metadata     Json
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  user         User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([verifiedAt])
+}
+
+model VerificationHistory {
+  id         String             @id @default(uuid())
+  entityId   String
+  entityType EntityType
+  status     VerificationStatus
+  verifiedBy String?
+  notes      String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  verifier   User?              @relation("verifier", fields: [verifiedBy], references: [id])
+
+  @@index([entityId])
+  @@index([entityType])
+  @@index([status])
+}
+
+model Profile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  firstName        String
+  lastName         String
+  middleName       String?
+  dateOfBirth      DateTime
+  phoneNumber      String? // Required for all except STUDENT
+  address          Json? // Street, city, state, country, postal code
+  gender           String?
+  nationality      String?
+  emergencyContact Json? // Name, relationship, phone number
+
+  // Occupation Details (System-managed based on role)
+  occupation      String? // Auto-populated based on role for system roles
+  occupationType  OccupationType?
+  employer        String? // Company/Organization name (optional)
+  employerDetails Json? // Additional employer information
+  workAddress     Json? // Work location details
+
+  // Education Details
+  education Json[] // Array of education history
+
+  // System Fields
+  metadata  Json? // Additional flexible metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user                User                 @relation(fields: [userId], references: [id])
+  professionalProfile ProfessionalProfile?
+  studentProfile      StudentProfile?
+  parentProfile       ParentProfile?
+  staffProfile        StaffProfile?
+
+  // Additional fields
+  settings                 Json? // User specific settings
+  communicationPreferences Json? // Communication preferences
+  lastLoginAt              DateTime?
+  lastActivityAt           DateTime?
+  deviceInfo               Json? // Last used device information
+
+  @@index([occupationType])
+  @@index([dateOfBirth])
+  @@index([lastActivityAt])
+  @@map("profiles")
+}
+
+model ProfessionalProfile {
+  id        String  @id @default(uuid())
+  profileId String  @unique
+  profile   Profile @relation(fields: [profileId], references: [id])
+
+  // Work Experience
+  currentPosition   String?
+  yearsOfExperience Int?
+  workHistory       Json[] // Array of previous work experiences
+
+  // Education Sector Specific
+  teachingExperience Json? // For teachers
+  subjectsQualified  String[] // For teachers
+  adminExperience    Json? // For school administrators
+  certifications     Json[] // Professional certifications
+  licenses           Json[] // Professional licenses
+
+  // Skills and Expertise
+  skills          String[]
+  specializations String[]
+  achievements    Json[]
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("professional_profiles")
+}
+
+model School {
+  id                 String   @id @default(uuid())
+  name               String
+  type               String // Primary, Secondary, etc.
+  registrationNumber String   @unique
+  license            Json // License details
+  contact            Json // Phone, email, website
+  address            Json // Physical address
+  facilities         String[] // Available facilities
+  capacity           Int // Maximum student capacity
+
+  // School Details
+  curriculum     String[] // Supported curricula
+  languages      String[] // Languages of instruction
+  operatingHours Json // School hours
+  termDates      Json[] // Academic calendar
+
+  // Relations
+  staffAssignments    StaffAssignment[]
+  reportCards         ReportCard[]
+  classSubjects       ClassSubject[]
+  classes             Class[]
+  communicationGroups CommunicationGroup[]
+  schoolRoles         SchoolRole[]
+
+  // Verification
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Additional fields from DEVELOPMENT_PLAN3.md
+  status                String
+  settings              Json? // School settings
+  communicationSettings Json? // Communication preferences
+  createdBy             String // Must be a system admin
+  ownershipDetails      Json // Details about school ownership
+  systemApproval        Json? // System approval details
+
+  @@index([status])
+  @@index([type])
+  @@index([verificationStatus])
+  @@index([createdAt])
+  @@map("schools")
+}
+
+model StaffAssignment {
+  id             String       @id @default(uuid())
+  staffProfileId String
+  staffProfile   StaffProfile @relation(fields: [staffProfileId], references: [id])
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+  role           Role
+  startDate      DateTime
+  endDate        DateTime?
+  isActive       Boolean      @default(true)
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([staffProfileId, schoolId, role])
+  @@map("staff_assignments")
+}
+
+model ParentStudentRelation {
+  id               String  @id @default(uuid())
+  parentProfileId  String
+  studentProfileId String
+  relationship     String // Specific relationship (Father, Mother, Legal Guardian)
+  isPrimary        Boolean @default(false)
+
+  // Relations
+  parentProfile  ParentProfile  @relation(fields: [parentProfileId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([parentProfileId, studentProfileId])
+  @@map("parent_student_relations")
+}
+
+model ClassSubject {
+  id             String       @id @default(uuid())
+  classId        String
+  class          Class        @relation(fields: [classId], references: [id])
+  subjectId      String
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  staffProfileId String
+  staffProfile   StaffProfile @relation(fields: [staffProfileId], references: [id])
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+
+  // Schedule
+  schedule Json // Class schedule for this subject
+  syllabus Json? // Syllabus details
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  academicYear      String // Add missing field
+  term              String
+  maxStudents       Int?
+  currentEnrollment Int    @default(0)
+
+  @@unique([classId, subjectId, academicYear])
+  @@index([schoolId, academicYear])
+  @@index([staffProfileId])
+  @@index([term])
+  @@map("class_subjects")
+}
+
+model Class {
+  id           String  @id @default(uuid())
+  name         String
+  grade        String // e.g., "Primary 1", "Primary 2"
+  section      String? // e.g., "A", "B", "Red", "Blue"
+  academicYear String
+  capacity     Int
+  schedule     Json // Class schedule
+
+  // Relations
+  school        School         @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  classSubjects ClassSubject[]
+  students      ClassStudent[]
+  attendance    Attendance[] // Link to attendance records
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Class Master
+  classMasterId      String? // Current class master
+  classMasterHistory Json[] // History of class masters with dates
+
+  @@unique([schoolId, name, academicYear])
+  @@index([grade])
+  @@index([academicYear])
+  @@index([schoolId])
+  @@index([classMasterId])
+  @@map("classes")
+}
+
+model ClassStudent {
+  id               String         @id @default(uuid())
+  classId          String
+  class            Class          @relation(fields: [classId], references: [id])
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  enrollmentDate   DateTime
+  status           String // Active, Transferred, Withdrawn
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([classId, studentProfileId])
+  @@map("class_students")
+}
+
+model ReportCard {
+  id               String         @id @default(uuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  schoolId         String
+  school           School         @relation(fields: [schoolId], references: [id])
+
+  // Report Card Details
+  term              String
+  academicYear      String
+  grades            Grade[]
+  teacherComments   String?
+  principalComments String?
+  attendance        Json? // Attendance summary
+  status            ReportCardStatus
+  publishedAt       DateTime?
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([academicYear])
+  @@index([term])
+  @@index([status])
+  @@index([publishedAt])
+  @@map("report_cards")
+}
+
+model Grade {
+  id               String         @id @default(uuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  reportCardId     String
+  reportCard       ReportCard     @relation(fields: [reportCardId], references: [id])
+  subjectId        String
+  teacherId        String
+
+  // Grade Details
+  grade          Float
+  comments       String?
+  assessmentType String // Exam, Quiz, Assignment, etc.
+  assessmentDate DateTime
+  status         GradeStatus
+
+  // Add teacher relation
+  staffProfileId String
+  staffProfile   StaffProfile @relation("TeacherGrades", fields: [staffProfileId], references: [id])
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  term         String
+  academicYear String
+  weightage    Float? // Grade weightage for final calculation
+
+  @@index([studentProfileId, academicYear])
+  @@index([subjectId])
+  @@index([assessmentDate])
+  @@index([status])
+  @@map("grades")
+}
+
+model StudentProfile {
+  id        String  @id @default(uuid())
+  profileId String  @unique
+  profile   Profile @relation(fields: [profileId], references: [id])
+
+  // Academic Details
+  admissionNumber String   @unique
+  enrollmentDate  DateTime
+  currentGrade    String? // Current grade level
+  previousSchools Json[] // Previous schools attended
+
+  // Guardian Information
+  guardians ParentStudentRelation[]
+
+  // Academic Records
+  classes           ClassStudent[]
+  attendanceRecords Attendance[]
+  reportCards       ReportCard[]
+  grades            Grade[]
+
+  // Learning Journey
+  learningProgress Json[] // Track progress over time
+  achievements     Json[] // Academic achievements
+  extracurricular  Json[] // Extra-curricular activities
+
+  // Special Needs/Requirements
+  specialNeeds        Json? // Any special educational needs
+  medicalInfo         Json? // Medical information
+  dietaryRestrictions String[]
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Academic Performance
+  currentGPA         Float?
+  academicStanding   String?
+  attendanceRate     Float?
+  lastAttendanceDate DateTime?
+
+  @@index([currentGrade])
+  @@index([enrollmentDate])
+  @@index([currentGPA])
+  @@index([attendanceRate])
+  @@map("student_profiles")
+}
+
+model ParentProfile {
+  id        String  @id @default(uuid())
+  profileId String  @unique
+  profile   Profile @relation(fields: [profileId], references: [id])
+
+  // Parent Specific
+  children     ParentStudentRelation[]
+  relationship String // Relationship to children (Father, Mother, Guardian)
+
+  // Additional Information
+  preferredLanguage        String?
+  communicationPreferences Json?
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("parent_profiles")
+}
+
+model Attendance {
+  id               String         @id @default(uuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  date             DateTime
+  status           String // Present, Absent, Late
+  timeIn           DateTime?
+  timeOut          DateTime?
+  reason           String? // Reason for absence/late
+  isExcused        Boolean        @default(false)
+  notes            String?
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Additional fields
+  term         String
+  academicYear String
+  verifiedBy   String? // Staff who verified the attendance
+
+  // Class Master Fields
+  classMasterId     String // Staff ID of the class master
+  classId           String // Class where attendance was taken
+  recordedBy        String // Staff who recorded the attendance
+  modifiedBy        String? // Staff who modified the attendance
+  modifiedAt        DateTime? // When the attendance was modified
+  verificationNotes String? // Notes from verification
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id])
+
+  @@unique([studentProfileId, date])
+  @@index([date])
+  @@index([status])
+  @@index([academicYear, term])
+  @@index([classMasterId])
+  @@index([classId])
+  @@index([recordedBy])
+  @@map("attendance_records")
+}
+
+model StaffProfile {
+  id        String @id @default(uuid())
+  profileId String @unique
+
+  // Employment Details
+  employeeId     String    @unique
+  position       String
+  department     String
+  employmentType String // Full-time, Part-time, Contract
+  startDate      DateTime
+  endDate        DateTime?
+
+  // Work Schedule and Details
+  schedule         Json?
+  responsibilities String[]
+  teachingHours    Int?
+  specializations  String[]
+
+  // Relations
+  profile       Profile             @relation(fields: [profileId], references: [id])
+  assignments   StaffAssignment[]
+  subjects      SubjectAssignment[]
+  grades        Grade[]             @relation("TeacherGrades")
+  classSubjects ClassSubject[]
+
+  @@index([employeeId])
+  @@map("staff_profiles")
+}
+
+model Subject {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  category    String // Core, Elective, etc.
+  gradeLevel  String[] // Applicable grade levels
+
+  // Relations
+  assignments   SubjectAssignment[]
+  classSubjects ClassSubject[]
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Additional fields
+  credits            Float?
+  prerequisites      String[] // Required prerequisite subjects
+  corequisites       String[] // Required concurrent subjects
+  learningOutcomes   String[]
+  assessmentCriteria Json?
+
+  @@index([category])
+  @@index([code])
+  @@index([gradeLevel])
+  @@map("subjects")
+}
+
+model SubjectAssignment {
+  id             String       @id @default(uuid())
+  subjectId      String
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  staffProfileId String
+  staffProfile   StaffProfile @relation(fields: [staffProfileId], references: [id])
+  academicYear   String
+
+  // System Fields
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([subjectId, staffProfileId, academicYear])
+  @@map("subject_assignments")
+}
+
+model CommunicationGroup {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  name      String
+  type      String // GROUP_TYPE
+  filters   Json? // For targeting specific groups
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([type])
+  @@map("communication_groups")
+}
+
+model SchoolRole {
+  id                       String   @id @default(uuid())
+  schoolId                 String
+  school                   School   @relation(fields: [schoolId], references: [id])
+  userId                   String
+  role                     Role
+  permissions              String[]
+  communicationPermissions String[]
+  assignedBy               String // Must be school admin for owner role
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([schoolId, userId, role])
+  @@index([schoolId])
+  @@index([userId])
+  @@map("school_roles")
+}

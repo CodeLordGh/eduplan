@@ -394,6 +394,10 @@ importers:
         version: 5.22.0
 
   libs/types:
+    dependencies:
+      '@eduflow/prisma':
+        specifier: workspace:*
+        version: link:../prisma
     devDependencies:
       '@eduflow/tsconfig':
         specifier: workspace:*

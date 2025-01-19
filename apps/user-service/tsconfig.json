@@ -2,7 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "composite": true
   },
+  "references": [
+    { "path": "../../libs/common" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/prisma" }
+  ],
   "include": ["src"]
 } 

@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../client';
 
 // Re-export everything from the generated Prisma client
-export * from '.prisma/client';
+export * from '../client';
 
 // Export specific types that are needed across the application
 export type {
@@ -18,13 +18,13 @@ export type {
   RefreshToken,
   VerificationHistory,
   ParentStudentRelation
-} from '.prisma/client';
+} from '../client';
 
 // Export enums as both types and values
-export { Role, UserStatus, VerificationStatus, DocumentType, EntityType, OTPStatus, EmploymentEligibilityStatus, GradeStatus, ReportCardStatus } from '.prisma/client';
+export { Role, UserStatus, VerificationStatus, DocumentType, EntityType, OTPStatus, EmploymentEligibilityStatus, GradeStatus, ReportCardStatus } from '../client';
 
 // Export Prisma namespace for input types
-export type { Prisma } from '.prisma/client';
+export type { Prisma } from '../client';
 
 // Export the Prisma client instance
 export const prisma = new PrismaClient(); 

@@ -1,4 +1,5 @@
 import { prisma } from '@eduflow/prisma';
+import type { PrismaClient } from '@eduflow/types';
 import { EVENTS, USER_ROLES, SYSTEM_OCCUPATIONS } from '../utils/constants';
 import { validateProfile, validateOccupation } from '../validators/profile.validator';
 import { createProfile, getProfileByUserId } from '../repositories/profile.repository';
@@ -17,7 +18,7 @@ export const handleUserCreated = async (
   const { userId, email, role } = event;
 
   // Check if profile already exists
-  const existingProfile = await getProfileByUserId(userId);
+  const existingProfile = await getProfileByUserId(prisma as unknown as PrismaClient, userId);
   if (existingProfile) return;
 
   // Determine occupation based on role
@@ -26,12 +27,18 @@ export const handleUserCreated = async (
     : '';
 
   // Create base profile
-  const profile = await createProfile(userId, {
+  const profile = await createProfile(prisma as unknown as PrismaClient, userId, {
     firstName: '',
     lastName: '',
-    contact: { email },
-    occupation,
-    metadata: {}
+    dateOfBirth: new Date(), // Temporary date, will be updated later
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      country: '',
+      postalCode: ''
+    },
+    occupation
   });
 
   // Publish profile created event
@@ -52,7 +59,7 @@ export const handleUserDeleted = async (
   const { userId } = event;
 
   // Check if profile exists
-  const profile = await getProfileByUserId(userId);
+  const profile = await getProfileByUserId(prisma as unknown as PrismaClient, userId);
   if (!profile) return;
 
   // Delete profile
@@ -78,7 +85,7 @@ export const handleKYCVerified = async (
   const { userId } = event;
 
   // Update profile metadata with KYC status
-  await prisma.profile.update({
+  await (prisma as unknown as PrismaClient).profile.update({
     where: { userId },
     data: {
       metadata: {
