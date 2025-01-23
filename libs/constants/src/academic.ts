@@ -1,5 +1,6 @@
 export const REPORT_CARD_AVAILABILITY_DELAY_HOURS = 72
 
+// grade exports
 export const GRADE_SCALES = {
   PERCENTAGE: {
     min: 0,

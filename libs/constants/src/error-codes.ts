@@ -1,5 +1,5 @@
 export const ERROR_CODES = {
-  // Authentication Errors
+  // Authentication Error test one
   AUTH_ERROR: 'AUTH_ERROR',
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',

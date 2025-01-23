@@ -1,11 +1,11 @@
-generator client {
-  provider = "prisma-client-js"
-  output   = "./client"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../client"
 }
 
 enum Role {
@@ -14,9 +14,9 @@ enum Role {
   SCHOOL_HEAD
   SCHOOL_ADMIN
   TEACHER
+  ACCOUNTANT
   PARENT
   STUDENT
-  ACCOUNTANT
   CHEF
   SECURITY
   TRANSPORT_OFFICER

@@ -5,7 +5,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@eduflow/types": "workspace:*",
@@ -15,6 +16,7 @@
     "@types/node": "^18.17.12",
     "typescript": "^5.2.2",
     "jest": "^29.6.4",
-    "@types/jest": "^29.5.4"
+    "@types/jest": "^29.5.4",
+    "rimraf": "^5.0.1"
   }
 }

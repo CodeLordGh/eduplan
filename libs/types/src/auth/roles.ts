@@ -1,6 +1,8 @@
 import type { Role } from '@eduflow/prisma'
 
-// Re-export Prisma's Role type
+// Re-export the Role type from Prisma
+// Test change to verify build system
+// Another test change
 export { Role } from '@eduflow/prisma'
 
 export enum Permission {
@@ -32,24 +34,26 @@ export enum Permission {
   MANAGE_COMMUNICATIONS = 'MANAGE_COMMUNICATIONS'
 }
 
-export const ROLE_HIERARCHY = {
-  'SYSTEM_ADMIN': [],  // Top level, no superiors
-  'SCHOOL_OWNER': ['SYSTEM_ADMIN' as Role],
-  'SCHOOL_HEAD': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role],
-  'SCHOOL_ADMIN': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role],
-  'TEACHER': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role],
-  'ACCOUNTANT': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role],
-  'PARENT': ['SYSTEM_ADMIN' as Role],
-  'STUDENT': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role, 'TEACHER' as Role],
-  'CHEF': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role],
-  'SECURITY': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role],
-  'TRANSPORT_OFFICER': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role],
-  'OTHER': ['SYSTEM_ADMIN' as Role, 'SCHOOL_OWNER' as Role, 'SCHOOL_HEAD' as Role, 'SCHOOL_ADMIN' as Role]
-} as const as Record<Role, readonly Role[]>;
+// Business logic for role hierarchy
+export const ROLE_HIERARCHY: Record<Role, readonly Role[]> = {
+  SYSTEM_ADMIN: [],  // Top level, no superiors
+  SCHOOL_OWNER: ['SYSTEM_ADMIN'],
+  SCHOOL_HEAD: ['SYSTEM_ADMIN', 'SCHOOL_OWNER'],
+  SCHOOL_ADMIN: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD'],
+  TEACHER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  ACCOUNTANT: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  PARENT: ['SYSTEM_ADMIN'],
+  STUDENT: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN', 'TEACHER'],
+  CHEF: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  SECURITY: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  TRANSPORT_OFFICER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  OTHER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN']
+};
 
-export const ROLE_PERMISSIONS = {
-  'SYSTEM_ADMIN': Object.values(Permission),
-  'SCHOOL_OWNER': [
+// Business logic for role permissions
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  SYSTEM_ADMIN: Object.values(Permission),
+  SCHOOL_OWNER: [
     Permission.MANAGE_SCHOOL,
     Permission.VIEW_SCHOOL,
     Permission.CREATE_USER,
@@ -59,7 +63,7 @@ export const ROLE_PERMISSIONS = {
     Permission.VIEW_PAYMENTS,
     Permission.SEND_NOTIFICATIONS
   ],
-  'SCHOOL_HEAD': [
+  SCHOOL_HEAD: [
     Permission.VIEW_SCHOOL,
     Permission.MANAGE_CLASSES,
     Permission.MANAGE_GRADES,
@@ -67,7 +71,7 @@ export const ROLE_PERMISSIONS = {
     Permission.VIEW_PAYMENTS,
     Permission.SEND_NOTIFICATIONS
   ],
-  'SCHOOL_ADMIN': [
+  SCHOOL_ADMIN: [
     Permission.VIEW_SCHOOL,
     Permission.CREATE_USER,
     Permission.MANAGE_USER,
@@ -75,26 +79,26 @@ export const ROLE_PERMISSIONS = {
     Permission.VIEW_GRADES,
     Permission.SEND_NOTIFICATIONS
   ],
-  'TEACHER': [
+  TEACHER: [
     Permission.MANAGE_GRADES,
     Permission.VIEW_GRADES,
     Permission.SEND_NOTIFICATIONS
   ],
-  'ACCOUNTANT': [
+  ACCOUNTANT: [
     Permission.MANAGE_PAYMENTS,
     Permission.VIEW_PAYMENTS
   ],
-  'PARENT': [
+  PARENT: [
     Permission.VIEW_GRADES,
     Permission.VIEW_PAYMENTS
   ],
-  'STUDENT': [
+  STUDENT: [
     Permission.VIEW_GRADES
   ],
-  'CHEF': [],
-  'SECURITY': [],
-  'TRANSPORT_OFFICER': [],
-  'OTHER': []
-} as const as Record<Role, Permission[]>;
+  CHEF: [],
+  SECURITY: [],
+  TRANSPORT_OFFICER: [],
+  OTHER: []
+};
 
 export type UserRole = Role;

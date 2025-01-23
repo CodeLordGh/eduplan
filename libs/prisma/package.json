@@ -9,8 +9,8 @@
     "client"
   ],
   "scripts": {
-    "build": "prisma generate && tsc",
-    "generate": "prisma generate",
+    "build": "prisma generate --schema=./prisma/schema.prisma && tsc",
+    "generate": "prisma generate --schema=./prisma/schema.prisma",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev"
   },
