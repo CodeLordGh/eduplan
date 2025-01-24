@@ -3,7 +3,7 @@ import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
 import { Option } from 'fp-ts/Option';
 import { AuthErrors, createDatabaseError } from '../errors/auth';
-import { redisUtils } from '@eduflow/middleware';
+import { setRedisValue, getRedisValue, deleteRedisValue } from '@eduflow/middleware';
 
 const REFRESH_TOKEN_PREFIX = 'refresh_token:';
 
@@ -14,7 +14,7 @@ export const storeRefreshToken = (
   expirySeconds: number
 ): TE.TaskEither<AuthErrors, void> =>
   pipe(
-    redisUtils.setRedisValue(redis)(`${REFRESH_TOKEN_PREFIX}${token}`, userId, expirySeconds * 1000),
+    setRedisValue(redis)(`${REFRESH_TOKEN_PREFIX}${token}`, userId, expirySeconds * 1000),
     TE.mapLeft((error) => createDatabaseError(error as Error)),
     TE.map(() => void 0)
   );
@@ -24,7 +24,7 @@ export const getRefreshTokenUserId = (
   token: string
 ): TE.TaskEither<AuthErrors, Option<string>> =>
   pipe(
-    redisUtils.getRedisValue(redis)(`${REFRESH_TOKEN_PREFIX}${token}`),
+    getRedisValue(redis)(`${REFRESH_TOKEN_PREFIX}${token}`),
     TE.mapLeft((error) => createDatabaseError(error as Error))
   ) as TE.TaskEither<AuthErrors, Option<string>>;
 
@@ -33,7 +33,7 @@ export const deleteRefreshToken = (
   token: string
 ): TE.TaskEither<AuthErrors, void> =>
   pipe(
-    redisUtils.deleteRedisValue(redis)(`${REFRESH_TOKEN_PREFIX}${token}`),
+    deleteRedisValue(redis)(`${REFRESH_TOKEN_PREFIX}${token}`),
     TE.mapLeft((error) => createDatabaseError(error as Error)),
     TE.map(() => void 0)
   );
