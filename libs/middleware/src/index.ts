@@ -14,6 +14,12 @@ export {
   parseJSON,
   getHeaderValue
 } from './redis/utils';
-export { createRateLimiter, createOTPManager } from './redis.middleware';
+
+// Export Redis middleware utilities
+export * from './redis/session';
+export * from './redis/rate-limit';
+export * from './redis/otp';
+export * from './redis/cache';
+export * from './redis/types';
+
 export { authenticate, authorize, AuthenticatedUser, RequestWithUser } from './auth.middleware';
-export type { OTPData, RateLimitConfig, SessionData } from './redis.middleware';
