@@ -1,5 +1,3 @@
-import { PrismaClient } from '@eduflow/prisma';
-
-const prisma = new PrismaClient();
+import { prisma } from '@eduflow/prisma';
 
 export default prisma;

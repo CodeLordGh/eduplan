@@ -392,16 +392,17 @@ importers:
       prisma:
         specifier: ^5.7.1
         version: 5.22.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
+
+  libs/prisma/client: {}
 
   libs/types:
     dependencies:
       '@eduflow/prisma':
         specifier: workspace:*
         version: link:../prisma
-    devDependencies:
-      '@eduflow/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
       '@types/node':
         specifier: ^20.17.12
         version: 20.17.12
@@ -411,6 +412,10 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+    devDependencies:
+      '@eduflow/tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/tsconfig
 
   libs/validators:
     dependencies:
@@ -430,6 +435,9 @@ importers:
       jest:
         specifier: ^29.6.4
         version: 29.7.0(@types/node@18.19.70)(ts-node@10.9.2(@types/node@18.19.70)(typescript@5.7.3))
+      rimraf:
+        specifier: ^5.0.1
+        version: 5.0.10
       typescript:
         specifier: ^5.2.2
         version: 5.7.3

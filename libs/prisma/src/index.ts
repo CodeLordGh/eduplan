@@ -3,4 +3,4 @@ export * from '../client';
 
 // Factory function to create new PrismaClient instances
 import { PrismaClient } from '../client';
-export const createPrismaClient = () => new PrismaClient(); 
+export const prisma = new PrismaClient(); 

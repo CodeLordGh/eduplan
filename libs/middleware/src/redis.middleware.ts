@@ -23,6 +23,7 @@ export interface OTPData {
   code: string;
   purpose: string;
   expiresAt: number;
+  attempts?: number;
 }
 
 export interface CacheConfig {

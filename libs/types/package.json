@@ -5,6 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc --build --force",
+    "build:libs": "pnpm --filter \"@eduflow/*\" -r build",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "clean:src": "rimraf ./src/*.js ./src/*.js.map ./src/*.d.ts ./src/*.d.ts.map ./src/**/*.js ./src/**/*.js.map ./src/**/*.d.ts ./src/**/*.d.ts.map"
   },
