@@ -3,6 +3,7 @@ import fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import swagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import { kycRoutes } from './routes/kyc.routes';
 import { errorHandler } from '@eduflow/common';
 import prisma from './lib/prisma';
@@ -36,6 +37,7 @@ export async function createApp(): Promise<FastifyInstance> {
   });
 
   const swaggerOptions: FastifyDynamicSwaggerOptions = {
+    mode: 'dynamic',
     openapi: {
       info: {
         title: 'KYC Service API',
@@ -48,15 +50,13 @@ export async function createApp(): Promise<FastifyInstance> {
       },
       servers: [
         {
-          url: 'http://localhost:3002',
-          description: 'Development server'
+          url: '/',
+          description: 'Current server'
         }
       ],
       tags: [
         { name: 'documents', description: 'KYC Document operations' },
-        { name: 'verification', description: 'Verification operations' },
-        { name: 'schools', description: 'School verification operations' },
-        { name: 'employment', description: 'Employment eligibility operations' }
+        { name: 'verification', description: 'Verification operations' }
       ],
       components: {
         securitySchemes: {
@@ -70,8 +70,9 @@ export async function createApp(): Promise<FastifyInstance> {
           Error: {
             type: 'object',
             properties: {
+              error: { type: 'string' },
               code: { type: 'string' },
-              message: { type: 'string' }
+              statusCode: { type: 'number' }
             }
           }
         }
@@ -82,19 +83,24 @@ export async function createApp(): Promise<FastifyInstance> {
   };
 
   await app.register(swagger, swaggerOptions);
-  await app.register(require('@fastify/swagger-ui'), {
-    routePrefix: '/docs',
+  
+  // Register Swagger UI
+  await app.register(swaggerUi, {
+    routePrefix: '/documentation',
     uiConfig: {
       docExpansion: 'list',
       deepLinking: true
     },
-    staticCSP: true,
-    transformStaticCSP: (header:any) => header,
-    exposeRoute: true
+    staticCSP: false
+  });
+
+  // Only expose the JSON endpoint
+  app.get('/documentation/json', () => {
+    return app.swagger();
   });
 
   // Register routes
-  app.register(kycRoutes, { prefix: '/api/kyc' });
+  app.register(kycRoutes);
 
   // Error handler
   app.setErrorHandler(errorHandler);
@@ -111,7 +117,7 @@ if (require.main === module) {
         port: parseInt(process.env.PORT || '3002'), 
         host: '0.0.0.0' 
       });
-      app.log.info(`Documentation available at http://localhost:${process.env.PORT || '3002'}/docs`);
+      app.log.info(`Documentation available at http://localhost:${process.env.PORT || '3002'}/documentation`);
     } catch (err) {
       console.error(err);
       process.exit(1);

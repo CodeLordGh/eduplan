@@ -22,13 +22,13 @@ const services: ServiceConfig[] = [
   {
     name: 'user',
     prefix: '/api/v1/users',
-    target: 'http://localhost:3002',
+    target: 'http://localhost:3003',
     auth: true
   },
   {
     name: 'kyc',
     prefix: '/api/v1/kyc',
-    target: 'http://localhost:3003',
+    target: 'http://localhost:3002',
     auth: true
   },
   {

@@ -72,16 +72,18 @@ export const kycRoutes: FastifyPluginAsync = async (
           description: 'Invalid request body',
           type: 'object',
           properties: {
+            error: { type: 'string' },
             code: { type: 'string' },
-            message: { type: 'string' }
+            statusCode: { type: 'number' }
           }
         },
         401: {
           description: 'Unauthorized',
           type: 'object',
           properties: {
+            error: { type: 'string' },
             code: { type: 'string' },
-            message: { type: 'string' }
+            statusCode: { type: 'number' }
           }
         }
       },
