@@ -42,5 +42,9 @@
     "apps/*",
     "libs/*",
     "packages/*"
-  ]
-} 
+  ],
+  "dependencies": {
+    "@types/ioredis": "^5.0.0",
+    "ioredis": "^5.4.2"
+  }
+}

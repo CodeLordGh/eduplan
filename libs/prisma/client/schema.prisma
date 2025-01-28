@@ -95,6 +95,35 @@ enum OccupationType {
   OTHER // For other occupations
 }
 
+enum FileType {
+  DOCUMENT
+  IMAGE
+  VIDEO
+  AUDIO
+  OTHER
+}
+
+enum FileCategory {
+  PROFILE_PICTURE
+  KYC_DOCUMENT
+  SCHOOL_DOCUMENT
+  STUDENT_WORK
+  COURSE_MATERIAL
+  OTHER
+}
+
+enum FileAccessLevel {
+  PUBLIC
+  PRIVATE
+  RESTRICTED
+}
+
+enum StorageProvider {
+  LOCAL
+  CLOUDINARY
+  S3
+}
+
 model User {
   id                    String                      @id @default(uuid())
   email                 String?                     @unique // Optional for students and young learners
@@ -718,4 +747,51 @@ model SchoolRole {
   @@index([schoolId])
   @@index([userId])
   @@map("school_roles")
+}
+
+model File {
+  id           String          @id @default(uuid())
+  name         String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  type         FileType
+  category     FileCategory
+  accessLevel  FileAccessLevel @default(PRIVATE)
+  provider     StorageProvider
+  metadata     Json?
+  ownerId      String
+  ownerType    EntityType
+  accessibleTo String[] // List of user/role IDs who can access
+  quota        FileQuota? // One-to-one relation with quota
+
+  // System fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([ownerId])
+  @@index([ownerType])
+  @@index([type])
+  @@index([category])
+  @@index([accessLevel])
+  @@index([createdAt])
+  @@map("files")
+}
+
+model FileQuota {
+  id        String @id @default(uuid())
+  fileId    String @unique
+  file      File   @relation(fields: [fileId], references: [id])
+  totalSize Int // Total size in bytes
+  usedSize  Int // Used size in bytes
+  maxSize   Int // Maximum allowed size in bytes
+
+  // System fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fileId])
+  @@map("file_quotas")
 }

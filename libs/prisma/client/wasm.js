@@ -480,6 +480,36 @@ exports.Prisma.SchoolRoleScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.FileScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  originalName: 'originalName',
+  mimeType: 'mimeType',
+  size: 'size',
+  url: 'url',
+  type: 'type',
+  category: 'category',
+  accessLevel: 'accessLevel',
+  provider: 'provider',
+  metadata: 'metadata',
+  ownerId: 'ownerId',
+  ownerType: 'ownerType',
+  accessibleTo: 'accessibleTo',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+};
+
+exports.Prisma.FileQuotaScalarFieldEnum = {
+  id: 'id',
+  fileId: 'fileId',
+  totalSize: 'totalSize',
+  usedSize: 'usedSize',
+  maxSize: 'maxSize',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -589,6 +619,35 @@ exports.GradeStatus = exports.$Enums.GradeStatus = {
   APPROVED: 'APPROVED'
 };
 
+exports.FileType = exports.$Enums.FileType = {
+  DOCUMENT: 'DOCUMENT',
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  AUDIO: 'AUDIO',
+  OTHER: 'OTHER'
+};
+
+exports.FileCategory = exports.$Enums.FileCategory = {
+  PROFILE_PICTURE: 'PROFILE_PICTURE',
+  KYC_DOCUMENT: 'KYC_DOCUMENT',
+  SCHOOL_DOCUMENT: 'SCHOOL_DOCUMENT',
+  STUDENT_WORK: 'STUDENT_WORK',
+  COURSE_MATERIAL: 'COURSE_MATERIAL',
+  OTHER: 'OTHER'
+};
+
+exports.FileAccessLevel = exports.$Enums.FileAccessLevel = {
+  PUBLIC: 'PUBLIC',
+  PRIVATE: 'PRIVATE',
+  RESTRICTED: 'RESTRICTED'
+};
+
+exports.StorageProvider = exports.$Enums.StorageProvider = {
+  LOCAL: 'LOCAL',
+  CLOUDINARY: 'CLOUDINARY',
+  S3: 'S3'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   OTP: 'OTP',
@@ -612,7 +671,9 @@ exports.Prisma.ModelName = {
   Subject: 'Subject',
   SubjectAssignment: 'SubjectAssignment',
   CommunicationGroup: 'CommunicationGroup',
-  SchoolRole: 'SchoolRole'
+  SchoolRole: 'SchoolRole',
+  File: 'File',
+  FileQuota: 'FileQuota'
 };
 
 /**

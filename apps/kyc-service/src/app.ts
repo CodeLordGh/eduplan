@@ -50,8 +50,8 @@ export async function createApp(): Promise<FastifyInstance> {
       },
       servers: [
         {
-          url: '/',
-          description: 'Current server'
+          url: 'http://localhost:3002',
+          description: 'Development server'
         }
       ],
       tags: [
@@ -94,13 +94,14 @@ export async function createApp(): Promise<FastifyInstance> {
     staticCSP: false
   });
 
-  // Only expose the JSON endpoint
-  app.get('/documentation/json', () => {
-    return app.swagger();
-  });
+  // Register routes with prefix
+  app.register(kycRoutes, { prefix: '/api/v1/kyc' });
 
-  // Register routes
-  app.register(kycRoutes);
+  // Log swagger documentation state after ready
+  app.addHook('onReady', async () => {
+    const swaggerDoc = app.swagger();
+    app.log.info(`KYC Service documentation paths: ${Object.keys(swaggerDoc.paths || {}).join(', ')}`);
+  });
 
   // Error handler
   app.setErrorHandler(errorHandler);

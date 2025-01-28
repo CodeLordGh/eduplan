@@ -3,7 +3,6 @@ import * as TE from 'fp-ts/TaskEither';
 import { TaskEither } from 'fp-ts/TaskEither';
 import * as O from 'fp-ts/Option';
 import { Option } from 'fp-ts/Option';
-import { Role, UserStatus } from '@eduflow/types';
 import { validateEmail, validatePassword } from '@eduflow/validators';
 import { User, CreateUserInput, UpdateUserInput, UserRepository } from './types';
 import { hashPassword, verifyPassword } from '../security';

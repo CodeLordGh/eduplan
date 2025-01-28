@@ -48,7 +48,7 @@ async function start() {
     await server.listen({ port: 4000, host: '0.0.0.0' });
     server.log.info('API Gateway started on port 4000');
   } catch (err) {
-    server.log.error('Error starting server:', err);
+    console.error('[ERROR] Error starting server:', err instanceof Error ? err.stack : err);
     process.exit(1);
   }
 }

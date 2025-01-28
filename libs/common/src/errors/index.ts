@@ -21,4 +21,6 @@ export const errorHandler = (
   });
 };
 
-export * from './base.error'; 
+export * from './base.error';
+export * from './auth.error';
+export * from './file.error'; 

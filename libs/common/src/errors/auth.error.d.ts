@@ -1,9 +1,0 @@
-export declare const createAuthenticationError: (message: string, details?: unknown) => import("./base.error").BaseError;
-export declare const createInvalidCredentialsError: (details?: unknown) => import("./base.error").BaseError;
-export declare const createTokenExpiredError: (details?: unknown) => import("./base.error").BaseError;
-export declare const createInvalidTokenError: (details?: unknown) => import("./base.error").BaseError;
-export declare const createUnauthorizedError: (message: string, details?: unknown) => import("./base.error").BaseError;
-export declare const createOTPError: (message: string, details?: unknown) => import("./base.error").BaseError;
-export declare const createOTPExpiredError: (details?: unknown) => import("./base.error").BaseError;
-export declare const createInvalidOTPError: (details?: unknown) => import("./base.error").BaseError;
-//# sourceMappingURL=auth.error.d.ts.map

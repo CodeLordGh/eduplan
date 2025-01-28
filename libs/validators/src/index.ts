@@ -1,1 +1,2 @@
-export * from './auth'; 
+export { validateEmail, validatePassword } from './auth';
+export * from './academic'; 

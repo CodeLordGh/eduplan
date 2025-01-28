@@ -20,11 +20,5 @@ dist/
 
 .turbo/
 *.tsbuildinfo
-*.tsbuildinfo.2025-01-24
-*.tsbuildinfo.2025-01-25
-*.tsbuildinfo.2025-01-26
-*.tsbuildinfo.2025-01-27
-*.tsbuildinfo.2025-01-28
-*.tsbuildinfo.2025-01-29
-*.tsbuildinfo.2025-01-30
-*.tsbuildinfo.2025-01-31
+./apps/*/*.tsbuildinfo
+./libs/*/*.tsbuildinfo

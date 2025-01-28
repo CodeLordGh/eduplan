@@ -14,7 +14,7 @@ export async function setupSwagger(server: FastifyInstance) {
       },
       servers: [
         {
-          url: 'http://localhost:4000',
+          url: 'http://localhost:4000/api/v1',
           description: 'Development server'
         }
       ],
@@ -68,6 +68,7 @@ export async function setupSwagger(server: FastifyInstance) {
 
       for (const service of services) {
         try {
+          server.log.info(`Fetching documentation from ${service.name} at ${service.url}`);
           const response = await fetch(service.url);
           if (!response.ok) {
             server.log.warn(`Failed to fetch documentation from ${service.name}: ${response.statusText}`);
@@ -75,18 +76,24 @@ export async function setupSwagger(server: FastifyInstance) {
           }
           
           const serviceDoc = await response.json();
+          server.log.info(`Successfully fetched documentation from ${service.name}`);
+          server.log.info(`Service paths: ${Object.keys(serviceDoc.paths || {}).join(', ')}`);
+          
           const swaggerObject = server.swagger();
           
-          // Merge paths with prefix
+          // Merge paths with prefix if not already prefixed
           if (serviceDoc.paths) {
             for (const [path, pathItem] of Object.entries(serviceDoc.paths)) {
-              const prefixedPath = `${service.prefix}${path}`;
+              const finalPath = path.startsWith(service.prefix) ? path : `${service.prefix}${path}`;
+              server.log.info(`Merging path ${path} as ${finalPath}`);
               if (!swaggerObject.paths) swaggerObject.paths = {};
-              swaggerObject.paths[prefixedPath] = JSON.parse(JSON.stringify(pathItem));
+              swaggerObject.paths[finalPath] = JSON.parse(JSON.stringify(pathItem));
             }
           }
 
           server.swagger({ ...swaggerObject, yaml: false });
+          server.log.info(`Documentation merged successfully for ${service.name}`);
+          server.log.info(`Total paths after merge: ${Object.keys(swaggerObject.paths || {}).length}`);
         } catch (error) {
           server.log.warn(`Failed to fetch documentation from ${service.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
