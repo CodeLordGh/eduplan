@@ -143,25 +143,7 @@ export type FileQuota = $Result.DefaultSelection<Prisma.$FileQuotaPayload>
  * Enums
  */
 export namespace $Enums {
-  export const Role: {
-  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  SCHOOL_OWNER: 'SCHOOL_OWNER',
-  SCHOOL_HEAD: 'SCHOOL_HEAD',
-  SCHOOL_ADMIN: 'SCHOOL_ADMIN',
-  TEACHER: 'TEACHER',
-  ACCOUNTANT: 'ACCOUNTANT',
-  PARENT: 'PARENT',
-  STUDENT: 'STUDENT',
-  CHEF: 'CHEF',
-  SECURITY: 'SECURITY',
-  TRANSPORT_OFFICER: 'TRANSPORT_OFFICER',
-  OTHER: 'OTHER'
-};
-
-export type Role = (typeof Role)[keyof typeof Role]
-
-
-export const UserStatus: {
+  export const UserStatus: {
   PENDING: 'PENDING',
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',
@@ -189,6 +171,25 @@ export const EmploymentEligibilityStatus: {
 };
 
 export type EmploymentEligibilityStatus = (typeof EmploymentEligibilityStatus)[keyof typeof EmploymentEligibilityStatus]
+
+
+export const Role: {
+  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
+  SCHOOL_OWNER: 'SCHOOL_OWNER',
+  SCHOOL_HEAD: 'SCHOOL_HEAD',
+  SCHOOL_ADMIN: 'SCHOOL_ADMIN',
+  TEACHER: 'TEACHER',
+  ACCOUNTANT: 'ACCOUNTANT',
+  PARENT: 'PARENT',
+  STUDENT: 'STUDENT',
+  CHEF: 'CHEF',
+  SECURITY: 'SECURITY',
+  TRANSPORT_OFFICER: 'TRANSPORT_OFFICER',
+  KYC_OFFICER: 'KYC_OFFICER',
+  OTHER: 'OTHER'
+};
+
+export type Role = (typeof Role)[keyof typeof Role]
 
 
 export const OTPStatus: {
@@ -295,10 +296,6 @@ export type StorageProvider = (typeof StorageProvider)[keyof typeof StorageProvi
 
 }
 
-export type Role = $Enums.Role
-
-export const Role: typeof $Enums.Role
-
 export type UserStatus = $Enums.UserStatus
 
 export const UserStatus: typeof $Enums.UserStatus
@@ -310,6 +307,10 @@ export const VerificationStatus: typeof $Enums.VerificationStatus
 export type EmploymentEligibilityStatus = $Enums.EmploymentEligibilityStatus
 
 export const EmploymentEligibilityStatus: typeof $Enums.EmploymentEligibilityStatus
+
+export type Role = $Enums.Role
+
+export const Role: typeof $Enums.Role
 
 export type OTPStatus = $Enums.OTPStatus
 
@@ -3524,7 +3525,6 @@ export namespace Prisma {
     id: string | null
     email: string | null
     password: string | null
-    role: $Enums.Role | null
     status: $Enums.UserStatus | null
     kycStatus: $Enums.VerificationStatus | null
     kycVerifiedAt: Date | null
@@ -3540,7 +3540,6 @@ export namespace Prisma {
     id: string | null
     email: string | null
     password: string | null
-    role: $Enums.Role | null
     status: $Enums.UserStatus | null
     kycStatus: $Enums.VerificationStatus | null
     kycVerifiedAt: Date | null
@@ -3556,7 +3555,8 @@ export namespace Prisma {
     id: number
     email: number
     password: number
-    role: number
+    roles: number
+    permissions: number
     status: number
     kycStatus: number
     kycVerifiedAt: number
@@ -3576,7 +3576,6 @@ export namespace Prisma {
     id?: true
     email?: true
     password?: true
-    role?: true
     status?: true
     kycStatus?: true
     kycVerifiedAt?: true
@@ -3592,7 +3591,6 @@ export namespace Prisma {
     id?: true
     email?: true
     password?: true
-    role?: true
     status?: true
     kycStatus?: true
     kycVerifiedAt?: true
@@ -3608,7 +3606,8 @@ export namespace Prisma {
     id?: true
     email?: true
     password?: true
-    role?: true
+    roles?: true
+    permissions?: true
     status?: true
     kycStatus?: true
     kycVerifiedAt?: true
@@ -3699,7 +3698,8 @@ export namespace Prisma {
     id: string
     email: string | null
     password: string
-    role: $Enums.Role
+    roles: $Enums.Role[]
+    permissions: string[]
     status: $Enums.UserStatus
     kycStatus: $Enums.VerificationStatus | null
     kycVerifiedAt: Date | null
@@ -3734,7 +3734,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     password?: boolean
-    role?: boolean
+    roles?: boolean
+    permissions?: boolean
     status?: boolean
     kycStatus?: boolean
     kycVerifiedAt?: boolean
@@ -3756,7 +3757,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     password?: boolean
-    role?: boolean
+    roles?: boolean
+    permissions?: boolean
     status?: boolean
     kycStatus?: boolean
     kycVerifiedAt?: boolean
@@ -3774,7 +3776,8 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     password?: boolean
-    role?: boolean
+    roles?: boolean
+    permissions?: boolean
     status?: boolean
     kycStatus?: boolean
     kycVerifiedAt?: boolean
@@ -3807,7 +3810,8 @@ export namespace Prisma {
       id: string
       email: string | null
       password: string
-      role: $Enums.Role
+      roles: $Enums.Role[]
+      permissions: string[]
       status: $Enums.UserStatus
       kycStatus: $Enums.VerificationStatus | null
       kycVerifiedAt: Date | null
@@ -4218,7 +4222,8 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
     readonly password: FieldRef<"User", 'String'>
-    readonly role: FieldRef<"User", 'Role'>
+    readonly roles: FieldRef<"User", 'Role[]'>
+    readonly permissions: FieldRef<"User", 'String[]'>
     readonly status: FieldRef<"User", 'UserStatus'>
     readonly kycStatus: FieldRef<"User", 'VerificationStatus'>
     readonly kycVerifiedAt: FieldRef<"User", 'DateTime'>
@@ -29802,7 +29807,8 @@ export namespace Prisma {
     id: 'id',
     email: 'email',
     password: 'password',
-    role: 'role',
+    roles: 'roles',
+    permissions: 'permissions',
     status: 'status',
     kycStatus: 'kycStatus',
     kycVerifiedAt: 'kycVerifiedAt',
@@ -30329,16 +30335,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Role'
+   * Reference to a field of type 'Role[]'
    */
-  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
+  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
     
 
 
   /**
-   * Reference to a field of type 'Role[]'
+   * Reference to a field of type 'Role'
    */
-  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
+  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
     
 
 
@@ -30597,7 +30603,8 @@ export namespace Prisma {
     id?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
     password?: StringFilter<"User"> | string
-    role?: EnumRoleFilter<"User"> | $Enums.Role
+    roles?: EnumRoleNullableListFilter<"User">
+    permissions?: StringNullableListFilter<"User">
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
     kycStatus?: EnumVerificationStatusNullableFilter<"User"> | $Enums.VerificationStatus | null
     kycVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -30618,7 +30625,8 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrderInput | SortOrder
     password?: SortOrder
-    role?: SortOrder
+    roles?: SortOrder
+    permissions?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrderInput | SortOrder
     kycVerifiedAt?: SortOrderInput | SortOrder
@@ -30642,7 +30650,8 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     password?: StringFilter<"User"> | string
-    role?: EnumRoleFilter<"User"> | $Enums.Role
+    roles?: EnumRoleNullableListFilter<"User">
+    permissions?: StringNullableListFilter<"User">
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
     kycStatus?: EnumVerificationStatusNullableFilter<"User"> | $Enums.VerificationStatus | null
     kycVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -30663,7 +30672,8 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrderInput | SortOrder
     password?: SortOrder
-    role?: SortOrder
+    roles?: SortOrder
+    permissions?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrderInput | SortOrder
     kycVerifiedAt?: SortOrderInput | SortOrder
@@ -30687,7 +30697,8 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"User"> | string
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
     password?: StringWithAggregatesFilter<"User"> | string
-    role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+    roles?: EnumRoleNullableListFilter<"User">
+    permissions?: StringNullableListFilter<"User">
     status?: EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
     kycStatus?: EnumVerificationStatusNullableWithAggregatesFilter<"User"> | $Enums.VerificationStatus | null
     kycVerifiedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -33042,7 +33053,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -33063,7 +33075,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -33084,7 +33097,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -33105,7 +33119,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -33126,7 +33141,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -33144,7 +33160,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -33162,7 +33179,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35874,11 +35892,20 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type EnumRoleFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  export type EnumRoleNullableListFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel> | null
+    has?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel> | null
+    hasEvery?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    hasSome?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
   }
 
   export type EnumUserStatusFilter<$PrismaModel = never> = {
@@ -35904,14 +35931,6 @@ export namespace Prisma {
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
-  }
-
-  export type StringNullableListFilter<$PrismaModel = never> = {
-    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    has?: string | StringFieldRefInput<$PrismaModel> | null
-    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
-    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
-    isEmpty?: boolean
   }
 
   export type EnumEmploymentEligibilityStatusFilter<$PrismaModel = never> = {
@@ -35971,7 +35990,8 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     password?: SortOrder
-    role?: SortOrder
+    roles?: SortOrder
+    permissions?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrder
     kycVerifiedAt?: SortOrder
@@ -35989,7 +36009,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     password?: SortOrder
-    role?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrder
     kycVerifiedAt?: SortOrder
@@ -36005,7 +36024,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     password?: SortOrder
-    role?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrder
     kycVerifiedAt?: SortOrder
@@ -36051,16 +36069,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
-  }
-
-  export type EnumRoleWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumRoleFilter<$PrismaModel>
-    _max?: NestedEnumRoleFilter<$PrismaModel>
   }
 
   export type EnumUserStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -36761,6 +36769,13 @@ export namespace Prisma {
     _max?: NestedIntFilter<$PrismaModel>
   }
 
+  export type EnumRoleFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  }
+
   export type StaffProfileRelationFilter = {
     is?: StaffProfileWhereInput
     isNot?: StaffProfileWhereInput
@@ -36812,6 +36827,16 @@ export namespace Prisma {
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type EnumRoleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRoleFilter<$PrismaModel>
+    _max?: NestedEnumRoleFilter<$PrismaModel>
   }
 
   export type ParentProfileRelationFilter = {
@@ -37821,6 +37846,14 @@ export namespace Prisma {
     maxSize?: SortOrder
   }
 
+  export type UserCreaterolesInput = {
+    set: $Enums.Role[]
+  }
+
+  export type UserCreatepermissionsInput = {
+    set: string[]
+  }
+
   export type UserCreatekycDocumentIdsInput = {
     set: string[]
   }
@@ -37877,8 +37910,14 @@ export namespace Prisma {
     set?: string | null
   }
 
-  export type EnumRoleFieldUpdateOperationsInput = {
-    set?: $Enums.Role
+  export type UserUpdaterolesInput = {
+    set?: $Enums.Role[]
+    push?: $Enums.Role | $Enums.Role[]
+  }
+
+  export type UserUpdatepermissionsInput = {
+    set?: string[]
+    push?: string | string[]
   }
 
   export type EnumUserStatusFieldUpdateOperationsInput = {
@@ -38592,6 +38631,10 @@ export namespace Prisma {
     create?: XOR<SchoolCreateWithoutStaffAssignmentsInput, SchoolUncheckedCreateWithoutStaffAssignmentsInput>
     connectOrCreate?: SchoolCreateOrConnectWithoutStaffAssignmentsInput
     connect?: SchoolWhereUniqueInput
+  }
+
+  export type EnumRoleFieldUpdateOperationsInput = {
+    set?: $Enums.Role
   }
 
   export type StaffProfileUpdateOneRequiredWithoutAssignmentsNestedInput = {
@@ -39853,13 +39896,6 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type NestedEnumRoleFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
-  }
-
   export type NestedEnumUserStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.UserStatus | EnumUserStatusFieldRefInput<$PrismaModel>
     in?: $Enums.UserStatus[] | ListEnumUserStatusFieldRefInput<$PrismaModel>
@@ -39962,16 +39998,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedEnumRoleWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
-    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
-    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumRoleFilter<$PrismaModel>
-    _max?: NestedEnumRoleFilter<$PrismaModel>
   }
 
   export type NestedEnumUserStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -40221,6 +40247,23 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedEnumRoleFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  }
+
+  export type NestedEnumRoleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRoleFilter<$PrismaModel>
+    _max?: NestedEnumRoleFilter<$PrismaModel>
   }
 
   export type NestedEnumReportCardStatusFilter<$PrismaModel = never> = {
@@ -40624,7 +40667,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -40644,7 +40688,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -40680,7 +40725,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -40700,7 +40746,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -40720,7 +40767,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -40740,7 +40788,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -40776,7 +40825,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -40796,7 +40846,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -40816,7 +40867,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -40836,7 +40888,8 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
-    role: $Enums.Role
+    roles?: UserCreaterolesInput | $Enums.Role[]
+    permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
     kycStatus?: $Enums.VerificationStatus | null
     kycVerifiedAt?: Date | string | null
@@ -41038,7 +41091,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -41058,7 +41112,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    roles?: UserUpdaterolesInput | $Enums.Role[]
+    permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     kycStatus?: NullableEnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus | null
     kycVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

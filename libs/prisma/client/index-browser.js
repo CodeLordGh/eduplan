@@ -126,7 +126,8 @@ exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
   password: 'password',
-  role: 'role',
+  roles: 'roles',
+  permissions: 'permissions',
   status: 'status',
   kycStatus: 'kycStatus',
   kycVerifiedAt: 'kycVerifiedAt',
@@ -539,21 +540,6 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
-exports.Role = exports.$Enums.Role = {
-  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  SCHOOL_OWNER: 'SCHOOL_OWNER',
-  SCHOOL_HEAD: 'SCHOOL_HEAD',
-  SCHOOL_ADMIN: 'SCHOOL_ADMIN',
-  TEACHER: 'TEACHER',
-  ACCOUNTANT: 'ACCOUNTANT',
-  PARENT: 'PARENT',
-  STUDENT: 'STUDENT',
-  CHEF: 'CHEF',
-  SECURITY: 'SECURITY',
-  TRANSPORT_OFFICER: 'TRANSPORT_OFFICER',
-  OTHER: 'OTHER'
-};
-
 exports.UserStatus = exports.$Enums.UserStatus = {
   PENDING: 'PENDING',
   ACTIVE: 'ACTIVE',
@@ -573,6 +559,22 @@ exports.EmploymentEligibilityStatus = exports.$Enums.EmploymentEligibilityStatus
   ELIGIBLE: 'ELIGIBLE',
   INELIGIBLE: 'INELIGIBLE',
   PENDING_REVIEW: 'PENDING_REVIEW'
+};
+
+exports.Role = exports.$Enums.Role = {
+  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
+  SCHOOL_OWNER: 'SCHOOL_OWNER',
+  SCHOOL_HEAD: 'SCHOOL_HEAD',
+  SCHOOL_ADMIN: 'SCHOOL_ADMIN',
+  TEACHER: 'TEACHER',
+  ACCOUNTANT: 'ACCOUNTANT',
+  PARENT: 'PARENT',
+  STUDENT: 'STUDENT',
+  CHEF: 'CHEF',
+  SECURITY: 'SECURITY',
+  TRANSPORT_OFFICER: 'TRANSPORT_OFFICER',
+  KYC_OFFICER: 'KYC_OFFICER',
+  OTHER: 'OTHER'
 };
 
 exports.OTPStatus = exports.$Enums.OTPStatus = {

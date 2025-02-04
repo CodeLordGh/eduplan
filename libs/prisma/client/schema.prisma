@@ -20,6 +20,7 @@ enum Role {
   CHEF
   SECURITY
   TRANSPORT_OFFICER
+  KYC_OFFICER
   OTHER
 }
 
@@ -128,7 +129,8 @@ model User {
   id                    String                      @id @default(uuid())
   email                 String?                     @unique // Optional for students and young learners
   password              String
-  role                  Role
+  roles                 Role[]                      @default([])
+  permissions           String[]                    @default([])
   status                UserStatus                  @default(PENDING)
   kycStatus             VerificationStatus?         @default(PENDING)
   kycVerifiedAt         DateTime?
@@ -148,7 +150,7 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  @@index([role])
+  @@index([roles])
   @@index([status])
   @@index([kycStatus])
   @@index([employmentStatus])

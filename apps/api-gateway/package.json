@@ -13,6 +13,7 @@
     "@eduflow/common": "workspace:*",
     "@eduflow/constants": "workspace:*",
     "@eduflow/middleware": "workspace:*",
+    "@eduflow/prisma": "workspace:*",
     "@eduflow/types": "workspace:*",
     "@eduflow/validators": "workspace:*",
     "@fastify/compress": "^6.4.0",
@@ -24,6 +25,7 @@
     "@fastify/swagger-ui": "^1.9.3",
     "fastify": "^4.21.0",
     "fastify-plugin": "^4.5.1",
+    "fp-ts": "^2.16.1",
     "http-proxy": "^1.18.1",
     "ioredis": "^5.4.2"
   },

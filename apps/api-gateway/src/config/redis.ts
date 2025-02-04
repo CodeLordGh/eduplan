@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fastifyRedis from '@fastify/redis';
-import Redis from 'ioredis';
+import { Redis, RedisOptions } from 'ioredis';
 import { 
   createRateLimiter,
   createOTPManager,
@@ -35,6 +35,22 @@ const isPublicRoute = (url: string) => {
     return normalizedUrl === route;
   });
 };
+
+const getRedisConfig = (): RedisOptions => ({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT || '6379', 10),
+  password: process.env.REDIS_PASSWORD,
+  db: parseInt(process.env.REDIS_DB || '0', 10),
+  retryStrategy: (times: number) => {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  }
+});
+
+export const createRedisClient = (): Redis => new Redis(getRedisConfig());
+
+// Create shared Redis instance
+export const redis = createRedisClient();
 
 export async function setupRedis(server: FastifyInstance) {
   const redisClient = new Redis();

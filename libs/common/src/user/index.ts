@@ -6,80 +6,91 @@ import { Option } from 'fp-ts/Option';
 import { validateEmail, validatePassword } from '@eduflow/validators';
 import { User, CreateUserInput, UpdateUserInput, UserRepository } from './types';
 import { hashPassword, verifyPassword } from '../security';
-
-// Error types
-export class UserError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UserError';
-  }
-}
-
-export class ValidationError extends UserError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-
-export class DuplicateEmailError extends UserError {
-  constructor(email: string) {
-    super(`User with email ${email} already exists`);
-    this.name = 'DuplicateEmailError';
-  }
-}
+import { createAppError } from '../errors';
+import { AppError } from '@eduflow/types';
 
 // Validation functions
-const validateCreateUserInput = (input: CreateUserInput): TaskEither<ValidationError, CreateUserInput> =>
+const validateCreateUserInput = (input: CreateUserInput): TaskEither<AppError, CreateUserInput> =>
   TE.tryCatch(
     async () => {
       if (!validateEmail(input.email)) {
-        throw new ValidationError('Invalid email format');
+        throw createAppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid email format'
+        });
       }
       if (!validatePassword(input.password)) {
-        throw new ValidationError('Invalid password format');
+        throw createAppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid password format'
+        });
       }
       return input;
     },
-    error => error as ValidationError
+    error => createAppError({
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
+      cause: error
+    })
   );
 
-const validateUpdateUserInput = (input: UpdateUserInput): TaskEither<ValidationError, UpdateUserInput> =>
+const validateUpdateUserInput = (input: UpdateUserInput): TaskEither<AppError, UpdateUserInput> =>
   TE.tryCatch(
     async () => {
       if (input.email && !validateEmail(input.email)) {
-        throw new ValidationError('Invalid email format');
+        throw createAppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid email format'
+        });
       }
       if (input.password && !validatePassword(input.password)) {
-        throw new ValidationError('Invalid password format');
+        throw createAppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid password format'
+        });
       }
       return input;
     },
-    error => error as ValidationError
+    error => createAppError({
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
+      cause: error
+    })
   );
 
 // User service factory
 export const createUserService = (repository: UserRepository) => {
-  const findByEmail = (email: string): TaskEither<Error, Option<User>> =>
+  const findByEmail = (email: string): TaskEither<AppError, Option<User>> =>
     TE.tryCatch(
       async () => O.fromNullable(await repository.findByEmail(email)),
-      error => error as Error
+      error => createAppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Database error',
+        cause: error
+      })
     );
 
-  const findById = (id: string): TaskEither<Error, Option<User>> =>
+  const findById = (id: string): TaskEither<AppError, Option<User>> =>
     TE.tryCatch(
       async () => O.fromNullable(await repository.findById(id)),
-      error => error as Error
+      error => createAppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Database error',
+        cause: error
+      })
     );
 
-  const create = (input: CreateUserInput): TaskEither<Error, User> =>
+  const create = (input: CreateUserInput): TaskEither<AppError, User> =>
     pipe(
       input,
       validateCreateUserInput,
       TE.chain(() => findByEmail(input.email)),
       TE.chain((existingUser: Option<User>) => {
         if (existingUser._tag === 'Some') {
-          return TE.left(new DuplicateEmailError(input.email));
+          return TE.left(createAppError({
+            code: 'CONFLICT',
+            message: `User with email ${input.email} already exists`
+          }));
         }
         return TE.right(input);
       }),
@@ -92,23 +103,30 @@ export const createUserService = (repository: UserRepository) => {
               password: hashedPassword
             });
           },
-          error => error as Error
+          error => createAppError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create user',
+            cause: error
+          })
         )
       )
     );
 
-  const update = (id: string, input: UpdateUserInput): TaskEither<Error, User> =>
+  const update = (id: string, input: UpdateUserInput): TaskEither<AppError, User> =>
     pipe(
       input,
       validateUpdateUserInput,
       TE.chain(() => findById(id)),
       TE.chain((existingUser: Option<User>) => {
         if (existingUser._tag === 'None') {
-          return TE.left(new UserError('User not found'));
+          return TE.left(createAppError({
+            code: 'NOT_FOUND',
+            message: 'User not found'
+          }));
         }
         return TE.right({ existingUser: existingUser.value, input });
       }),
-      TE.chain(({ existingUser, input }: { existingUser: User; input: UpdateUserInput }) =>
+      TE.chain(({ existingUser, input }) =>
         TE.tryCatch(
           async () => {
             const updates = { ...input };
@@ -117,29 +135,40 @@ export const createUserService = (repository: UserRepository) => {
             }
             return repository.update(id, updates);
           },
-          error => error as Error
+          error => createAppError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to update user',
+            cause: error
+          })
         )
       )
     );
 
-  const remove = (id: string): TaskEither<Error, void> =>
+  const remove = (id: string): TaskEither<AppError, void> =>
     pipe(
       findById(id),
       TE.chain((existingUser: Option<User>) => {
         if (existingUser._tag === 'None') {
-          return TE.left(new UserError('User not found'));
+          return TE.left(createAppError({
+            code: 'NOT_FOUND',
+            message: 'User not found'
+          }));
         }
         return TE.right(id);
       }),
       TE.chain((userId: string) =>
         TE.tryCatch(
           () => repository.delete(userId),
-          error => error as Error
+          error => createAppError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to delete user',
+            cause: error
+          })
         )
       )
     );
 
-  const authenticate = (email: string, password: string): TaskEither<Error, Option<User>> =>
+  const authenticate = (email: string, password: string): TaskEither<AppError, Option<User>> =>
     pipe(
       findByEmail(email),
       TE.chain((userOption: Option<User>) => {
@@ -153,7 +182,11 @@ export const createUserService = (repository: UserRepository) => {
               const isValid = await verifyPassword(user.password, password);
               return isValid ? userOption : O.fromNullable(null);
             },
-            error => error as Error
+            error => createAppError({
+              code: 'UNAUTHORIZED',
+              message: 'Authentication failed',
+              cause: error
+            })
           )
         );
       })
@@ -167,4 +200,6 @@ export const createUserService = (repository: UserRepository) => {
     remove,
     authenticate
   };
-}; 
+};
+
+export * from './types'; 

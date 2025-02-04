@@ -2,7 +2,11 @@
   "extends": "../../packages/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "types": ["node", "jest"],
+    "paths": {
+      "fp-ts/*": ["./node_modules/fp-ts/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
