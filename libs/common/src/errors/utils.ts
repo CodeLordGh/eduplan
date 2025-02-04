@@ -44,17 +44,43 @@ export const combineErrors = (errors: AppError[]): AppError =>
   });
 
 /**
- * Adds request context to error logging without modifying the error structure
+ * Enhanced request context logging with correlation
  */
 export const withRequestContext = (request: FastifyRequest) =>
   (error: AppError): AppError => {
-    // Log the request context
-    console.error('Request Context:', {
-      path: request.url,
-      method: request.method,
-      requestId: request.id,
-      timestamp: new Date()
+    const correlationId = request.id || request.headers['x-request-id'];
+    const timestamp = new Date().toISOString();
+    
+    // Create a structured log entry for better correlation
+    console.error('Error Context:', {
+      error: {
+        code: error.code,
+        message: error.message,
+        name: error.name,
+        statusCode: error.statusCode
+      },
+      request: {
+        id: correlationId,
+        path: request.url,
+        method: request.method,
+        timestamp,
+        headers: {
+          'user-agent': request.headers['user-agent'],
+          'accept': request.headers.accept,
+          'content-type': request.headers['content-type']
+        }
+      },
+      // Safely access user ID if available
+      user: (request as any).user?.id,
+      service: process.env.SERVICE_NAME || 'unknown',
+      environment: process.env.NODE_ENV || 'development'
     });
+
+    // Add correlation ID to error logs for distributed tracing
+    if (correlationId) {
+      console.error(`[Correlation ID: ${correlationId}] Error occurred in request processing`);
+    }
+
     return error;
   };
 
@@ -96,6 +122,39 @@ export const withFallback = <T>(fallback: T) =>
     );
 
 /**
+ * Creates a logged error with request context
+ */
+export const createLoggedError = (request: FastifyRequest) => 
+  <T>(operation: string) => (error: AppError): TE.TaskEither<AppError, T> =>
+    pipe(
+      TE.tryCatch(
+        async () => {
+          const correlationId = request.id || request.headers['x-request-id'];
+          const timestamp = new Date().toISOString();
+
+          console.error('Operation Failed:', {
+            operation,
+            correlationId,
+            timestamp,
+            error: {
+              code: error.code,
+              message: error.message,
+              metadata: error.metadata
+            },
+            request: {
+              path: request.url,
+              method: request.method,
+              service: process.env.SERVICE_NAME
+            }
+          });
+          return error;
+        },
+        () => error
+      ),
+      TE.chain(() => TE.left(error))
+    );
+
+/**
  * Logs an error and continues with the error chain
  */
 export const loggedError = <T>(operation: string) => 
@@ -103,13 +162,15 @@ export const loggedError = <T>(operation: string) =>
     pipe(
       TE.tryCatch(
         async () => {
-          console.error('Operation failed:', {
+          console.error('Operation Failed:', {
             operation,
+            timestamp: new Date().toISOString(),
             error: {
               code: error.code,
               message: error.message,
               metadata: error.metadata
-            }
+            },
+            service: process.env.SERVICE_NAME || 'unknown'
           });
           return error;
         },

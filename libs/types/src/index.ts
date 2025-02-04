@@ -5,4 +5,6 @@ export * from './events/academic'
 export * from './database'
 export * from './file/types'
 export * from './errors'
+export * from './logger/types';
+export * from './errors/types';
 
