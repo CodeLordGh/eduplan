@@ -27,7 +27,7 @@ export const verifyAndAttachUser = async (
     const user = await request.jwtVerify();
     return Object.assign(request, { user }) as RequestWithUser;
   } catch (error) {
-    throw createInvalidTokenError(error instanceof Error ? error.message : 'Invalid token');
+    throw createInvalidTokenError(error);
   }
 };
 
