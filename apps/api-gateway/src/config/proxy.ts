@@ -1,7 +1,8 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import httpProxy from 'http-proxy';
 import { ServerResponse } from 'http';
 import { logger, errorLogger } from './logger';
+import type { VersionManager } from '../services/version.service';
 
 interface ServiceConfig {
   name: string;
@@ -67,7 +68,7 @@ const services: ServiceConfig[] = [
   }
 ];
 
-export async function setupProxies(server: FastifyInstance) {
+export async function setupProxies(server: FastifyInstance, versionManager?: VersionManager) {
   const proxy = httpProxy.createProxyServer({
     changeOrigin: true,
     ws: true
@@ -75,7 +76,12 @@ export async function setupProxies(server: FastifyInstance) {
 
   // Handle proxy errors
   proxy.on('error', (err, req, res) => {
-    const service = services.find(s => req.url?.startsWith(s.prefix));
+    const service = services.find(s => {
+      const version = versionManager?.getCurrentVersion() || 'v1';
+      const versionedPrefix = s.prefix.replace('/v1/', `/${version}/`);
+      return req.url?.startsWith(versionedPrefix);
+    });
+
     errorLogger.logError(err, {
       context: 'proxy',
       service: service?.name,
@@ -91,7 +97,7 @@ export async function setupProxies(server: FastifyInstance) {
 
   // Register proxy routes
   services.forEach(service => {
-    server.all(`${service.prefix}/*`, async (request, reply) => {
+    server.all(`${service.prefix}/*`, async (request: FastifyRequest, reply: FastifyReply) => {
       // Skip auth check for non-auth required endpoints
       if (service.auth) {
         try {
@@ -102,17 +108,22 @@ export async function setupProxies(server: FastifyInstance) {
         }
       }
 
+      // Get versioned target if version manager is provided
+      const version = request.apiVersion;
+      const target = service.target.replace('3001', `3001/v${version.substring(1)}`);
+
       logger.info('Proxying request', {
         service: service.name,
-        target: service.target,
+        target,
         path: request.url,
         method: request.method,
-        requestId: request.id
+        requestId: request.id,
+        version
       });
 
       return new Promise((resolve, reject) => {
         proxy.web(request.raw, reply.raw, {
-          target: service.target,
+          target,
           selfHandleResponse: false
         }, (err) => {
           if (err) {
