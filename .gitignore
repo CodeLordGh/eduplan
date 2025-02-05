@@ -1,6 +1,7 @@
 # Documentation
 docs/
-*.md
+# *.md
+README.md
 
 # Environment variables
 .env
