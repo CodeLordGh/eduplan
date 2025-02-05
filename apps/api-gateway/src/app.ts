@@ -7,19 +7,10 @@ import { setupRedis } from './config/redis';
 import { setupRoutes } from './routes';
 import { setupProxies } from './config/proxy';
 import { errorHandler } from './utils/error-handler';
+import { logger, requestLogger } from './config/logger';
 
 const server = fastify({
-  logger: {
-    level: 'info',
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname'
-      }
-    }
-  },
-  trustProxy: true
+  logger
 });
 
 async function start() {
@@ -28,6 +19,15 @@ async function start() {
     await server.register(cors);
     await server.register(helmet);
     await server.register(compress);
+
+    // Add correlation ID middleware
+    server.addHook('onRequest', (request, _reply, done) => {
+      request.correlationId = request.headers['x-correlation-id'] as string || request.id;
+      done();
+    });
+
+    // Add request logging middleware
+    server.addHook('onRequest', requestLogger);
 
     // Setup Redis
     await setupRedis(server);
@@ -46,9 +46,9 @@ async function start() {
 
     // Start the server
     await server.listen({ port: 4000, host: '0.0.0.0' });
-    server.log.info('API Gateway started on port 4000');
+    logger.info('API Gateway started on port 4000');
   } catch (err) {
-    console.error('[ERROR] Error starting server:', err instanceof Error ? err.stack : err);
+    logger.error('Error starting server:', { error: err instanceof Error ? err.stack : err });
     process.exit(1);
   }
 }

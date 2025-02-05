@@ -1,5 +1,6 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ERROR_CODES } from '@eduflow/constants';
+import { errorLogger } from '../config/logger';
 
 interface ErrorResponse {
   error: string;
@@ -88,21 +89,22 @@ export function errorHandler(
     response.details = error.details;
   }
 
-  // Log internal server errors
+  // Log errors using errorLogger
   if (response.statusCode >= 500) {
-    request.log.error('Internal Server Error:', {
-      error: error.message,
+    errorLogger.logError(error, {
+      context: 'request-handler',
+      requestId,
+      statusCode: response.statusCode,
       code: response.code,
-      stack: error.stack,
-      requestId
+      details: response.details
     });
   } else {
-    // Log other errors at info level with request ID
-    request.log.info('Error occurred:', {
-      error: error.message,
-      code: response.code,
+    errorLogger.logError(error, {
+      context: 'request-handler',
+      requestId,
       statusCode: response.statusCode,
-      requestId
+      code: response.code,
+      level: 'info'
     });
   }
 

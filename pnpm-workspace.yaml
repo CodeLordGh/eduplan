@@ -1,8 +1,8 @@
 packages:
   # all packages in subdirs of apps/ and their descendants
-  - 'apps/**'
+  - 'apps/*'
   # all packages in subdirs of libs/ and their descendants
-  - 'libs/**'
+  - 'libs/*'
   # all packages in subdirs of packages/
   - 'packages/**'
   # exclude files marked as private

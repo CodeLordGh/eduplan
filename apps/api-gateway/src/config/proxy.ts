@@ -1,9 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import httpProxy from 'http-proxy';
-import { createLogger } from '@eduflow/common';
 import { ServerResponse } from 'http';
-
-const logger = createLogger('proxy-config');
+import { logger, errorLogger } from './logger';
 
 interface ServiceConfig {
   name: string;
@@ -76,8 +74,15 @@ export async function setupProxies(server: FastifyInstance) {
   });
 
   // Handle proxy errors
-  proxy.on('error', (err, _req, res) => {
-    logger.error('Proxy error:', err);
+  proxy.on('error', (err, req, res) => {
+    const service = services.find(s => req.url?.startsWith(s.prefix));
+    errorLogger.logError(err, {
+      context: 'proxy',
+      service: service?.name,
+      target: service?.target,
+      url: req.url
+    });
+
     if (res instanceof ServerResponse && !res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Proxy error occurred' }));
@@ -96,6 +101,14 @@ export async function setupProxies(server: FastifyInstance) {
           return;
         }
       }
+
+      logger.info('Proxying request', {
+        service: service.name,
+        target: service.target,
+        path: request.url,
+        method: request.method,
+        requestId: request.id
+      });
 
       return new Promise((resolve, reject) => {
         proxy.web(request.raw, reply.raw, {
