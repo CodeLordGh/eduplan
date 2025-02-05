@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import httpProxy from 'http-proxy';
 import { ServerResponse } from 'http';
-import { logger, errorLogger } from './logger';
+import { logger, errorLogger, createRequestContext } from './logger';
 import type { VersionManager } from '../services/version.service';
 
 interface ServiceConfig {
@@ -86,7 +86,9 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
       context: 'proxy',
       service: service?.name,
       target: service?.target,
-      url: req.url
+      url: req.url,
+      correlationId: (req as any).correlationId,
+      requestId: (req as any).id
     });
 
     if (res instanceof ServerResponse && !res.headersSent) {
@@ -112,12 +114,11 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
       const version = request.apiVersion;
       const target = service.target.replace('3001', `3001/v${version.substring(1)}`);
 
+      const context = createRequestContext(request);
       logger.info('Proxying request', {
+        ...context,
         service: service.name,
         target,
-        path: request.url,
-        method: request.method,
-        requestId: request.id,
         version
       });
 

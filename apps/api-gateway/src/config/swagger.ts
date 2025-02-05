@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import { logger } from './logger';
 
 export async function setupSwagger(server: FastifyInstance) {
   // Register base Swagger configuration
@@ -68,16 +69,27 @@ export async function setupSwagger(server: FastifyInstance) {
 
       for (const service of services) {
         try {
-          server.log.info(`Fetching documentation from ${service.name} at ${service.url}`);
+          logger.info('Fetching service documentation', { 
+            service: service.name, 
+            url: service.url 
+          });
+          
           const response = await fetch(service.url);
           if (!response.ok) {
-            server.log.warn(`Failed to fetch documentation from ${service.name}: ${response.statusText}`);
+            logger.warn('Failed to fetch service documentation', { 
+              service: service.name, 
+              statusCode: response.status,
+              statusText: response.statusText 
+            });
             continue;
           }
           
           const serviceDoc = await response.json();
-          server.log.info(`Successfully fetched documentation from ${service.name}`);
-          server.log.info(`Service paths: ${Object.keys(serviceDoc.paths || {}).join(', ')}`);
+          logger.info('Successfully fetched service documentation', { 
+            service: service.name,
+            pathCount: Object.keys(serviceDoc.paths || {}).length,
+            paths: Object.keys(serviceDoc.paths || {})
+          });
           
           const swaggerObject = server.swagger();
           
@@ -85,21 +97,32 @@ export async function setupSwagger(server: FastifyInstance) {
           if (serviceDoc.paths) {
             for (const [path, pathItem] of Object.entries(serviceDoc.paths)) {
               const finalPath = path.startsWith(service.prefix) ? path : `${service.prefix}${path}`;
-              server.log.info(`Merging path ${path} as ${finalPath}`);
+              logger.debug('Merging service path', { 
+                service: service.name,
+                originalPath: path,
+                finalPath: finalPath 
+              });
               if (!swaggerObject.paths) swaggerObject.paths = {};
               swaggerObject.paths[finalPath] = JSON.parse(JSON.stringify(pathItem));
             }
           }
 
           server.swagger({ ...swaggerObject, yaml: false });
-          server.log.info(`Documentation merged successfully for ${service.name}`);
-          server.log.info(`Total paths after merge: ${Object.keys(swaggerObject.paths || {}).length}`);
+          logger.info('Service documentation merged successfully', { 
+            service: service.name,
+            totalPaths: Object.keys(swaggerObject.paths || {}).length 
+          });
         } catch (error) {
-          server.log.warn(`Failed to fetch documentation from ${service.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          logger.error('Failed to process service documentation', {
+            service: service.name,
+            error: error instanceof Error ? error.stack : error
+          });
         }
       }
     } catch (error) {
-      server.log.error(`Failed to aggregate service documentation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error('Failed to aggregate service documentation', {
+        error: error instanceof Error ? error.stack : error
+      });
     }
   });
 } 

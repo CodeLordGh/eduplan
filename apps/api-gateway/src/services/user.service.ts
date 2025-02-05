@@ -6,6 +6,7 @@ import { redis } from '../config/redis';
 import { pipe } from 'fp-ts/function';
 import { TaskEither } from 'fp-ts/TaskEither';
 import * as TE from 'fp-ts/TaskEither';
+import { logger } from '../config/logger';
 
 const CACHE_TTL = 5 * 60; // 5 minutes
 const CACHE_PREFIX = 'user_attributes:';
@@ -185,5 +186,5 @@ const subscribeToEvents = async (): Promise<void> => {
 
 // Initialize event subscription
 subscribeToEvents().catch(error => {
-  console.error('Failed to subscribe to events:', error);
+  logger.error('Failed to subscribe to events:', { error: error instanceof Error ? error.stack : error });
 }); 

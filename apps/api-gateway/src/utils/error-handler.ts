@@ -1,6 +1,6 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ERROR_CODES } from '@eduflow/constants';
-import { errorLogger } from '../config/logger';
+import { errorLogger, createErrorContext } from '../config/logger';
 
 interface ErrorResponse {
   error: string;
@@ -89,19 +89,21 @@ export function errorHandler(
     response.details = error.details;
   }
 
+  const context = createErrorContext(request, error);
+
   // Log errors using errorLogger
   if (response.statusCode >= 500) {
     errorLogger.logError(error, {
+      ...context,
       context: 'request-handler',
-      requestId,
       statusCode: response.statusCode,
       code: response.code,
       details: response.details
     });
   } else {
     errorLogger.logError(error, {
+      ...context,
       context: 'request-handler',
-      requestId,
       statusCode: response.statusCode,
       code: response.code,
       level: 'info'
