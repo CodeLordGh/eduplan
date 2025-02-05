@@ -47,6 +47,7 @@ export const ROLE_HIERARCHY: Record<Role, readonly Role[]> = {
   CHEF: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
   SECURITY: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
   TRANSPORT_OFFICER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  KYC_OFFICER: ['SYSTEM_ADMIN'],
   OTHER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN']
 };
 
@@ -98,6 +99,11 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   CHEF: [],
   SECURITY: [],
   TRANSPORT_OFFICER: [],
+  KYC_OFFICER: [
+    Permission.VIEW_USER,
+    Permission.MANAGE_USER,
+    Permission.VIEW_SYSTEM_LOGS
+  ],
   OTHER: []
 };
 

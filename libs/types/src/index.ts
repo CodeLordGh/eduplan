@@ -7,6 +7,7 @@ export * from './file/types'
 export * from './errors'
 export * from './logger/types';
 export * from './errors/types';
+export * from './events';
 
 // Explicitly re-export the required types
 export type {

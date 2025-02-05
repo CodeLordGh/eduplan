@@ -1,21 +1,23 @@
 import { EVENT_TYPES } from '@eduflow/constants';
+import { Channel, Connection } from 'amqplib';
+import Redis from 'ioredis';
+import { Logger } from '@eduflow/logger';
 
-export type EventMetadata = {
-  correlationId: string;
-  timestamp: string;
-  source: string;
-  version: string;
-};
-
-export type Event<T = unknown> = {
-  type: keyof typeof EVENT_TYPES;
-  payload: T;
-  metadata: EventMetadata;
-};
+export interface Event<T = unknown> {
+  type: string;
+  data: T;
+  metadata: {
+    version: string;
+    source: string;
+    correlationId: string;
+    timestamp: string;
+    schemaVersion: string;
+  };
+}
 
 export type EventHandler<T = unknown> = (event: Event<T>) => Promise<void>;
 
-export type EventBusConfig = {
+export interface EventBusConfig {
   serviceName: string;
   rabbitmq: {
     url: string;
@@ -29,29 +31,31 @@ export type EventBusConfig = {
     keyPrefix: string;
     eventTTL: number;
   };
-};
+}
 
-export type PublishOptions = {
-  persistent?: boolean;  // Use RabbitMQ persistence
-  cache?: boolean;      // Cache in Redis
-  cacheTTL?: number;    // Redis cache TTL
-  priority?: number;    // RabbitMQ message priority
-};
+export interface PublishOptions {
+  persistent?: boolean;
+  priority?: number;
+  cache?: boolean;
+}
 
-export type SubscribeOptions = {
-  useCache?: boolean;   // Check Redis cache first
-  pattern?: string;     // RabbitMQ routing pattern
-  queue?: string;       // RabbitMQ queue name
-  exclusive?: boolean;  // RabbitMQ exclusive queue
-  durable?: boolean;    // RabbitMQ durable queue
-};
+export interface SubscribeOptions {
+  queueName?: string;
+  durable?: boolean;
+  useCache?: boolean;
+}
+
+export interface EventBusState {
+  rabbitmqChannel: Channel | null;
+  rabbitmqConnection: Connection | null;
+  redisClient: Redis | null;
+  config: EventBusConfig;
+  logger: Logger;
+  handlers: Map<string, EventHandler>;
+}
 
 export type EventBus = {
-  publish<T>(event: Event<T>, options?: PublishOptions): Promise<void>;
-  subscribe<T>(
-    eventType: keyof typeof EVENT_TYPES,
-    handler: EventHandler<T>,
-    options?: SubscribeOptions
-  ): Promise<void>;
-  unsubscribe(eventType: keyof typeof EVENT_TYPES): Promise<void>;
+  publish: <T>(event: Event<T>, options?: PublishOptions) => Promise<void>;
+  subscribe: <T>(eventType: string, handler: EventHandler<T>, options?: SubscribeOptions) => Promise<void>;
+  close: () => Promise<void>;
 }; 

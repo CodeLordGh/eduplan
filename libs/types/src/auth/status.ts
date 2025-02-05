@@ -20,16 +20,25 @@ export enum OTPPurpose {
   STUDENT_LINKING = 'STUDENT_LINKING'
 }
 
+/**
+ * Represents the possible states of a user's KYC verification
+ */
 export enum KYCStatus {
-  NOT_SUBMITTED = 'NOT_SUBMITTED',
-  PENDING = 'PENDING',
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  PENDING_REVIEW = 'PENDING_REVIEW',
   VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED'
 }
 
+/**
+ * Represents the possible states of a user's employment eligibility
+ */
 export enum EmploymentEligibilityStatus {
-  NOT_CHECKED = 'NOT_CHECKED',
+  UNVERIFIED = 'UNVERIFIED',
+  PENDING = 'PENDING',
   ELIGIBLE = 'ELIGIBLE',
   INELIGIBLE = 'INELIGIBLE',
-  PENDING_REVIEW = 'PENDING_REVIEW'
+  SUSPENDED = 'SUSPENDED'
 } 

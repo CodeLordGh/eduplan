@@ -1,6 +1,7 @@
-export * from './types';
 export * from './event-bus';
 export * from './factory';
-
-// Re-export event types from constants
-export { EVENT_TYPES } from '@eduflow/constants'; 
+export * from './types';
+export * from './validation';
+export * from './metrics';
+export * from './health';
+export { EVENT_TYPES, EventType } from '@eduflow/types'; 

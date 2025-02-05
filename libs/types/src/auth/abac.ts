@@ -1,8 +1,15 @@
+/**
+ * ABAC (Attribute-Based Access Control) type definitions
+ * @see ./ABAC.md for detailed documentation
+ */
+
 import { Role, Permission } from './roles';
 import { KYCStatus, EmploymentEligibilityStatus } from './status';
 
+/** Allowed actions on resources */
 export type ResourceAction = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
 
+/** School-specific role configuration */
 export interface SchoolRole {
   roles: Role[];
   permissions: Permission[];
@@ -11,6 +18,7 @@ export interface SchoolRole {
   createdAt: Date;
 }
 
+/** KYC officer status and permissions */
 export interface KYCOfficerStatus {
   isOfficer: boolean;
   permissions: {
@@ -24,6 +32,7 @@ export interface KYCOfficerStatus {
   workload: number;
 }
 
+/** User's KYC verification status and details */
 export interface UserKYC {
   status: KYCStatus;
   verifiedAt?: Date;
@@ -31,6 +40,7 @@ export interface UserKYC {
   officerStatus?: KYCOfficerStatus;
 }
 
+/** User's employment verification status */
 export interface UserEmployment {
   status: EmploymentEligibilityStatus;
   verifiedAt?: Date;
@@ -38,12 +48,14 @@ export interface UserEmployment {
   currentSchools: string[];
 }
 
+/** Time-based access restrictions */
 export interface TimeRestrictions {
   allowedDays: string[];
   allowedHours: string[];
   timezone: string;
 }
 
+/** User's access configuration and restrictions */
 export interface UserAccess {
   socialEnabled: boolean;
   hubAccess: {
@@ -64,48 +76,61 @@ export interface UserAccess {
   };
 }
 
+/** Current user context for access decisions */
 export interface UserContext {
   currentSchoolId?: string;
-  currentRole?: Role;
+  location?: {
+    ip?: string;
+    country?: string;
+    region?: string;
+  };
   deviceInfo?: {
     id: string;
     type: string;
-    lastUsed: Date;
-  };
-  location?: {
-    ip: string;
-    country: string;
-    region: string;
+    trustScore: number;
+    lastVerified: Date;
   };
 }
 
+/** Complete set of user attributes for access decisions */
 export interface UserAttributes {
   id: string;
   email: string;
   status: string;
   globalRoles: Role[];
-  schoolRoles: Map<string, SchoolRole>;
-  kyc: UserKYC;
-  employment: UserEmployment;
-  access: UserAccess;
+  schoolRoles: Record<string, Role[]>;
+  kyc: {
+    status: KYCStatus;
+    officerStatus?: {
+      permissions: {
+        canVerifyIdentity: boolean;
+        canVerifyDocuments: boolean;
+        canApproveKYC: boolean;
+      };
+    };
+  };
+  employment: {
+    status: EmploymentEligibilityStatus;
+    verifiedAt?: Date;
+    verifiedBy?: string;
+  };
+  access: {
+    lastLogin?: Date;
+    failedAttempts: number;
+    lockedUntil?: Date;
+  };
   context: UserContext;
 }
 
+/** Conditions that must be met for access */
 export interface PolicyConditions {
   anyOf?: {
     roles?: Role[];
-    globalRoles?: Role[];
-    schoolRoles?: Role[];
+    permissions?: Permission[];
   };
   allOf?: {
     roles?: Role[];
     permissions?: Permission[];
-  };
-  verification?: {
-    requireKYC?: boolean;
-    kycStatus?: KYCStatus[];
-    employmentStatus?: EmploymentEligibilityStatus[];
-    officerPermissions?: string[];
   };
   school?: {
     mustBeInSchool?: boolean;
@@ -120,27 +145,78 @@ export interface PolicyConditions {
     };
     timeRestrictions?: TimeRestrictions;
     deviceRestrictions?: {
-      types?: string[];
-      requireTrusted?: boolean;
+      requireTrusted: boolean;
+      minTrustScore?: number;
+      allowedTypes?: string[];
     };
     locationRestrictions?: {
       countries?: string[];
       regions?: string[];
     };
   };
+  verification?: {
+    requireKYC?: boolean;
+    kycStatus?: KYCStatus[];
+    employmentStatus?: EmploymentEligibilityStatus[];
+    officerPermissions?: string[];
+  };
   custom?: Array<{
-    evaluator: (attributes: UserAttributes, context: any) => boolean;
+    evaluator: (attributes: UserAttributes, conditions: PolicyConditions) => boolean;
     errorMessage: string;
   }>;
 }
 
+/** Access policy definition */
 export interface AccessPolicy {
   resource: string;
   action: ResourceAction;
   conditions: PolicyConditions;
 }
 
+/** Result of access policy evaluation */
 export interface ValidationResult {
   granted: boolean;
   reason?: string;
+}
+
+export interface IPRestrictions {
+  allowlist?: string[];
+  denylist?: string[];
+}
+
+export interface LocationRestrictions {
+  countries?: string[];
+  regions?: string[];
+}
+
+export interface DeviceRestrictions {
+  requireTrusted: boolean;
+  minTrustScore?: number;
+  allowedTypes?: string[];
+}
+
+export interface SchoolConditions {
+  mustBeInSchool?: boolean;
+  mustBeOwner?: boolean;
+  mustBeCurrentSchool?: boolean;
+  allowedRoles?: Role[];
+}
+
+export interface EnvironmentConditions {
+  timeRestrictions?: TimeRestrictions;
+  ipRestrictions?: IPRestrictions;
+  locationRestrictions?: LocationRestrictions;
+  deviceRestrictions?: DeviceRestrictions;
+}
+
+export interface VerificationConditions {
+  requireKYC?: boolean;
+  kycStatus?: KYCStatus[];
+  employmentStatus?: EmploymentEligibilityStatus[];
+  officerPermissions?: string[];
+}
+
+export interface CustomEvaluator {
+  evaluator: (attributes: UserAttributes, conditions: PolicyConditions) => boolean;
+  errorMessage: string;
 } 

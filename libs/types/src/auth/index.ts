@@ -1,6 +1,5 @@
 export * from './roles';
 export * from './status';
-export * from './events'; 
 export * from './user';
 // export * from './abac';
 
@@ -18,3 +17,14 @@ export type {
   UserAccess,
   UserContext
 } from './abac';
+
+export * from './constants';
+export * from './validation';
+
+// Re-export types from validation for backward compatibility
+export type {
+  Email,
+  Password,
+  LoginCredentials,
+  RegistrationData
+} from './validation';

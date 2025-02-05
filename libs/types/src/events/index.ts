@@ -1,11 +1,27 @@
-import { User, UserRole, UserStatus } from '../auth';
+import { Role } from '../auth/roles';
+import { UserStatus } from '../auth/status';
+import { User } from '../auth';
 
+// Base event interface
+export interface Event<T = unknown> {
+  type: string;
+  data: T;
+  metadata: {
+    version: string;
+    source: string;
+    correlationId: string;
+    timestamp: string;
+    schemaVersion: string;
+  };
+}
+
+// Auth Events
 export interface UserCreatedEvent {
   type: 'USER_CREATED';
   data: {
     userId: string;
     email: string;
-    role: UserRole;
+    role: Role;
     status: UserStatus;
     createdAt: Date;
   };
@@ -80,6 +96,7 @@ export interface EmploymentEligibilityUpdatedEvent {
   };
 }
 
+// Event type unions
 export type AuthEvent = 
   | UserCreatedEvent
   | UserUpdatedEvent
@@ -90,4 +107,7 @@ export type AuthEvent =
 export type ConsumedAuthEvent =
   | KYCVerifiedEvent
   | KYCRejectedEvent
-  | EmploymentEligibilityUpdatedEvent; 
+  | EmploymentEligibilityUpdatedEvent;
+
+// Re-export event type constants
+export { EVENT_TYPES, EventType } from './constants'; 

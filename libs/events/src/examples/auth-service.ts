@@ -5,6 +5,7 @@ import { Event } from '../types';
 import { EventBusOperations } from '../factory';
 import { UserCreatedEvent, KYCVerifiedEvent, EmploymentEligibilityUpdatedEvent } from '@eduflow/types';
 import { Role } from '@eduflow/prisma';
+import { UserStatus } from '@eduflow/types';
 import { createLogger, LogContext } from '@eduflow/logger';
 
 const logger = createLogger({
@@ -14,7 +15,7 @@ const logger = createLogger({
 
 // Event handlers
 const handleKYCVerification = (
-  event: Event<KYCVerifiedEvent>
+  event: Event<KYCVerifiedEvent['data']>
 ): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
@@ -23,9 +24,9 @@ const handleKYCVerification = (
           service: 'auth-service',
           environment: process.env.NODE_ENV || 'development',
           timestamp: new Date().toISOString(),
-          userId: event.payload.userId,
-          documentType: event.payload.documentType,
-          verificationId: event.payload.verificationId,
+          userId: event.data.userId,
+          documentType: event.data.documentType,
+          verificationId: event.data.verificationId,
           correlationId: event.metadata.correlationId
         };
 
@@ -41,7 +42,7 @@ const handleKYCVerification = (
           service: 'auth-service',
           environment: process.env.NODE_ENV || 'development',
           timestamp: new Date().toISOString(),
-          userId: event.payload.userId,
+          userId: event.data.userId,
           correlationId: event.metadata.correlationId,
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
@@ -53,7 +54,7 @@ const handleKYCVerification = (
   );
 
 const handleEmploymentEligibilityUpdate = (
-  event: Event<EmploymentEligibilityUpdatedEvent>
+  event: Event<EmploymentEligibilityUpdatedEvent['data']>
 ): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
@@ -62,8 +63,8 @@ const handleEmploymentEligibilityUpdate = (
           service: 'auth-service',
           environment: process.env.NODE_ENV || 'development',
           timestamp: new Date().toISOString(),
-          userId: event.payload.userId,
-          status: event.payload.status,
+          userId: event.data.userId,
+          status: event.data.status,
           correlationId: event.metadata.correlationId
         };
 
@@ -79,7 +80,7 @@ const handleEmploymentEligibilityUpdate = (
           service: 'auth-service',
           environment: process.env.NODE_ENV || 'development',
           timestamp: new Date().toISOString(),
-          userId: event.payload.userId,
+          userId: event.data.userId,
           correlationId: event.metadata.correlationId,
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
@@ -110,29 +111,26 @@ export const publishUserCreated = (
 
   logger.info('Creating user event', context);
 
-  const event: Event<UserCreatedEvent> = {
+  const event: Event<UserCreatedEvent['data']> = {
     type: 'USER_CREATED',
-    payload: {
+    data: {
       userId,
       email,
       role,
+      status: UserStatus.ACTIVE,
       createdAt: new Date()
     },
     metadata: {
       correlationId,
       timestamp: new Date().toISOString(),
       source: 'auth-service',
-      version: '1.0.0'
+      version: '1.0.0',
+      schemaVersion: '1.0'
     }
   };
 
   return pipe(
-    eventBus.publish(event, {
-      persistent: true,
-      cache: true,
-      cacheTTL: 3600,
-      priority: 1
-    }),
+    eventBus.publish(event, { persistent: true, cache: true }),
     TE.map(() => {
       logger.info('User created event published successfully', context);
     }),
@@ -155,7 +153,7 @@ export const setupAuthEventHandlers = (
     TE.Do,
     TE.chain(() => {
       logger.info('Setting up KYC verification handler');
-      return eventBus.subscribe<KYCVerifiedEvent>(
+      return eventBus.subscribe<KYCVerifiedEvent['data']>(
         'KYC_VERIFIED',
         async event => {
           const result = await handleKYCVerification(event)();
@@ -163,15 +161,15 @@ export const setupAuthEventHandlers = (
         },
         {
           useCache: true,
-          pattern: 'kyc.*',
-          queue: 'auth.kyc-verification',
+        //   pattern: 'kyc.*',
+        //   queue: 'auth.kyc-verification',
           durable: true
         }
       );
     }),
     TE.chain(() => {
       logger.info('Setting up employment eligibility handler');
-      return eventBus.subscribe<EmploymentEligibilityUpdatedEvent>(
+      return eventBus.subscribe<EmploymentEligibilityUpdatedEvent['data']>(
         'EMPLOYMENT_ELIGIBILITY_UPDATED',
         async event => {
           const result = await handleEmploymentEligibilityUpdate(event)();
@@ -179,7 +177,6 @@ export const setupAuthEventHandlers = (
         },
         {
           useCache: false,
-          queue: 'auth.employment-eligibility',
           durable: true
         }
       );
