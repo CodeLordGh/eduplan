@@ -1,12 +1,7 @@
 import pino from 'pino';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-
-export interface LoggerOptions {
-  service: string;
-  environment: string;
-  minLevel?: string;
-}
+import { LoggerOptions } from '@eduflow/types';
 
 export const createLogger = (options: LoggerOptions) => pino({
   level: options.minLevel || 'info',

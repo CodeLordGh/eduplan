@@ -18,7 +18,6 @@
     "@eduflow/middleware": "workspace:*",
     "@eduflow/types": "workspace:*",
     "@eduflow/prisma": "workspace:*",
-    "@eduflow/validators": "workspace:*",
     "@fastify/cookie": "^8.3.0",
     "@fastify/jwt": "^7.0.0",
     "@fastify/redis": "^6.1.1",

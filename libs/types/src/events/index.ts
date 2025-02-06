@@ -2,19 +2,6 @@ import { Role } from '../auth/roles';
 import { UserStatus } from '../auth/status';
 import { User } from '../auth';
 
-// Base event interface
-export interface Event<T = unknown> {
-  type: string;
-  data: T;
-  metadata: {
-    version: string;
-    source: string;
-    correlationId: string;
-    timestamp: string;
-    schemaVersion: string;
-  };
-}
-
 // Auth Events
 export interface UserCreatedEvent {
   type: 'USER_CREATED';
@@ -110,4 +97,11 @@ export type ConsumedAuthEvent =
   | EmploymentEligibilityUpdatedEvent;
 
 // Re-export event type constants
-export { EVENT_TYPES, EventType } from './constants'; 
+export { EVENT_TYPES, EventType } from './constants';
+
+// Re-export all event types
+export * from './config';
+export * from './state';
+export * from './handlers';
+export * from './constants';
+export * from './academic'; 

@@ -1,3 +1,5 @@
+import { ErrorCode, ErrorMetadata } from '../errors/types';
+
 /**
  * Log levels in order of severity (lowest to highest)
  */
@@ -57,4 +59,34 @@ export type Logger = {
   [K in LogLevel]: LogFn;
 } & {
   child: (context: Partial<LogContext>) => Logger;
-}; 
+};
+
+export type ServiceContext = 'api' | 'database' | 'cache' | 'queue' | 'auth' | 'file' | 'integration';
+
+export interface RequestContext extends BaseContext {
+  path: string;
+  method: string;
+  userAgent?: string;
+  ip?: string;
+  userId?: string;
+  sessionId?: string;
+}
+
+export interface ErrorContext extends BaseContext {
+  code: ErrorCode;
+  message: string;
+  statusCode: number;
+  metadata?: ErrorMetadata;
+  stack?: string;
+}
+
+export interface OperationContext extends BaseContext {
+  operation: string;
+  duration?: number;
+  result: 'success' | 'failure';
+}
+
+export interface RequestLogger extends Logger {
+  request: (context: Partial<RequestContext>) => void;
+  response: (context: Partial<RequestContext> & { statusCode: number; duration: number }) => void;
+} 

@@ -1,6 +1,7 @@
-import * as TE from 'fp-ts/TaskEither';
+import { pipe } from 'fp-ts/function'
+import * as TE from 'fp-ts/TaskEither'
 import { Prisma, Role, UserStatus, VerificationStatus, User as PrismaUser } from '@eduflow/prisma';
-import { validateEmail, validatePassword } from '@eduflow/validators';
+import { validateEmail, validatePassword } from '@eduflow/common';
 import { createValidationError, createDuplicateEmailError, AuthErrors } from '../errors/auth';
 
 export type User = PrismaUser;

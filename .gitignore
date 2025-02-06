@@ -1,7 +1,7 @@
 # Documentation
-docs/
+# docs/
 # *.md
-README.md
+# README.md
 
 # Environment variables
 .env

@@ -9,7 +9,7 @@ import {
   Logger,
   LogContext,
   LogFn
-} from './types';
+} from '@eduflow/types';
 
 /**
  * Default logger options

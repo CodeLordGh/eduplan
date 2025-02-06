@@ -9,6 +9,7 @@ export {
 export * from './errors';
 export * from './auth';
 export * from './user';
+export * from './validation';
 
 // Re-export security policies
 export * from './security/policies';

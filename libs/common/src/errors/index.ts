@@ -1,6 +1,8 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { AppError } from '@eduflow/types';
+import { Logger } from '@eduflow/logger';
 import { createAppError, createErrorResponse } from './base.error';
+import { createErrorLogger } from '@eduflow/logger';
 
 // Export error types and utilities
 export * from './base.error';
@@ -27,13 +29,24 @@ export const createError = (
 
 // Export error handler
 export const errorHandler = (
+  logger: Logger,
   error: FastifyError | Error,
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
+  const errorLogger = createErrorLogger(logger);
+
   if ((error as AppError).code) {
-    return reply.status((error as AppError).statusCode).send(
-      createErrorResponse(error as AppError)
+    const appError = error as AppError;
+    // Log the known error
+    errorLogger.logError(appError, {
+      requestId: request.id,
+      path: request.url,
+      method: request.method
+    });
+    
+    return reply.status(appError.statusCode).send(
+      createErrorResponse(appError)
     );
   }
 
@@ -44,9 +57,13 @@ export const errorHandler = (
     cause: error
   });
 
+  // Log the unknown error
+  errorLogger.logError(appError, {
+    requestId: request.id,
+    path: request.url,
+    method: request.method,
+    originalError: error
+  });
+
   return reply.status(appError.statusCode).send(createErrorResponse(appError));
 };
-
-// export * from './base';
-// export * from './app';
-// export * from './validation'; 

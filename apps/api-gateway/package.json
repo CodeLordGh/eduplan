@@ -16,7 +16,6 @@
     "@eduflow/middleware": "workspace:*",
     "@eduflow/prisma": "workspace:*",
     "@eduflow/types": "workspace:*",
-    "@eduflow/validators": "workspace:*",
     "@fastify/compress": "^6.5.0",
     "@fastify/cors": "^8.4.1",
     "@fastify/helmet": "^11.1.1",

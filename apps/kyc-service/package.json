@@ -15,7 +15,6 @@
     "@eduflow/constants": "workspace:*",
     "@eduflow/prisma": "workspace:*",
     "@eduflow/types": "workspace:*",
-    "@eduflow/validators": "workspace:*",
     "@fastify/cors": "^8.5.0",
     "@fastify/jwt": "^7.2.4",
     "@fastify/redis": "^6.1.1",

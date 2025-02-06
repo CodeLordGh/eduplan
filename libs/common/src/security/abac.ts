@@ -1,36 +1,72 @@
 import * as E from 'fp-ts/Either';
-import { createError } from '../errors';
+import { 
+  createForbiddenError, 
+  throwError
+} from '../errors';
 import type {
   UserAttributes,
   AccessPolicy,
   ValidationResult,
   PolicyConditions,
   Role,
-  SchoolRole
+  AppError
 } from '@eduflow/types';
+
+// Error creation helpers
+const createRoleError = (message: string, metadata: Record<string, any>): AppError => 
+  createForbiddenError(message, {
+    code: 'INSUFFICIENT_ROLES',
+    ...metadata
+  });
+
+const createVerificationError = (message: string, metadata: Record<string, any>): AppError =>
+  createForbiddenError(message, {
+    code: 'VERIFICATION_REQUIRED',
+    ...metadata
+  });
+
+const createSchoolContextError = (message: string, metadata: Record<string, any>): AppError =>
+  createForbiddenError(message, {
+    code: 'INVALID_SCHOOL_CONTEXT',
+    ...metadata
+  });
+
+const createEnvironmentError = (message: string, metadata: Record<string, any>): AppError =>
+  createForbiddenError(message, {
+    code: 'ENVIRONMENT_RESTRICTION',
+    ...metadata
+  });
 
 // Validation helper functions
 const validateRoles = (
   user: UserAttributes,
   conditions: PolicyConditions
-): E.Either<string, true> => {
+): E.Either<AppError, true> => {
   if (conditions.anyOf?.roles) {
     const hasAnyRole = conditions.anyOf.roles.some((role: Role) => 
       user.globalRoles.includes(role) || 
-      Array.from(user.schoolRoles.values()).some((sr: SchoolRole) => sr.roles.includes(role))
+      Object.values(user.schoolRoles).some((roles: Role[]) => roles.includes(role))
     );
     if (!hasAnyRole) {
-      return E.left('User does not have any of the required roles');
+      return E.left(createRoleError('User does not have any of the required roles', {
+        requiredRoles: conditions.anyOf.roles,
+        userGlobalRoles: user.globalRoles,
+        userSchoolRoles: user.schoolRoles
+      }));
     }
   }
 
   if (conditions.allOf?.roles) {
     const hasAllRoles = conditions.allOf.roles.every((role: Role) =>
       user.globalRoles.includes(role) ||
-      Array.from(user.schoolRoles.values()).some((sr: SchoolRole) => sr.roles.includes(role))
+      Object.values(user.schoolRoles).some((roles: Role[]) => roles.includes(role))
     );
     if (!hasAllRoles) {
-      return E.left('User does not have all required roles');
+      return E.left(createRoleError('User does not have all required roles', {
+        requiredRoles: conditions.allOf.roles,
+        userGlobalRoles: user.globalRoles,
+        userSchoolRoles: user.schoolRoles
+      }));
     }
   }
 
@@ -40,19 +76,36 @@ const validateRoles = (
 const validateVerification = (
   user: UserAttributes,
   conditions: PolicyConditions
-): E.Either<string, true> => {
+): E.Either<AppError, true> => {
   if (conditions.verification?.requireKYC && user.kyc.status !== 'VERIFIED') {
-    return E.left('KYC verification required');
+    return E.left(createVerificationError('KYC verification required', {
+      currentKycStatus: user.kyc.status,
+      requiredStatus: 'VERIFIED'
+    }));
   }
 
   if (conditions.verification?.kycStatus && 
       !conditions.verification.kycStatus.includes(user.kyc.status)) {
-    return E.left('Invalid KYC status');
+    return E.left(createVerificationError(
+      `Invalid KYC status. Required: ${conditions.verification.kycStatus.join(', ')}, Current: ${user.kyc.status}`,
+      {
+        requiredStatuses: conditions.verification.kycStatus,
+        currentStatus: user.kyc.status
+      }
+    ));
   }
 
   if (conditions.verification?.employmentStatus &&
       !conditions.verification.employmentStatus.includes(user.employment.status)) {
-    return E.left('Invalid employment status');
+    return E.left(createVerificationError(
+      `Invalid employment status. Required: ${conditions.verification.employmentStatus.join(', ')}, Current: ${user.employment.status}`,
+      {
+        requiredStatuses: conditions.verification.employmentStatus,
+        currentStatus: user.employment.status,
+        verifiedAt: user.employment.verifiedAt,
+        verifiedBy: user.employment.verifiedBy
+      }
+    ));
   }
 
   if (conditions.verification?.officerPermissions) {
@@ -62,7 +115,13 @@ const validateVerification = (
         user.kyc.officerStatus.permissions[permission as keyof typeof user.kyc.officerStatus.permissions]
     );
     if (!hasPermissions) {
-      return E.left('Missing required KYC officer permissions');
+      return E.left(createVerificationError(
+        `Missing required KYC officer permissions: ${conditions.verification.officerPermissions.join(', ')}`,
+        {
+          requiredPermissions: conditions.verification.officerPermissions,
+          currentPermissions: user.kyc.officerStatus?.permissions
+        }
+      ));
     }
   }
 
@@ -72,34 +131,50 @@ const validateVerification = (
 const validateSchoolContext = (
   user: UserAttributes,
   conditions: PolicyConditions
-): E.Either<string, true> => {
+): E.Either<AppError, true> => {
   if (!conditions.school) return E.right(true);
 
   const { mustBeInSchool, mustBeOwner, mustBeCurrentSchool, allowedRoles } = conditions.school;
 
-  if (mustBeInSchool && user.schoolRoles.size === 0) {
-    return E.left('User must be associated with a school');
+  if (mustBeInSchool && Object.keys(user.schoolRoles).length === 0) {
+    return E.left(createSchoolContextError('User must be associated with a school', {
+      userId: user.id,
+      schoolRoles: user.schoolRoles
+    }));
   }
 
   if (mustBeCurrentSchool && !user.context.currentSchoolId) {
-    return E.left('No current school context');
+    return E.left(createSchoolContextError('No current school context', {
+      userId: user.id,
+      context: user.context
+    }));
   }
 
   if (mustBeOwner) {
-    const isOwner = Array.from(user.schoolRoles.values()).some(
-      (sr: SchoolRole) => sr.roles.includes('SCHOOL_OWNER')
+    const isOwner = Object.values(user.schoolRoles).some(
+      (roles: Role[]) => roles.includes('SCHOOL_OWNER')
     );
     if (!isOwner) {
-      return E.left('User must be a school owner');
+      return E.left(createSchoolContextError('User must be a school owner', {
+        userId: user.id,
+        schoolRoles: user.schoolRoles
+      }));
     }
   }
 
   if (allowedRoles) {
     const hasAllowedRole = allowedRoles.some((role: Role) =>
-      Array.from(user.schoolRoles.values()).some((sr: SchoolRole) => sr.roles.includes(role))
+      Object.values(user.schoolRoles).some((roles: Role[]) => roles.includes(role))
     );
     if (!hasAllowedRole) {
-      return E.left('User does not have any of the allowed school roles');
+      return E.left(createSchoolContextError(
+        `User does not have any of the allowed school roles: ${allowedRoles.join(', ')}`,
+        {
+          userId: user.id,
+          allowedRoles,
+          currentRoles: user.schoolRoles
+        }
+      ));
     }
   }
 
@@ -109,7 +184,7 @@ const validateSchoolContext = (
 const validateEnvironment = (
   user: UserAttributes,
   conditions: PolicyConditions
-): E.Either<string, true> => {
+): E.Either<AppError, true> => {
   if (!conditions.environment) return E.right(true);
 
   const { ipRestrictions, timeRestrictions, deviceRestrictions, locationRestrictions } = conditions.environment;
@@ -117,13 +192,22 @@ const validateEnvironment = (
   // IP restrictions
   if (ipRestrictions) {
     const userIp = user.context.location?.ip;
-    if (!userIp) return E.left('IP address not available');
+    if (!userIp) return E.left(createEnvironmentError('IP address not available', {
+      userId: user.id,
+      context: user.context
+    }));
 
     if (ipRestrictions.allowlist && !ipRestrictions.allowlist.includes(userIp)) {
-      return E.left('IP not in allowlist');
+      return E.left(createEnvironmentError(`IP ${userIp} not in allowlist`, {
+        userIp,
+        allowlist: ipRestrictions.allowlist
+      }));
     }
     if (ipRestrictions.denylist && ipRestrictions.denylist.includes(userIp)) {
-      return E.left('IP in denylist');
+      return E.left(createEnvironmentError(`IP ${userIp} is in denylist`, {
+        userIp,
+        denylist: ipRestrictions.denylist
+      }));
     }
   }
 
@@ -135,14 +219,28 @@ const validateEnvironment = (
     
     if (timeRestrictions.allowedDays && 
         !timeRestrictions.allowedDays.includes(currentDate.getDay().toString())) {
-      return E.left('Access not allowed on this day');
+      return E.left(createEnvironmentError(
+        `Access not allowed on ${currentDate.toLocaleDateString('en-US', { weekday: 'long' })}`,
+        {
+          currentDay: currentDate.getDay(),
+          allowedDays: timeRestrictions.allowedDays,
+          timezone: userTimezone
+        }
+      ));
     }
 
     if (timeRestrictions.allowedHours) {
       const currentHour = currentDate.getHours();
       const [startHour, endHour] = timeRestrictions.allowedHours.map(Number);
       if (currentHour < startHour || currentHour > endHour) {
-        return E.left('Access not allowed during these hours');
+        return E.left(createEnvironmentError(
+          `Access not allowed at ${currentDate.toLocaleTimeString()}. Allowed hours: ${startHour}:00-${endHour}:00`,
+          {
+            currentHour,
+            allowedHours: timeRestrictions.allowedHours,
+            timezone: userTimezone
+          }
+        ));
       }
     }
   }
@@ -150,26 +248,50 @@ const validateEnvironment = (
   // Device restrictions
   if (deviceRestrictions) {
     const userDevice = user.context.deviceInfo?.type;
-    if (!userDevice) return E.left('Device information not available');
+    if (!userDevice) return E.left(createEnvironmentError('Device information not available', {
+      userId: user.id,
+      context: user.context
+    }));
 
-    if (deviceRestrictions.types && !deviceRestrictions.types.includes(userDevice)) {
-      return E.left('Device type not allowed');
+    if (deviceRestrictions.allowedTypes && !deviceRestrictions.allowedTypes.includes(userDevice)) {
+      return E.left(createEnvironmentError(
+        `Device type ${userDevice} not allowed. Allowed types: ${deviceRestrictions.allowedTypes.join(', ')}`,
+        {
+          userDevice,
+          allowedTypes: deviceRestrictions.allowedTypes
+        }
+      ));
     }
   }
 
   // Location restrictions
   if (locationRestrictions) {
     const userLocation = user.context.location;
-    if (!userLocation) return E.left('Location information not available');
+    if (!userLocation) return E.left(createEnvironmentError('Location information not available', {
+      userId: user.id,
+      context: user.context
+    }));
 
-    if (locationRestrictions.countries && 
+    if (locationRestrictions.countries && userLocation.country &&
         !locationRestrictions.countries.includes(userLocation.country)) {
-      return E.left('Access not allowed from this country');
+      return E.left(createEnvironmentError(
+        `Access not allowed from country: ${userLocation.country}`,
+        {
+          userCountry: userLocation.country,
+          allowedCountries: locationRestrictions.countries
+        }
+      ));
     }
 
-    if (locationRestrictions.regions && 
+    if (locationRestrictions.regions && userLocation.region &&
         !locationRestrictions.regions.includes(userLocation.region)) {
-      return E.left('Access not allowed from this region');
+      return E.left(createEnvironmentError(
+        `Access not allowed from region: ${userLocation.region}`,
+        {
+          userRegion: userLocation.region,
+          allowedRegions: locationRestrictions.regions
+        }
+      ));
     }
   }
 
@@ -180,12 +302,16 @@ const validateCustomConditions = (
   user: UserAttributes,
   conditions: PolicyConditions,
   context: Record<string, any>
-): E.Either<string, true> => {
+): E.Either<AppError, true> => {
   if (!conditions.custom) return E.right(true);
 
   for (const condition of conditions.custom) {
     if (!condition.evaluator(user, context)) {
-      return E.left(condition.errorMessage);
+      return E.left(createForbiddenError(condition.errorMessage, {
+        code: 'CUSTOM_CONDITION_FAILED',
+        userId: user.id,
+        context
+      }));
     }
   }
 
@@ -198,23 +324,31 @@ export const validateAccess = (
   policy: AccessPolicy,
   context: Record<string, any> = {}
 ): ValidationResult => {
-  const validationResults = [
-    validateRoles(user, policy.conditions),
-    validateVerification(user, policy.conditions),
-    validateSchoolContext(user, policy.conditions),
-    validateEnvironment(user, policy.conditions),
-    validateCustomConditions(user, policy.conditions, context)
-  ];
+  try {
+    const validationResults = [
+      validateRoles(user, policy.conditions),
+      validateVerification(user, policy.conditions),
+      validateSchoolContext(user, policy.conditions),
+      validateEnvironment(user, policy.conditions),
+      validateCustomConditions(user, policy.conditions, context)
+    ];
 
-  const firstError = validationResults.find(E.isLeft);
-  if (firstError && E.isLeft(firstError)) {
+    const firstError = validationResults.find(E.isLeft);
+    if (firstError && E.isLeft(firstError)) {
+      return {
+        granted: false,
+        reason: firstError.left.message
+      };
+    }
+
+    return { granted: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       granted: false,
-      reason: firstError.left
+      reason: `Error evaluating access: ${errorMessage}`
     };
   }
-
-  return { granted: true };
 };
 
 // Policy management functions
@@ -243,15 +377,28 @@ export const createAbacMiddleware = (policy: AccessPolicy) =>
       );
 
       if (!validationResult.granted) {
-        throw createError(
-          validationResult.reason || 'Access denied',
-          'FORBIDDEN',
-          403
-        );
+        throwError(createForbiddenError(validationResult.reason || 'Access denied', {
+          code: 'ACCESS_CHECK_ERROR',
+          resource: policy.resource,
+          action: policy.action,
+          userId: req.userAttributes.id,
+          conditions: policy.conditions
+        }));
       }
 
       next();
     } catch (error) {
-      next(error);
+      if (error instanceof Error) {
+        next(createForbiddenError('Access check failed', {
+          code: 'ACCESS_CHECK_ERROR',
+          resource: policy.resource,
+          action: policy.action,
+          userId: req.userAttributes?.id,
+          error: error.message,
+          conditions: policy.conditions
+        }));
+      } else {
+        next(error);
+      }
     }
   }; 

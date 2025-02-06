@@ -4,18 +4,8 @@ import * as O from 'fp-ts/Option';
 import * as E from 'fp-ts/Either';
 import amqp, { Channel, Connection } from 'amqplib';
 import Redis from 'ioredis';
-import { Logger } from '@eduflow/logger';
-import { Event, EventBusConfig, EventHandler, PublishOptions, SubscribeOptions } from './types';
-
-// Core types
-type EventBusState = {
-  rabbitmqChannel: Channel | null;
-  rabbitmqConnection: Connection | null;
-  redisClient: Redis | null;
-  config: EventBusConfig;
-  logger: Logger;
-  handlers: Map<string, EventHandler>;
-};
+import { Logger, Event, EventBusConfig, EventHandler, PublishOptions, SubscribeOptions } from '@eduflow/types';
+import { EventBusInternalState } from './internal-types';
 
 // Initialize RabbitMQ connection
 const initializeRabbitMQ = (
@@ -151,7 +141,7 @@ const setupEventQueue = (
 export const createEventBusState = (
   config: EventBusConfig,
   logger: Logger
-): EventBusState => ({
+): EventBusInternalState => ({
   rabbitmqChannel: null,
   rabbitmqConnection: null,
   redisClient: null,
@@ -162,8 +152,8 @@ export const createEventBusState = (
 
 // Initialize connections
 export const initialize = (
-  state: EventBusState
-): TE.TaskEither<Error, EventBusState> =>
+  state: EventBusInternalState
+): TE.TaskEither<Error, EventBusInternalState> =>
   pipe(
     initializeRabbitMQ(state.config, state.logger),
     TE.chain(({ connection, channel }) =>
@@ -180,7 +170,7 @@ export const initialize = (
   );
 
 // Publishing events
-export const publish = (state: EventBusState) => <T>(
+export const publish = (state: EventBusInternalState) => <T>(
   event: Event<T>,
   options: PublishOptions = {}
 ): TE.TaskEither<Error, void> => {
@@ -218,7 +208,7 @@ export const publish = (state: EventBusState) => <T>(
 };
 
 // Subscribing to events
-export const subscribe = (state: EventBusState) => <T>(
+export const subscribe = (state: EventBusInternalState) => <T>(
   eventType: string,
   handler: EventHandler<T>,
   options: SubscribeOptions = {}
@@ -333,7 +323,7 @@ export const subscribe = (state: EventBusState) => <T>(
 };
 
 // Unsubscribe from events
-export const unsubscribe = (state: EventBusState) => (
+export const unsubscribe = (state: EventBusInternalState) => (
   eventType: string
 ): TE.TaskEither<Error, void> => {
   if (!state.rabbitmqChannel) {
@@ -352,7 +342,7 @@ export const unsubscribe = (state: EventBusState) => (
 };
 
 // Cleanup
-export const close = (state: EventBusState): TE.TaskEither<Error, void> =>
+export const close = (state: EventBusInternalState): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
       async () => {

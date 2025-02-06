@@ -2,7 +2,7 @@ import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as TE from 'fp-ts/TaskEither';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { Logger, LogContext } from './types';
+import { Logger, LogContext } from '@eduflow/types';
 
 /**
  * Extract relevant request information for logging
@@ -21,7 +21,7 @@ const extractRequestInfo = (request: FastifyRequest): Partial<LogContext> => ({
  */
 const extractResponseInfo = (reply: FastifyReply): Partial<LogContext> => ({
   statusCode: reply.statusCode,
-  responseTime: reply.getResponseTime()
+  responseTime: reply.elapsedTime
 });
 
 /**

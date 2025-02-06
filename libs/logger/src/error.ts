@@ -1,7 +1,6 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { AppError } from '@eduflow/types';
-import { Logger, LogContext } from './types';
+import { AppError, Logger, LogContext } from '@eduflow/types';
 
 /**
  * Extract error details for logging

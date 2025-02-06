@@ -1,6 +1,7 @@
 {
   "name": "@eduflow/common",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -34,25 +35,31 @@
   },
   "dependencies": {
     "@eduflow/types": "workspace:*",
-    "@eduflow/validators": "workspace:*",
+    "@eduflow/logger": "workspace:*",
     "argon2": "^0.31.0",
     "jsonwebtoken": "^9.0.2",
     "fp-ts": "^2.16.1",
     "pino": "^8.16.0",
-    "fastify": "^4.29.0"
+    "fastify": "^4.29.0",
+    "amqplib": "^0.10.3",
+    "ioredis": "^5.3.2"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/amqplib": "^0.10.4",
+    "@types/node": "^20.10.6",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/argon2": "^0.15.0",
     "@types/pino": "^7.0.5",
-    "typescript": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
+    "eslint": "^8.56.0",
     "rimraf": "^5.0.0",
-    "eslint": "^8.0.0",
     "@eduflow/eslint-config": "workspace:*",
     "@eduflow/tsconfig": "workspace:*",
-    "jest": "^29.0.0",
+    "jest": "^29.7.0",
     "@eduflow/jest-config": "workspace:*",
-    "@types/jest": "^29.5.4"
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
   }
 }
