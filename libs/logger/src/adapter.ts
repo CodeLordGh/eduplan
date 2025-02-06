@@ -1,0 +1,49 @@
+import { Logger as PinoLogger } from 'pino';
+import { Logger, LogContext, LogLevel } from '@eduflow/types';
+import { pipe } from 'fp-ts/function';
+import * as O from 'fp-ts/Option';
+import * as R from 'fp-ts/Reader';
+import * as IO from 'fp-ts/IO';
+
+type LogFn = (message: string, context?: Partial<LogContext>) => IO.IO<void>;
+type LoggerEnv = { pinoLogger: PinoLogger };
+
+/**
+ * Creates a logging function for a specific level
+ */
+const createLogFn = (level: LogLevel): R.Reader<LoggerEnv, LogFn> =>
+  ({ pinoLogger }) =>
+    (message, context) =>
+      () => pinoLogger[level](withContext(context), message);
+
+/**
+ * Creates a child logger with additional context
+ */
+const createChild = (context: Partial<LogContext>): R.Reader<LoggerEnv, Logger> =>
+  ({ pinoLogger }) => createLoggerAdapter(pinoLogger.child(context));
+
+/**
+ * Creates a logger adapter with all logging functions
+ */
+export const createLoggerAdapter = (pinoLogger: PinoLogger): Logger => {
+  const env: LoggerEnv = { pinoLogger };
+
+  return {
+    trace: pipe(createLogFn('trace')(env)),
+    debug: pipe(createLogFn('debug')(env)),
+    info: pipe(createLogFn('info')(env)),
+    warn: pipe(createLogFn('warn')(env)),
+    error: pipe(createLogFn('error')(env)),
+    fatal: pipe(createLogFn('fatal')(env)),
+    child: (context) => pipe(createChild(context)(env))
+  };
+};
+
+/**
+ * Helper to safely handle undefined context
+ */
+const withContext = (context?: Partial<LogContext>): Partial<LogContext> =>
+  pipe(
+    O.fromNullable(context),
+    O.getOrElse(() => ({}))
+  ); 

@@ -1,6 +1,6 @@
 import { createLogger, createRequestLogger, createErrorLogger } from '@eduflow/logger';
 import { FastifyRequest } from 'fastify';
-
+import { LOG_LEVELS, LogLevel, LoggerOptions } from '@eduflow/types';
 
 export interface LogContext {
   service?: string;
@@ -60,17 +60,33 @@ export interface MetricsContext extends LogContext {
   thresholds?: Record<string, number>;
 }
 
-// Create base logger instance with default configuration
-export const logger = createLogger({
+// Validate and get log level from environment
+const getLogLevel = (level: string | undefined): LogLevel => {
+  if (level && Object.values(LOG_LEVELS).includes(level as LogLevel)) {
+    return level as LogLevel;
+  }
+  return LOG_LEVELS.INFO;
+};
+
+// Logger configuration
+const loggerConfig: LoggerOptions = {
   service: 'api-gateway',
   environment: process.env.NODE_ENV || 'development',
-  minLevel: process.env.LOG_LEVEL || 'info'
-});
+  minLevel: getLogLevel(process.env.LOG_LEVEL),
+  redactPaths: [
+    'body.password',
+    'headers.authorization',
+    'headers.cookie'
+  ]
+};
 
-// Create request logger middleware with context
+// Create base logger instance with configuration
+export const logger = createLogger(loggerConfig);
+
+// Create request logger middleware
 export const requestLogger = createRequestLogger(logger);
 
-// Create error logger utility
+// Create error logger
 export const errorLogger = createErrorLogger(logger);
 
 // Create request context utility

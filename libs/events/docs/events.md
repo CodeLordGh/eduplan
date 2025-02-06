@@ -1,5 +1,63 @@
 # Events Library Documentation
 
+## Overview
+The events library provides a robust, functional event system for building event-driven architectures. This documentation covers the complete implementation details and core functionality. For integration patterns and examples, see the [Events Integration Guide](../../docs/events-integration.md).
+
+## Architecture
+
+### System Architecture
+```mermaid
+graph TB
+    subgraph "Event System"
+        EB[Event Bus]
+        V[Validators]
+        M[Metrics]
+        H[Health Checks]
+        R[Resilience]
+    end
+
+    subgraph "Infrastructure"
+        RMQ[RabbitMQ]
+        RD[Redis]
+    end
+
+    subgraph "Integration"
+        P[Publishers]
+        S[Subscribers]
+    end
+
+    P --> EB
+    EB --> V
+    EB --> M
+    EB --> H
+    EB --> R
+    R --> RMQ
+    R --> RD
+    EB --> S
+```
+
+### Event Flow
+```mermaid
+sequenceDiagram
+    participant P as Publisher
+    participant EB as Event Bus
+    participant V as Validator
+    participant RMQ as RabbitMQ
+    participant RD as Redis
+    participant S as Subscriber
+
+    P->>EB: Publish Event
+    EB->>V: Validate Event
+    V-->>EB: Validation Result
+    alt Valid Event
+        EB->>RMQ: Publish to Exchange
+        EB->>RD: Cache Event
+        RMQ-->>S: Deliver Event
+    else Invalid Event
+        EB-->>P: Validation Error
+    end
+```
+
 This document provides a comprehensive overview of all functions and utilities exported from the events library. For type definitions and interfaces, please refer to the [Types Documentation](../../types/docs/types.md#event-system-types).
 
 ## Table of Contents
@@ -488,6 +546,103 @@ All resilience features include functional monitoring:
    ```
 
 For more information about monitoring, see the [Metrics and Monitoring](#metrics-and-monitoring) section.
+
+## Event Schema Management
+
+### Core Schemas
+```typescript
+import { z } from 'zod';
+
+const eventSchemas = {
+  USER_CREATED: z.object({
+    id: z.string(),
+    email: z.string().email(),
+    role: z.enum(['STUDENT', 'TEACHER', 'ADMIN'])
+  }),
+  
+  GRADE_UPDATED: z.object({
+    studentId: z.string(),
+    courseId: z.string(),
+    grade: z.number().min(0).max(100)
+  })
+} as const;
+
+type EventSchemas = typeof eventSchemas;
+type EventTypes = keyof EventSchemas;
+type EventData<T extends EventTypes> = z.infer<EventSchemas[T]>;
+```
+
+### Error Categories
+```typescript
+const EventErrorTypes = {
+  VALIDATION_ERROR: 'EVENT_VALIDATION_ERROR',
+  PROCESSING_ERROR: 'EVENT_PROCESSING_ERROR',
+  PUBLISH_ERROR: 'EVENT_PUBLISH_ERROR',
+  SUBSCRIPTION_ERROR: 'EVENT_SUBSCRIPTION_ERROR'
+} as const;
+
+type EventErrorType = typeof EventErrorTypes[keyof typeof EventErrorTypes];
+```
+
+## Advanced Features
+
+### Dead Letter Queue Management
+```typescript
+const moveToDeadLetterQueue = async (
+  event: Event<unknown>,
+  error: Error
+): Promise<void> => {
+  const deadLetterEvent = {
+    ...event,
+    metadata: {
+      ...event.metadata,
+      error: {
+        message: error.message,
+        stack: error.stack
+      },
+      retryCount: (event.metadata?.retryCount || 0) + 1,
+      lastAttempt: new Date().toISOString()
+    }
+  };
+
+  await channel.publish(
+    config.deadLetterExchange,
+    event.type,
+    Buffer.from(JSON.stringify(deadLetterEvent))
+  );
+};
+```
+
+### Retry Mechanism
+```typescript
+const withRetry = <T>(
+  operation: () => TE.TaskEither<Error, T>,
+  retryCount: number = 3,
+  delay: number = 1000
+): TE.TaskEither<Error, T> => {
+  const retry = (
+    remainingAttempts: number,
+    lastError: Error
+  ): TE.TaskEither<Error, T> =>
+    remainingAttempts <= 0
+      ? TE.left(lastError)
+      : pipe(
+          TE.tryCatch(
+            () => new Promise(resolve => setTimeout(resolve, delay)),
+            error => error as Error
+          ),
+          TE.chain(() => operation()),
+          TE.orElse(error =>
+            retry(remainingAttempts - 1, error as Error)
+          )
+        );
+
+  return pipe(
+    operation(),
+    TE.orElse(error => retry(retryCount - 1, error as Error))
+  );
+};
+```
 
 ## Related Documentation
 - [Event Types](../../types/docs/types.md#event-system-types)

@@ -1,4 +1,4 @@
-import { EmploymentEligibilityStatus, UserAttributes, AccessPolicy, KYCStatus } from '@eduflow/types';
+import { EmploymentEligibilityStatus, UserAttributes, AccessPolicy, KYCStatus, PolicyConditions } from '@eduflow/types';
 import { createPolicy } from './abac';
 
 // School Management Policies
@@ -57,10 +57,10 @@ export const viewStudentGradesPolicy = createPolicy(
     custom: [{
       evaluator: (user, context) => {
         if (user.globalRoles.includes('TEACHER')) {
-          return isTeacherOfStudent(user, context.studentId);
+          return isTeacherOfStudent(user, context);
         }
         if (user.globalRoles.includes('PARENT')) {
-          return isParentOfStudent(user, context.studentId);
+          return isParentOfStudent(user, context);
         }
         return true;
       },
@@ -115,14 +115,20 @@ export const createBHubPostPolicy = createPolicy(
 );
 
 // Helper functions for custom evaluators
-const isTeacherOfStudent = (user: UserAttributes, studentId: string): boolean => {
-  // Implementation would check if the teacher is assigned to the student's class
-  return true; // Placeholder
+const isTeacherOfStudent = (user: UserAttributes, context: PolicyConditions): boolean => {
+  const studentSchoolId = user.context.currentSchoolId;
+  if (!studentSchoolId) return false;
+  
+  // Check if user is a teacher in the student's school
+  return user.schoolRoles[studentSchoolId]?.includes('TEACHER') || false;
 };
 
-const isParentOfStudent = (user: UserAttributes, studentId: string): boolean => {
-  // Implementation would check parent-student relationship
-  return true; // Placeholder
+const isParentOfStudent = (user: UserAttributes, context: PolicyConditions): boolean => {
+  const studentSchoolId = user.context.currentSchoolId;
+  if (!studentSchoolId) return false;
+  
+  // Check if user is a parent in the student's school
+  return user.schoolRoles[studentSchoolId]?.includes('PARENT') || false;
 };
 
 export const createKYCPolicy = (action: AccessPolicy['action']): AccessPolicy => ({
@@ -161,6 +167,39 @@ export const createSchoolPolicy = (action: AccessPolicy['action']): AccessPolicy
   }
 });
 
+// Update student-related policies to use custom evaluators
+const createStudentPolicy = (action: AccessPolicy['action']): AccessPolicy => ({
+  resource: 'student',
+  action,
+  conditions: {
+    verification: {
+      requireKYC: true
+    },
+    school: {
+      mustBeCurrentSchool: true
+    },
+    custom: [
+      {
+        evaluator: (user: UserAttributes) => {
+          const currentSchoolId = user.context.currentSchoolId;
+          if (!currentSchoolId) return false;
+
+          if (user.globalRoles.includes('TEACHER')) {
+            const schoolRoles = user.schoolRoles[currentSchoolId];
+            return schoolRoles ? schoolRoles.includes('TEACHER') : false;
+          }
+          if (user.globalRoles.includes('PARENT')) {
+            const schoolRoles = user.schoolRoles[currentSchoolId];
+            return schoolRoles ? schoolRoles.includes('PARENT') : false;
+          }
+          return false;
+        },
+        errorMessage: 'Must be a teacher or parent in the student\'s school'
+      }
+    ]
+  }
+});
+
 export const createEmploymentPolicy = (action: AccessPolicy['action']): AccessPolicy => ({
   resource: 'employment',
   action,
@@ -169,12 +208,12 @@ export const createEmploymentPolicy = (action: AccessPolicy['action']): AccessPo
       requireKYC: true,
       employmentStatus: [
         EmploymentEligibilityStatus.ELIGIBLE,
-        EmploymentEligibilityStatus.PENDING_REVIEW
+        EmploymentEligibilityStatus.PENDING
       ]
     },
     custom: [
       {
-        evaluator: (user: UserAttributes, context: Record<string, unknown>) => {
+        evaluator: (user: UserAttributes) => {
           // Custom employment policy logic
           return true;
         },

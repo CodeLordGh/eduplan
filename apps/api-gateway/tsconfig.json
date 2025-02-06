@@ -5,9 +5,19 @@
     "rootDir": "./src",
     "types": ["node", "jest"],
     "paths": {
-      "fp-ts/*": ["./node_modules/fp-ts/*"]
-    }
+      "fp-ts/*": ["./node_modules/fp-ts/*"],
+      "@eduflow/*": ["../../libs/*/src"]
+    },
+    "baseUrl": "."
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../../libs/common" },
+    { "path": "../../libs/types" },
+    { "path": "../../libs/prisma" },
+    { "path": "../../libs/logger" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/constants" }
+  ]
 } 

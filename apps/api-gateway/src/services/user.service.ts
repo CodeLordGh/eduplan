@@ -1,7 +1,16 @@
 import { PrismaClient, Prisma } from '@eduflow/prisma';
 import { createAppError } from '@eduflow/common';
-import type { UserAttributes, AppError } from '@eduflow/types';
-import { KYCStatus, EmploymentEligibilityStatus, Role } from '@eduflow/types';
+import { transformToUserAttributes, UserWithIncludes, RequestContext } from '@eduflow/common';
+import type { 
+  UserAttributes, 
+  AppError, 
+  UserContext,
+} from '@eduflow/types';
+import { 
+  KYCStatus, 
+  EmploymentEligibilityStatus, 
+  Role 
+} from '@eduflow/types';
 import { redis } from '../config/redis';
 import { pipe } from 'fp-ts/function';
 import { TaskEither } from 'fp-ts/TaskEither';
@@ -14,16 +23,6 @@ const CACHE_PREFIX = 'user_attributes:';
 // Initialize Prisma client
 const prisma = new PrismaClient();
 
-type UserWithIncludes = Prisma.UserGetPayload<{
-  include: {
-    profile: true;
-    documents: true;
-  }
-}> & {
-  roles: Role[];
-  permissions: string[];
-};
-
 interface StaffAssignment {
   school: {
     id: string;
@@ -35,8 +34,118 @@ interface StaffAssignment {
   createdAt: Date;
 }
 
-// Get user attributes with caching
-export const getUserAttributes = async (userId: string): Promise<UserAttributes> => {
+// ABAC-specific interfaces
+interface KYCAttributes {
+  status: KYCStatus;
+  verifiedAt?: Date;
+  documentIds: string[];
+  officerStatus?: {
+    permissions: {
+      canVerifyIdentity: boolean;
+      canVerifyDocuments: boolean;
+      canApproveKYC: boolean;
+    };
+  };
+}
+
+interface EmploymentAttributes {
+  status: EmploymentEligibilityStatus;
+  verifiedAt?: Date;
+  verifiedBy?: string;
+  documentIds: string[];
+  currentSchools: string[];
+}
+
+interface AccessAttributes {
+  failedAttempts: number;
+  lastLogin?: Date;
+  lockedUntil?: Date;
+  socialEnabled: boolean;
+  restrictions: {
+    ipWhitelist?: string[];
+    allowedCountries?: string[];
+    timeRestrictions?: {
+      allowedDays: string[];
+      allowedHours: string[];
+      timezone: string;
+    };
+  };
+}
+
+// Transform functions for each ABAC component
+const transformKYCAttributes = (user: UserWithIncludes): KYCAttributes => ({
+  status: (user.kycStatus || KYCStatus.NOT_STARTED) as KYCStatus,
+  verifiedAt: user.kycVerifiedAt || undefined,
+  documentIds: user.kycDocumentIds || [],
+  officerStatus: user.roles.includes('KYC_OFFICER') ? {
+    permissions: {
+      canVerifyIdentity: true,
+      canVerifyDocuments: true,
+      canApproveKYC: user.roles.includes('SYSTEM_ADMIN')
+    }
+  } : undefined
+});
+
+const transformEmploymentAttributes = (user: UserWithIncludes): EmploymentAttributes => ({
+  status: (user.employmentStatus || EmploymentEligibilityStatus.UNVERIFIED) as EmploymentEligibilityStatus,
+  verifiedAt: user.employmentVerifiedAt || undefined,
+  verifiedBy: user.verifications?.[0]?.id,
+  documentIds: user.employmentDocumentIds || [],
+  currentSchools: [] // Will be populated by school service
+});
+
+const transformAccessAttributes = async (userId: string): Promise<AccessAttributes> => {
+  // Get access data from auth service
+  const accessData = await getAccessFromAuthService(userId);
+  
+  return {
+    failedAttempts: accessData.failedAttempts || 0,
+    lastLogin: accessData.lastLogin,
+    lockedUntil: accessData.lockedUntil,
+    socialEnabled: accessData.socialEnabled || false,
+    restrictions: {
+      ipWhitelist: accessData.ipWhitelist,
+      allowedCountries: accessData.allowedCountries,
+      timeRestrictions: accessData.timeRestrictions
+    }
+  };
+};
+
+const transformContextAttributes = async (
+  user: UserWithIncludes,
+  requestContext?: RequestContext
+): Promise<UserContext> => ({
+  currentSchoolId: await getCurrentSchoolId(user.id),
+  location: requestContext?.location,
+  deviceInfo: requestContext?.deviceInfo ? {
+    id: requestContext.deviceInfo.id,
+    type: requestContext.deviceInfo.type,
+    trustScore: requestContext.deviceInfo.trustScore || 0,
+    lastVerified: requestContext.deviceInfo.lastVerified || new Date()
+  } : undefined
+});
+
+// Helper functions for external service calls
+const getAccessFromAuthService = async (userId: string): Promise<any> => {
+  // TODO: Implement auth service call
+  return {};
+};
+
+const getCurrentSchoolId = async (userId: string): Promise<string | undefined> => {
+  // TODO: Implement school service call
+  return undefined;
+};
+
+const getSchoolRoles = async (userId: string): Promise<Record<string, Role[]>> => {
+  // TODO: Implement school service call
+  return {};
+};
+
+// Update the main function to handle request context
+export const getUserAttributes = async (
+  userId: string,
+  requestContext?: RequestContext
+): Promise<UserAttributes> => {
   const result = await pipe(
     TE.tryCatch(
       () => redis.get(`${CACHE_PREFIX}${userId}`),
@@ -49,7 +158,7 @@ export const getUserAttributes = async (userId: string): Promise<UserAttributes>
     TE.chain((cached: string | null) => 
       cached 
         ? TE.right(JSON.parse(cached))
-        : getUserFromDatabase(userId)
+        : getUserFromDatabase(userId, requestContext)
     ),
     TE.chain((attributes: UserAttributes) => 
       pipe(
@@ -66,27 +175,41 @@ export const getUserAttributes = async (userId: string): Promise<UserAttributes>
   return result.right;
 };
 
-const getUserFromDatabase = (userId: string): TaskEither<AppError, UserAttributes> =>
+// Update database query function
+const getUserFromDatabase = (
+  userId: string,
+  requestContext?: RequestContext
+): TaskEither<AppError, UserAttributes> =>
   pipe(
     TE.tryCatch(
       () => prisma.user.findUnique({
         where: { id: userId },
         include: {
           profile: true,
-          documents: true
+          documents: true,
+          verifications: true,
         }
-      }).then(user => user ? {
-        ...user,
-        roles: user.roles || [],
-        permissions: user.permissions || []
-      } : null),
+      }).then(async user => {
+        if (!user) return null;
+        const userWithRoles = {
+          ...user,
+          roles: user.roles || [],
+          permissions: user.permissions || []
+        };
+        return transformToUserAttributes(userWithRoles, {
+          requestContext,
+          getAccessData: getAccessFromAuthService,
+          getCurrentSchoolId,
+          getSchoolRoles
+        });
+      }),
       (error: unknown) => createAppError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Database query failed',
         cause: error
       })
     ),
-    TE.chain((user: UserWithIncludes | null) => 
+    TE.chain((user: UserAttributes | null) => 
       user 
         ? TE.right(user)
         : TE.left(createAppError({
@@ -94,49 +217,8 @@ const getUserFromDatabase = (userId: string): TaskEither<AppError, UserAttribute
             message: 'User not found',
             metadata: { userId }
           }))
-    ),
-    TE.map(transformToUserAttributes)
+    )
   );
-
-const transformToUserAttributes = (user: UserWithIncludes): UserAttributes => ({
-  id: user.id,
-  email: user.email || '',
-  status: user.status,
-  globalRoles: user.roles,
-  schoolRoles: new Map(),  // This will be populated from a separate query
-  kyc: {
-    status: user.kycStatus as KYCStatus || KYCStatus.NOT_SUBMITTED,
-    verifiedAt: user.kycVerifiedAt || undefined,
-    documentIds: user.kycDocumentIds,
-    officerStatus: (user.roles.includes('SYSTEM_ADMIN') || user.roles.includes('KYC_OFFICER')) ? {
-      isOfficer: true,
-      permissions: {
-        teacherDocuments: true,
-        parentDocuments: true,
-        schoolOwnerDocuments: true,
-        approvalAuthority: user.roles.includes('SYSTEM_ADMIN'), // Only system admins get full authority
-        gracePeriodManagement: user.roles.includes('SYSTEM_ADMIN')
-      },
-      specializations: ['ALL'],
-      workload: 0
-    } : undefined
-  },
-  employment: {
-    status: user.employmentStatus as EmploymentEligibilityStatus,
-    verifiedAt: user.employmentVerifiedAt || undefined,
-    documentIds: user.employmentDocumentIds,
-    currentSchools: []  // This will be populated from a separate query
-  },
-  access: {
-    socialEnabled: user.socialAccessEnabled,
-    hubAccess: {
-      type: 'HUB',
-      permissions: user.permissions
-    },
-    restrictions: {}
-  },
-  context: {}
-});
 
 const cacheUserAttributes = (userId: string, attributes: UserAttributes): TaskEither<AppError, void> =>
   TE.tryCatch(

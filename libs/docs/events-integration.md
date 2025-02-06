@@ -1,9 +1,9 @@
 # Events Integration Guide
 
 ## Overview
-This guide explains how to integrate the event system into libraries and services. The system provides a functional, type-safe approach to event-driven architecture using fp-ts.
+This guide focuses on integrating the event system into your libraries and services. For a complete understanding of the event system, please refer to the [Events Documentation](../events/docs/events.md).
 
-## Integration Steps
+## Quick Start
 
 ### 1. Add Dependencies
 ```json
@@ -27,222 +27,80 @@ import * as E from 'fp-ts/Either';
 import { 
   createEventBus,
   EventBusConfig,
-  EventBusOperations,
-  Event
+  EventBusOperations
 } from '@eduflow/events';
 import { logger } from '@eduflow/common';
 ```
 
-## Event Bus Setup
+## Integration Patterns
 
-### 1. Configuration
+### 1. Basic Event Bus Setup
 ```typescript
-const createEventBusConfig = (
-  serviceName: string
-): EventBusConfig => ({
-  serviceName,
-  rabbitmq: {
-    url: process.env.RABBITMQ_URL,
-    exchange: 'eduflow.events',
-    deadLetterExchange: 'eduflow.events.dlq'
-  },
-  redis: {
-    url: process.env.REDIS_URL,
-    prefix: 'eduflow:events'
-  }
-});
-```
-
-### 2. Initialization
-```typescript
-const initializeEventBus = (
-  config: EventBusConfig
-): TE.TaskEither<Error, EventBusOperations> =>
+const setupEventBus = (serviceName: string): TE.TaskEither<Error, EventBusOperations> =>
   pipe(
-    createEventBus(config),
+    createEventBus({
+      serviceName,
+      rabbitmq: {
+        url: process.env.RABBITMQ_URL,
+        exchange: 'eduflow.events',
+        deadLetterExchange: 'eduflow.events.dlq'
+      },
+      redis: {
+        url: process.env.REDIS_URL,
+        prefix: 'eduflow:events'
+      }
+    }),
     TE.map(eventBus => {
-      logger.info('Event bus initialized', {
-        service: config.serviceName
-      });
+      logger.info('Event bus initialized', { service: serviceName });
       return eventBus;
     })
   );
 ```
 
-## Event Publishing
-
-### 1. Event Creation
+### 2. Event Publishing Pattern
 ```typescript
-const createEvent = <T>(
-  type: string,
-  data: T,
-  source: string
-): Event<T> => ({
-  id: crypto.randomUUID(),
-  type,
-  timestamp: new Date().toISOString(),
-  source,
-  data
-});
-```
-
-### 2. Publishing Events
-```typescript
-const publishEvent = <T>(
+const publishWithRetry = <T>(
   eventBus: EventBusOperations,
   type: string,
-  data: T,
-  options?: PublishOptions
+  data: T
 ): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
-      () => eventBus.publish(type, data, options),
+      () => eventBus.publish(type, data),
       error => new Error(`Failed to publish event: ${error}`)
     ),
-    TE.tap(() => TE.right(
-      logger.info('Event published', {
-        type,
-        id: data.id
-      })
-    ))
+    TE.chain(result =>
+      pipe(
+        TE.right(logger.info('Event published', { type, data })),
+        TE.map(() => result)
+      )
+    )
   );
 ```
 
-## Event Subscription
-
-### 1. Event Handler Setup
+### 3. Event Subscription Pattern
 ```typescript
-const createEventHandler = <T>(
-  processor: (data: T) => TE.TaskEither<Error, void>
-) => (
-  event: Event<T>
-): TE.TaskEither<Error, void> =>
-  pipe(
-    TE.Do,
-    TE.chain(() => processor(event.data)),
-    TE.mapLeft(error => {
-      logger.error('Event processing failed', {
-        type: event.type,
-        id: event.id,
-        error: error.message
-      });
-      return error;
-    })
-  );
-```
-
-### 2. Subscription Setup
-```typescript
-const setupSubscription = <T>(
+const subscribeWithErrorHandling = <T>(
   eventBus: EventBusOperations,
   type: string,
-  handler: (event: Event<T>) => TE.TaskEither<Error, void>,
-  options?: SubscribeOptions
+  handler: (data: T) => Promise<void>
 ): TE.TaskEither<Error, void> =>
   pipe(
-    eventBus.subscribe(type, handler, options),
-    TE.tap(() => TE.right(
-      logger.info('Event subscription setup', {
-        type,
-        options
-      })
-    ))
-  );
-```
-
-## Error Handling
-
-### 1. Event Processing Errors
-```typescript
-const handleEventError = (
-  error: unknown,
-  event: Event<unknown>
-): TE.TaskEither<Error, void> =>
-  pipe(
-    TE.tryCatch(
-      async () => {
-        logger.error('Event processing error', {
-          type: event.type,
-          id: event.id,
-          error: error instanceof Error ? error.message : String(error)
-        });
-        
-        // Move to DLQ if needed
-        if (shouldMoveToDLQ(error)) {
-          await moveToDeadLetterQueue(event);
-        }
-      },
-      error => new Error(`Error handling failed: ${error}`)
-    )
-  );
-```
-
-### 2. Retry Mechanism
-```typescript
-const withRetry = <T>(
-  operation: () => TE.TaskEither<Error, T>,
-  retryCount: number = 3,
-  delay: number = 1000
-): TE.TaskEither<Error, T> => {
-  const retry = (
-    remainingAttempts: number,
-    lastError: Error
-  ): TE.TaskEither<Error, T> =>
-    remainingAttempts <= 0
-      ? TE.left(lastError)
-      : pipe(
-          TE.tryCatch(
-            () => new Promise(resolve => setTimeout(resolve, delay)),
-            error => error as Error
-          ),
-          TE.chain(() => operation()),
-          TE.orElse(error =>
-            retry(remainingAttempts - 1, error as Error)
-          )
-        );
-
-  return pipe(
-    operation(),
-    TE.orElse(error => retry(retryCount - 1, error as Error))
-  );
-};
-```
-
-## Monitoring and Health Checks
-
-### 1. Health Check Setup
-```typescript
-const setupHealthCheck = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
-  pipe(
-    TE.tryCatch(
-      async () => {
-        const status = await checkHealth(eventBus);
-        logger.info('Event system health', status);
-      },
-      error => new Error(`Health check failed: ${error}`)
-    )
-  );
-```
-
-### 2. Metrics Collection
-```typescript
-const setupMetricsCollection = (
-  service: string
-): TE.TaskEither<Error, void> =>
-  pipe(
-    TE.tryCatch(
-      async () => {
-        setInterval(() => {
-          const metrics = getMetricsSummary();
-          logger.info('Event metrics', {
-            service,
-            ...metrics
+    eventBus.subscribe(
+      type,
+      async (event) => {
+        try {
+          await handler(event.data);
+          logger.info('Event processed', { type, id: event.id });
+        } catch (error) {
+          logger.error('Event processing failed', {
+            type,
+            id: event.id,
+            error: error instanceof Error ? error.message : String(error)
           });
-        }, 60000);
-      },
-      error => new Error(`Metrics collection failed: ${error}`)
+          throw error;
+        }
+      }
     )
   );
 ```
@@ -259,82 +117,68 @@ const createMockEventBus = (): EventBusOperations => ({
 });
 ```
 
-### 2. Event Testing
+### 2. Integration Tests
 ```typescript
 describe('Event Integration', () => {
   const mockEventBus = createMockEventBus();
   
   it('should publish events', async () => {
-    const event = createEvent('TEST_EVENT', { data: 'test' }, 'test-service');
+    const data = { id: '123', type: 'TEST' };
     
     await pipe(
-      publishEvent(mockEventBus, event.type, event.data),
+      publishWithRetry(mockEventBus, 'TEST_EVENT', data),
       TE.fold(
         error => {
           fail(`Should not fail: ${error.message}`);
           return TE.right(undefined);
         },
-        () => TE.right(undefined)
+        () => {
+          expect(mockEventBus.publish).toHaveBeenCalledWith(
+            'TEST_EVENT',
+            data
+          );
+          return TE.right(undefined);
+        }
       )
     )();
-    
-    expect(mockEventBus.publish).toHaveBeenCalledWith(
-      event.type,
-      event.data,
-      undefined
-    );
   });
 });
 ```
 
-## Best Practices
+## Best Practices for Integration
 
-### 1. Event Schema Management
-```typescript
-import { z } from 'zod';
+### 1. Event Bus Lifecycle
+- Initialize event bus at application startup
+- Handle graceful shutdown
+- Monitor connection health
+- Use the resilience features from the main library
 
-const eventSchemas = {
-  USER_CREATED: z.object({
-    id: z.string(),
-    email: z.string().email(),
-    role: z.enum(['STUDENT', 'TEACHER', 'ADMIN'])
-  }),
-  
-  GRADE_UPDATED: z.object({
-    studentId: z.string(),
-    courseId: z.string(),
-    grade: z.number().min(0).max(100)
-  })
-} as const;
+### 2. Error Handling
+- Implement proper error handling for event processing
+- Use dead letter queues for failed events
+- Log errors with context
+- Implement retry mechanisms for transient failures
 
-type EventSchemas = typeof eventSchemas;
-type EventTypes = keyof EventSchemas;
-type EventData<T extends EventTypes> = z.infer<EventSchemas[T]>;
-```
+### 3. Testing
+- Use mock event bus for unit tests
+- Test error scenarios
+- Verify event handling logic
+- Test retry mechanisms
 
-### 2. Error Categories
-```typescript
-const EventErrorTypes = {
-  VALIDATION_ERROR: 'EVENT_VALIDATION_ERROR',
-  PROCESSING_ERROR: 'EVENT_PROCESSING_ERROR',
-  PUBLISH_ERROR: 'EVENT_PUBLISH_ERROR',
-  SUBSCRIPTION_ERROR: 'EVENT_SUBSCRIPTION_ERROR'
-} as const;
-
-type EventErrorType = typeof EventErrorTypes[keyof typeof EventErrorTypes];
-```
+### 4. Monitoring
+- Implement health checks
+- Monitor event processing metrics
+- Track failed events
+- Set up alerting for critical failures
 
 ## Related Documentation
 
-### Core Implementation
-- [Events Implementation](../common/docs/events.md)
-- [Error Handling Implementation](../common/docs/error-handling.md)
-- [Logger Implementation](../logger/docs/logger-implementation.md)
+### Core Documentation
+- [Events Documentation](../events/docs/events.md) - Complete event system documentation
+- [Event Types](../../types/docs/types.md#event-system-types) - Event type definitions
+- [Error Handling](../common/docs/error-handling.md) - Error handling integration
 
-### Usage Guides
-- [Events Usage Guide](../../apps/docs/events-usage.md)
-- [Error Handling Usage](../../apps/docs/error-handling-usage.md)
-- [Logger Usage](../../apps/docs/logger-usage.md)
-
-### Additional Resources
-- [System Integration](../../apps/docs/system-integration.md)
+### Implementation Details
+- [Resilience Features](../events/docs/events.md#resilience-features) - Circuit breaker, connection pooling, etc.
+- [Metrics and Monitoring](../events/docs/events.md#metrics-and-monitoring) - Metrics collection and monitoring
+- [Health Monitoring](../events/docs/events.md#health-monitoring) - Health check implementation

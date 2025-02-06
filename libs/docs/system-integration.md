@@ -1,305 +1,319 @@
-# EduFlow System Integration Guide
+# System Integration Guide
 
-## System Architecture Overview
+## Overview
+This guide provides a comprehensive overview of integrating all core systems in the EduPlan platform. It serves as a high-level guide that connects the individual system components. For detailed integration of specific systems, please refer to their respective integration guides.
 
+## System Architecture
+
+### High-Level Architecture
 ```mermaid
-flowchart TB
+graph TB
+    subgraph "Core Systems"
+        ABAC[Access Control]
+        LOG[Logging]
+        ERR[Error Handling]
+        EVT[Events]
+    end
+
+    subgraph "Infrastructure"
+        RMQ[RabbitMQ]
+        RD[Redis]
+        DB[Database]
+    end
+
+    subgraph "Services"
+        API[API Services]
+        AUTH[Auth Service]
+        KYC[KYC Service]
+    end
+
+    API --> ABAC
+    API --> LOG
+    API --> ERR
+    API --> EVT
     
+    AUTH --> ABAC
+    AUTH --> LOG
+    AUTH --> ERR
+    
+    KYC --> ABAC
+    KYC --> LOG
+    KYC --> EVT
 
-    %% Core Infrastructure Layer
-    subgraph Infrastructure["Core Infrastructure Layer"]
-        direction LR
-        Logger["Logger System"]
-        ABAC["Access Control (ABAC)"]
-        Events["Event System"]
-        ErrorHandling["Error Handling"]
+    EVT --> RMQ
+    EVT --> RD
+    LOG --> RD
+    ABAC --> DB
+```
+
+### System Flow
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as API Gateway
+    participant AUTH as Auth Service
+    participant ABAC as Access Control
+    participant EVT as Event Bus
+    participant LOG as Logger
+
+    C->>API: Request
+    API->>LOG: Log Request
+    API->>AUTH: Authenticate
+    AUTH->>ABAC: Check Permissions
+    alt Authorized
+        API->>EVT: Emit Event
+        API->>C: Response
+    else Unauthorized
+        AUTH->>LOG: Log Error
+        AUTH->>C: Error Response
     end
-    class Logger,ABAC,Events,ErrorHandling infrastructure
-
-    %% Resilience Layer
-    subgraph Resilience["Resilience Layer"]
-        direction LR
-        CircuitBreaker["Circuit Breaker"]
-        RedisPool["Redis Connection Pool"]
-        BatchProcessor["Batch Processor"]
-    end
-    class CircuitBreaker,RedisPool,BatchProcessor resilience
-
-    %% External Systems
-    subgraph External["External Systems"]
-        direction LR
-        KYC["KYC Providers"]
-        Payment["Payment Gateway"]
-        Storage["File Storage"]
-        Email["Email Service"]
-    end
-    class KYC,Payment,Storage,Email external
-
-    %% Services Layer
-    subgraph Services["Services Layer"]
-        direction LR
-        API["API Gateway"]
-        Auth["Auth Service"]
-        User["User Service"]
-        FileService["File Service"]
-    end
-    class API,Auth,User,FileService services
-
-    %% Infrastructure to Services Connections
-    Logger --> Services
-    ABAC --> API & Auth
-    Events --> Services
-    ErrorHandling --> Services
-
-    %% Resilience to External Connections
-    CircuitBreaker --> KYC & Payment & Email
-    RedisPool --> Auth & User
-    BatchProcessor --> Events
-
-    %% Service to External Connections
-    Auth --> KYC & Email
-    FileService --> Storage
-    User --> Payment
-    API --> Auth
-    API --> User
-    API --> FileService
-
-    %% Layer Connections
-    Infrastructure -.-> Services
-    Resilience -.-> External
-    Services -.-> External
 ```
 
-## Component Integration
+## Core Systems Integration
 
-### 1. Core Infrastructure
-
-#### Logger System
-- Centralized logging across all services
-- Request/Response tracking
-- Error and performance monitoring
-- Integration with monitoring tools
+### 1. Access Control (ABAC)
+The ABAC system provides attribute-based access control across all services.
 
 ```typescript
-// Service initialization with logger
-const logger = createLogger({
-  service: 'auth-service',
-  environment: process.env.NODE_ENV,
-  minLevel: 'info'
-});
+import { createAbacMiddleware } from '@eduplan/abac';
+import { logger } from './logger';
 
-// Request logging middleware
-app.use(requestLogger(logger));
+// Setup ABAC middleware
+const setupAbac = (app: FastifyInstance) => {
+  const abacMiddleware = createAbacMiddleware({
+    logger,
+    // See ABAC integration guide for full configuration
+  });
 
-// Structured logging in services
-logger.info('Processing payment', {
-  userId,
-  amount,
-  currency,
-  provider
-});
-```
-
-#### ABAC (Attribute Based Access Control)
-- Fine-grained access control
-- Role and attribute-based permissions
-- Policy enforcement points
-
-```typescript
-// ABAC middleware
-app.use(abacMiddleware({
-  getUser: (req) => req.user,
-  policies: [
-    {
-      resource: 'STUDENT_RECORDS',
-      action: 'VIEW',
-      conditions: {
-        roles: ['TEACHER', 'ADMIN'],
-        schoolId: (user, resource) => user.schoolId === resource.schoolId
-      }
-    }
-  ]
-}));
-```
-
-#### Event System
-- Asynchronous communication
-- Event-driven architecture
-- Message persistence and replay
-
-```typescript
-// Publishing events
-await eventBus.publish({
-  type: 'USER_VERIFIED',
-  data: { userId, verificationDetails }
-});
-
-// Subscribing to events
-eventBus.subscribe('PAYMENT_COMPLETED', async (event) => {
-  await updateSubscriptionStatus(event.data);
-});
-```
-
-### 2. Resilience Layer
-
-#### Circuit Breaker
-- Fault tolerance for external services
-- Automatic recovery
-- Failure monitoring
-
-```typescript
-const paymentProcessor = createCircuitBreaker({
-  timeout: 5000,
-  errorThreshold: 5,
-  resetTimeout: 30000
-}, logger);
-
-const processPayment = paymentProcessor.wrap(
-  async (paymentDetails) => {
-    return await paymentGateway.charge(paymentDetails);
-  }
-);
-```
-
-#### Redis Connection Pool
-- Connection management
-- Load balancing
-- Resource optimization
-
-```typescript
-const redisPool = createRedisPool({
-  nodes: [
-    { host: 'redis-1', port: 6379 },
-    { host: 'redis-2', port: 6379 }
-  ],
-  maxConnections: 10
-}, logger);
-
-await redisPool.withClient(async (client) => {
-  await client.set('session:123', sessionData);
-});
-```
-
-#### Batch Processor
-- Message batching
-- Performance optimization
-- Retry handling
-
-```typescript
-const batchProcessor = createBatchProcessor(channel, {
-  batchSize: 100,
-  flushInterval: 1000,
-  maxRetries: 3
-}, logger);
-
-await batchProcessor.add({
-  exchange: 'notifications',
-  routingKey: 'email.send',
-  content: emailData
-});
-```
-
-### 3. Integration Patterns
-
-#### Service Layer Integration
-```typescript
-export const createAuthService = (config: AuthConfig) => {
-  // Core infrastructure
-  const logger = createLogger(config.logger);
-  const eventBus = createEventBus(config.events);
-  
-  // Resilience layer
-  const redisPool = createRedisPool(config.redis, logger);
-  const emailService = createCircuitBreaker(config.email);
-  const batchProcessor = createBatchProcessor(channel, config.batch);
-
-  // Service setup
-  const service = {
-    async login(credentials: Credentials) {
-      try {
-        // Use Redis pool for session management
-        const session = await redisPool.withClient(async (redis) => {
-          return await redis.get(`session:${credentials.userId}`);
-        });
-
-        // Publish login event
-        await eventBus.publish({
-          type: 'USER_LOGGED_IN',
-          data: { userId: credentials.userId }
-        });
-
-        // Batch process notifications
-        await batchProcessor.add({
-          exchange: 'notifications',
-          routingKey: 'login.alert',
-          content: { userId: credentials.userId }
-        });
-
-        return session;
-      } catch (error) {
-        logger.error('Login failed', { error });
-        throw new AuthError('LOGIN_FAILED');
-      }
-    }
-  };
-
-  return service;
+  app.addHook('preHandler', abacMiddleware);
 };
 ```
 
-#### API Gateway Integration
+For detailed ABAC integration, see [ABAC Integration Guide](./abac-integration.md).
+
+### 2. Logging System
+Centralized logging system for consistent log management across services.
+
 ```typescript
-export const createApiGateway = (config: GatewayConfig) => {
-  const app = fastify();
+import { createLogger } from '@eduplan/logger';
+import { createRequestLogger } from '@eduplan/logger/request';
+
+// Setup service logger
+const logger = createLogger({
+  service: 'my-service',
+  // See Logger integration guide for full configuration
+});
+
+// Setup request logging
+app.use(createRequestLogger(logger));
+```
+
+For detailed logging integration, see [Logger Integration Guide](./logger-integration.md).
+
+### 3. Error Handling
+Unified error handling system for consistent error management.
+
+```typescript
+import { createErrorHandler } from '@eduplan/common';
+import { logger } from './logger';
+
+// Setup error handling
+const setupErrorHandling = (app: FastifyInstance) => {
+  const errorHandler = createErrorHandler({
+    logger,
+    // See Error Handling integration guide for full configuration
+  });
+
+  app.setErrorHandler(errorHandler);
+};
+```
+
+For detailed error handling integration, see [Error Handling Integration Guide](./error-handling-integration.md).
+
+### 4. Event System
+Event-driven architecture for service communication.
+
+```typescript
+import { createEventBus } from '@eduplan/events';
+import { logger } from './logger';
+
+// Setup event bus
+const setupEvents = async () => {
+  const eventBus = await createEventBus({
+    service: 'my-service',
+    logger,
+    // See Events integration guide for full configuration
+  });
+
+  return eventBus;
+};
+```
+
+For detailed event system integration, see [Events Integration Guide](./events-integration.md).
+
+## Service Integration Patterns
+
+### 1. API Service Template
+```typescript
+import { setupAbac, setupLogger, setupErrorHandling, setupEvents } from '@eduplan/common';
+
+export const createService = async () => {
+  // Initialize core systems
+  const logger = setupLogger('api-service');
+  const eventBus = await setupEvents(logger);
   
-  // Core infrastructure setup
-  app.register(loggerPlugin, config.logger);
-  app.register(abacPlugin, config.abac);
-  app.register(errorHandlerPlugin);
+  // Create Fastify app
+  const app = fastify({
+    logger
+  });
 
-  // Resilience for downstream services
-  const services = {
-    auth: createCircuitBreaker(config.services.auth),
-    user: createCircuitBreaker(config.services.user),
-    files: createCircuitBreaker(config.services.files)
-  };
-
-  // Route handlers
-  app.post('/auth/login', async (req, reply) => {
-    const result = await services.auth.wrap(
-      async () => await authService.login(req.body)
-    )();
-    reply.send(result);
+  // Setup middleware
+  await setupAbac(app);
+  await setupErrorHandling(app);
+  
+  // Setup routes with integrated systems
+  app.post('/resource', {
+    handler: async (request, reply) => {
+      const { logger } = request;
+      
+      try {
+        // Operation with all systems integrated
+        const result = await processResource(request.body);
+        
+        await eventBus.publish('RESOURCE_CREATED', result);
+        logger.info('Resource created', { resourceId: result.id });
+        
+        return result;
+      } catch (error) {
+        // Error will be handled by error handler
+        throw error;
+      }
+    }
   });
 
   return app;
 };
 ```
 
+### 2. Event Handler Template
+```typescript
+import { createEventHandler } from '@eduplan/events';
+import { logger } from './logger';
+
+export const setupEventHandlers = (eventBus: EventBus) => {
+  // Setup event handlers with integrated systems
+  const handleResourceCreated = createEventHandler(
+    'RESOURCE_CREATED',
+    async (event) => {
+      const handlerLogger = logger.child({
+        event: event.type,
+        resourceId: event.data.id
+      });
+
+      try {
+        await processResourceCreated(event.data);
+        handlerLogger.info('Resource processed');
+      } catch (error) {
+        handlerLogger.error('Failed to process resource', { error });
+        throw error;
+      }
+    }
+  );
+
+  return eventBus.subscribe(handleResourceCreated);
+};
+```
+
 ## Best Practices
 
-1. **Layer Separation**
-   - Keep core infrastructure independent
-   - Use resilience layer as middleware
-   - Maintain clean service boundaries
+### 1. System Initialization
+- Initialize logger first
+- Setup error handling early
+- Initialize ABAC before routes
+- Setup event bus with retry mechanisms
 
-2. **Configuration Management**
-   - Centralize configuration
-   - Environment-specific settings
-   - Feature flags for gradual rollout
+### 2. Context Propagation
+- Pass logger through request context
+- Use correlation IDs across systems
+- Maintain ABAC context in requests
+- Link events to originating requests
 
-3. **Error Handling**
-   - Use custom error types
-   - Proper error propagation
-   - Consistent error responses
+### 3. Error Management
+- Use structured error logging
+- Implement proper error boundaries
+- Handle system-specific errors appropriately
+- Maintain error context across systems
 
-4. **Monitoring and Metrics**
-   - Track resilience metrics
-   - Monitor service health
-   - Alert on threshold breaches
+### 4. Performance
+- Use appropriate log levels
+- Implement caching strategies
+- Batch event publishing when possible
+- Monitor system health metrics
+
+### 5. Security
+- Implement proper access controls
+- Sanitize logged data
+- Secure event payloads
+- Handle sensitive errors appropriately
+
+## Testing Integration
+
+### 1. Integration Test Setup
+```typescript
+import { createTestContext } from '@eduplan/testing';
+
+describe('Integrated Systems', () => {
+  let context: TestContext;
+
+  beforeAll(async () => {
+    context = await createTestContext({
+      logger: true,
+      abac: true,
+      events: true
+    });
+  });
+
+  it('should handle integrated flow', async () => {
+    const { app, eventBus } = context;
+
+    // Test integrated systems
+    const response = await app.inject({
+      method: 'POST',
+      url: '/resource',
+      payload: testData
+    });
+
+    // Verify event was published
+    expect(eventBus.publish).toHaveBeenCalledWith(
+      'RESOURCE_CREATED',
+      expect.any(Object)
+    );
+
+    // Verify logs were created
+    expect(context.logger.info).toHaveBeenCalledWith(
+      'Resource created',
+      expect.any(Object)
+    );
+  });
+});
+```
 
 ## Related Documentation
-- [Error Handling Guide](./error-handling-integration.md)
-- [Logger Integration](./logger-integration.md)
+
+### Core Systems
 - [ABAC Integration](./abac-integration.md)
-- [Events Integration](./events-integration.md) 
+- [Logger Integration](./logger-integration.md)
+- [Error Handling Integration](./error-handling-integration.md)
+- [Events Integration](./events-integration.md)
+
+### Type Definitions
+- [Common Types](../types/docs/types.md)
+- [Event Types](../types/docs/types.md#event-system-types)
+- [Logger Types](../types/docs/types.md#logger-types)
+- [Error Types](../types/docs/types.md#error-types)
+
+### Implementation Details
+- [ABAC Implementation](../common/docs/abac.md)
+- [Logger Implementation](../logger/docs/logger.md)
+- [Error Handling Implementation](../common/docs/error-handling.md)
+- [Events Implementation](../events/docs/events.md) 

@@ -1,9 +1,9 @@
 # Error Handling Integration Guide for Libraries
 
 ## Overview
-This guide explains how to integrate the error handling system into libraries under the `libs` folder. The system follows functional programming principles and provides type-safe error handling.
+This guide focuses on integrating the error handling system into libraries under the `libs` folder. For a complete understanding of the error handling system, please refer to the [Error Handling Documentation](../common/docs/error-handling.md).
 
-## Integration Steps
+## Quick Start
 
 ### 1. Add Dependencies
 In your library's `package.json`:
@@ -28,39 +28,9 @@ import type {
 } from '@eduflow/types';
 ```
 
-### 3. Define Domain-Specific Errors
+## Integration Patterns
 
-```typescript
-// userErrors.ts
-import type { ErrorDetails } from '@eduflow/types';
-
-export const createUserNotFoundError = (userId: string): ErrorDetails => ({
-  code: ERROR_CODES.NOT_FOUND,
-  message: `User with ID ${userId} not found`,
-  metadata: {
-    resourceType: 'user',
-    resourceId: userId
-  }
-});
-
-export const createUserValidationError = (
-  field: string,
-  value: unknown,
-  constraint: string
-): ErrorDetails => ({
-  code: ERROR_CODES.VALIDATION_ERROR,
-  message: `Invalid user ${field}`,
-  metadata: {
-    field,
-    value,
-    constraint
-  }
-});
-```
-
-## Usage Patterns
-
-### 1. Functional Error Handling
+### 1. Functional Error Handling with fp-ts
 ```typescript
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
@@ -91,7 +61,7 @@ const processUser = (
   );
 ```
 
-### 2. Error Propagation
+### 2. Error Propagation with Context
 ```typescript
 import type { OperationContext } from './types';
 
@@ -111,49 +81,31 @@ export const performOperation = (
 };
 ```
 
-### 3. Custom Error Types
+### 3. Domain-Specific Error Integration
 ```typescript
-// Define custom error metadata
-type CustomErrorMetadata = {
-  operationType: string;
-  details: Record<string, unknown>;
-};
-
-// Create custom error
-const createCustomError = (
-  operationType: string,
-  details: Record<string, unknown>
-): ErrorDetails => ({
-  code: ERROR_CODES.SERVICE_ERROR,
-  message: `Operation ${operationType} failed`,
+// Define domain-specific error creators
+const createUserNotFoundError = (userId: string): ErrorDetails => ({
+  code: ERROR_CODES.NOT_FOUND,
+  message: `User with ID ${userId} not found`,
   metadata: {
-    operationType,
-    details
+    resourceType: 'user',
+    resourceId: userId
   }
 });
+
+// Use in your service
+const getUser = async (userId: string): Promise<User> => {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throwError(createUserNotFoundError(userId));
+  }
+  return user;
+};
 ```
 
-## Best Practices
+## Testing Integration
 
-### 1. Error Creation
-- Create domain-specific error factory functions
-- Include relevant context in error metadata
-- Use consistent error messages
-- Preserve error chains with `cause`
-
-### 2. Error Handling
-- Use FP-TS for functional error handling
-- Handle all possible error cases
-- Log errors appropriately
-- Propagate errors with context
-
-### 3. Type Safety
-- Use provided type definitions
-- Create custom error metadata types
-- Validate error structure at compile time
-- Export error-related types
-
-### 4. Testing
+### 1. Error Testing Utilities
 ```typescript
 import { expectError } from '@eduflow/common/testing';
 
@@ -172,29 +124,49 @@ describe('User Operations', () => {
 });
 ```
 
-## Available Error Types
-
-### Core Error Types
+### 2. Error Chain Testing
 ```typescript
-type ErrorCategory =
-  | 'AUTH'
-  | 'RESOURCE'
-  | 'VALIDATION'
-  | 'FILE'
-  | 'SYSTEM';
-
-interface AppError {
-  name: string;
-  message: string;
-  statusCode: number;
-  code: ErrorCode;
-  cause?: unknown;
-  metadata?: ErrorMetadata[keyof ErrorMetadata];
-}
+describe('Error Propagation', () => {
+  it('should preserve error context through the chain', async () => {
+    const result = await pipe(
+      performOperation(context),
+      TE.mapLeft(error => {
+        expect(error.metadata).toHaveProperty('operationType');
+        expect(error.metadata).toHaveProperty('details');
+        return error;
+      })
+    )();
+  });
+});
 ```
 
-For a complete list of error types and utilities, refer to the [Error Handling Documentation](../common/docs/error-handling.md).
+## Best Practices for Integration
+
+### 1. Error Creation
+- Create domain-specific error factory functions
+- Use the error creators from `@eduflow/common`
+- Include relevant context in error metadata
+- Follow the error structure defined in the [Error Types Documentation](../types/docs/types.md#error-types)
+
+### 2. Error Handling
+- Use FP-TS for functional error handling
+- Properly propagate errors through the chain
+- Add appropriate logging at boundaries
+- Preserve error context when transforming errors
+
+### 3. Testing
+- Use provided testing utilities
+- Test error cases explicitly
+- Verify error metadata
+- Test error propagation
 
 ## Related Documentation
-- [Error Handling Implementation](../common/docs/error-handling.md)
-- [Microservices Error Handling](../../apps/docs/error-handling-usage.md)
+
+### Core Documentation
+- [Error Handling Documentation](../common/docs/error-handling.md) - Complete error handling system documentation
+- [Error Types](../types/docs/types.md#error-types) - Error type definitions
+- [HTTP Status Codes](../constants/docs/constants.md#http-status-codes) - Status code mappings
+
+### Implementation Details
+- [Logger Integration](../logger/docs/logger.md#error-logging) - Error logging integration
+- [Testing Utilities](../common/docs/testing.md) - Error testing utilities

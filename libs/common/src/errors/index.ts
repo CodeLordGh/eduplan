@@ -1,6 +1,6 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
-import { AppError } from '@eduflow/types';
-import { Logger } from '@eduflow/logger';
+import { AppError, Logger } from '@eduflow/types';
+// Using pino.Logger directly as createErrorLogger expects it
 import { createAppError, createErrorResponse } from './base.error';
 import { createErrorLogger } from '@eduflow/logger';
 

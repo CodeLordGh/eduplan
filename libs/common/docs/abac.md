@@ -256,6 +256,12 @@ interface AbacError {
     [key: string]: any;
   };
 }
+
+interface ValidationResult {
+  granted: boolean;
+  reason?: string;
+  metadata?: Record<string, any>;
+}
 ```
 
 ## Policy Evaluation
@@ -355,38 +361,148 @@ const customPolicy: AccessPolicy = {
 };
 ```
 
+## Policy Definition Examples
+
+### Basic Policy
+```typescript
+const createBasicPolicy = (
+  resource: string,
+  action: ResourceAction,
+  roles: Role[]
+): AccessPolicy => ({
+  resource,
+  action,
+  conditions: {
+    roles,
+    verification: {
+      requireKYC: true
+    }
+  }
+});
+```
+
+### School-Specific Policy
+```typescript
+const createSchoolPolicy = (
+  resource: string,
+  action: ResourceAction,
+  schoolId: string,
+  roles: Role[]
+): AccessPolicy => ({
+  resource,
+  action,
+  conditions: {
+    roles,
+    school: {
+      mustBeInSchool: true,
+      mustBeCurrentSchool: true,
+      allowedRoles: roles
+    },
+    verification: {
+      requireKYC: true,
+      employmentStatus: ['VERIFIED']
+    }
+  }
+});
+```
+
+### Time-Restricted Policy
+```typescript
+const createTimeRestrictedPolicy = (
+  resource: string,
+  action: ResourceAction,
+  timeRestrictions: TimeRestrictions
+): AccessPolicy => ({
+  resource,
+  action,
+  conditions: {
+    environment: {
+      timeRestrictions
+    }
+  }
+});
+```
+
+### Custom Evaluator
+```typescript
+const createCustomEvaluator = (
+  evaluator: (attributes: UserAttributes) => boolean,
+  errorMessage: string
+) => ({
+  evaluator,
+  errorMessage
+});
+
+const createGradePolicy = (classId: string): AccessPolicy => ({
+  resource: 'grade',
+  action: 'UPDATE',
+  conditions: {
+    custom: [
+      createCustomEvaluator(
+        (attributes) => pipe(
+          attributes.classes,
+          O.fromNullable,
+          O.map((classes) => classes.includes(classId)),
+          O.getOrElse(() => false)
+        ),
+        'Teacher must be assigned to the class'
+      )
+    ]
+  }
+});
+```
+
 ## Best Practices
 
-### 1. Error Handling
-- Use specialized error creators for different violation types
-- Include relevant context in error metadata
-- Maintain consistent error structure
-- Provide actionable error messages
+### Policy Management
+```typescript
+// Create reusable policy factories
+const createResourcePolicy = (
+  resource: string,
+  action: ResourceAction
+) => (
+  roles: Role[],
+  options: PolicyOptions
+): AccessPolicy => ({
+  resource,
+  action,
+  conditions: {
+    roles,
+    ...options
+  }
+});
 
-### 2. Policy Definition
-- Group related conditions logically
-- Use role hierarchy appropriately
-- Include meaningful error messages
-- Keep policies granular and focused
+// Compose policies
+const createTeacherPolicy = createResourcePolicy('document', 'READ');
+const policy = createTeacherPolicy(['TEACHER'], {
+  school: { mustBeCurrentSchool: true }
+});
+```
 
-### 3. Performance
-- Cache user attributes when possible
-- Use hierarchical evaluations
-- Optimize condition order
-- Implement efficient role checks
+### Policy Composition Guidelines
+1. Keep policies granular and focused
+2. Use role hierarchy appropriately
+3. Include meaningful error messages
+4. Group related conditions logically
 
-### 4. Security
-- Always verify KYC status when required
-- Implement proper IP restrictions
-- Enforce device trust requirements
-- Log access decisions with context
+### Performance Optimization
+1. Cache user attributes when possible
+2. Use hierarchical evaluations
+3. Optimize condition order
+4. Implement efficient role checks
 
-### 5. Maintenance
-- Document policy changes
-- Version control policies
-- Test policy combinations
-- Monitor policy effectiveness
-- Track error patterns
+### Security Best Practices
+1. Always verify KYC status when required
+2. Implement proper IP restrictions
+3. Enforce device trust requirements
+4. Log access decisions with context
+
+### Maintenance Guidelines
+1. Document policy changes
+2. Version control policies
+3. Test policy combinations
+4. Monitor policy effectiveness
+5. Track error patterns
 
 ## Testing
 
