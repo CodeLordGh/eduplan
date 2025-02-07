@@ -1,62 +1,40 @@
-import { pipe } from 'fp-ts/function';
-import * as TE from 'fp-ts/TaskEither';
-import { AppError, Logger, LogContext } from '@eduflow/types';
+import { Logger, ErrorContext } from '@eduflow/types';
+import { AppError } from '@eduflow/types';
+
+type ExtendedLogger = Logger & {
+  logError: (error: AppError, context?: Partial<ErrorContext>) => void;
+  logErrorAndReturn: <E extends AppError>(error: E, context?: Partial<ErrorContext>) => E;
+};
 
 /**
  * Extract error details for logging
  */
-const extractErrorDetails = (error: AppError): Partial<LogContext> => ({
-  errorCode: error.code,
-  errorMessage: error.message,
-  errorStack: (error as Error)?.stack,
-  errorMetadata: error.metadata
+const extractErrorDetails = (error: AppError): Partial<ErrorContext> => ({
+  message: error.message,
+  stack: (error as Error).stack,
+  code: error.code,
+  statusCode: error.statusCode,
+  timestamp: new Date().toISOString()
 });
 
 /**
- * Create error logger utility
+ * Creates an error logger with specialized error logging methods
  */
-export const createErrorLogger = (logger: Logger) => {
-  const errorLogger = logger.child({ component: 'error' });
+export const createErrorLogger = (logger: Logger): ExtendedLogger => {
+  const errorLogger = logger.child({ component: 'error' }) as ExtendedLogger;
 
-  return {
-    /**
-     * Log an error with full context
-     */
-    logError: (error: AppError, context?: Partial<LogContext>): TE.TaskEither<Error, void> =>
-      pipe(
-        TE.tryCatch(
-          () => Promise.resolve(
-            errorLogger.error(
-              error.message,
-              {
-                ...extractErrorDetails(error),
-                ...context
-              }
-            )
-          ),
-          (err) => new Error(`Failed to log error: ${err}`)
-        )
-      ),
-
-    /**
-     * Log an error and return it (useful in fp-ts pipes)
-     */
-    logErrorAndReturn: <E extends AppError>(context?: Partial<LogContext>) =>
-      (error: E): TE.TaskEither<E, never> =>
-        pipe(
-          TE.tryCatch(
-            () => Promise.resolve(
-              errorLogger.error(
-                error.message,
-                {
-                  ...extractErrorDetails(error),
-                  ...context
-                }
-              )
-            ),
-            () => error
-          ),
-          TE.chain(() => TE.left(error))
-        )
+  errorLogger.logError = (error: AppError, context: Partial<ErrorContext> = {}) => {
+    errorLogger.error('Error occurred', {
+      ...extractErrorDetails(error),
+      ...context,
+      type: 'error'
+    });
   };
+
+  errorLogger.logErrorAndReturn = <E extends AppError>(error: E, context: Partial<ErrorContext> = {}) => {
+    errorLogger.logError(error, context);
+    return error;
+  };
+
+  return errorLogger;
 }; 

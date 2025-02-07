@@ -17,52 +17,69 @@ export type LogLevel = typeof LOG_LEVELS[keyof typeof LOG_LEVELS];
 /**
  * Base context that should be included with every log
  */
-export type BaseContext = {
+export interface BaseContext {
   service: string;
   environment: string;
-  timestamp: string;
+  timestamp?: string;
   correlationId?: string;
-};
+}
 
 /**
  * Additional context that can be added to any log
  */
-export type LogContext = BaseContext & {
+export interface LogContext extends BaseContext {
   [key: string]: unknown;
-};
-
-/**
- * Structure of a log entry
- */
-export type LogEntry = {
-  level: LogLevel;
-  message: string;
-  context: LogContext;
-};
+}
 
 /**
  * Configuration options for the logger
  */
-export type LoggerOptions = {
+export interface LoggerOptions {
   service: string;
   environment?: string;
   minLevel?: LogLevel;
   redactPaths?: string[];
+  formatters?: {
+    level?: (label: string) => Record<string, unknown>;
+    bindings?: (bindings: Record<string, unknown>) => Record<string, unknown>;
+    log?: (obj: Record<string, unknown>) => Record<string, unknown>;
+  };
+  serializers?: Record<string, (value: any) => any>;
+}
+
+/**
+ * Base logger function type that matches Pino's signature
+ */
+export type LogFn = {
+  (msg: string, ...args: any[]): void;
+  (obj: object, msg?: string, ...args: any[]): void;
 };
 
 /**
- * Logger function signatures
+ * Core logger interface that matches Pino's structure
  */
-export type LogFn = (message: string, context?: Partial<LogContext>) => void;
+export interface BaseLogger {
+  level: string;
+  silent: boolean;
+  [key: string]: any;
+}
 
-export type Logger = {
-  [K in LogLevel]: LogFn;
-} & {
-  child: (context: Partial<LogContext>) => Logger;
-};
+/**
+ * Our extended logger interface
+ */
+export interface Logger extends BaseLogger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  fatal: LogFn;
+  child: (bindings: Record<string, any>) => Logger;
+}
 
-export type ServiceContext = 'api' | 'database' | 'cache' | 'queue' | 'auth' | 'file' | 'integration';
-
+/**
+ * Specialized context types for different logging scenarios
+ */
 export interface RequestContext extends BaseContext {
   path: string;
   method: string;
@@ -70,6 +87,8 @@ export interface RequestContext extends BaseContext {
   ip?: string;
   userId?: string;
   sessionId?: string;
+  duration?: number;
+  statusCode?: number;
 }
 
 export interface ErrorContext extends BaseContext {
@@ -86,7 +105,17 @@ export interface OperationContext extends BaseContext {
   result: 'success' | 'failure';
 }
 
+/**
+ * Specialized logger types
+ */
 export interface RequestLogger extends Logger {
   request: (context: Partial<RequestContext>) => void;
   response: (context: Partial<RequestContext> & { statusCode: number; duration: number }) => void;
-} 
+}
+
+export interface ErrorLogger extends Logger {
+  logError: (error: Error & { code?: string; statusCode?: number }, context?: Partial<ErrorContext>) => void;
+  logErrorAndReturn: <E extends Error>(error: E, context?: Partial<ErrorContext>) => E;
+}
+
+export type ServiceContext = 'api' | 'database' | 'cache' | 'queue' | 'auth' | 'file' | 'integration'; 

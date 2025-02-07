@@ -1,11 +1,10 @@
 import { Logger as PinoLogger } from 'pino';
-import { Logger, LogContext, LogLevel } from '@eduflow/types';
+import { Logger, LogContext, LogLevel, LogFn as TypesLogFn } from '@eduflow/types';
 import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as R from 'fp-ts/Reader';
-import * as IO from 'fp-ts/IO';
 
-type LogFn = (message: string, context?: Partial<LogContext>) => IO.IO<void>;
+type LogFn = TypesLogFn;
 type LoggerEnv = { pinoLogger: PinoLogger };
 
 /**
@@ -13,8 +12,8 @@ type LoggerEnv = { pinoLogger: PinoLogger };
  */
 const createLogFn = (level: LogLevel): R.Reader<LoggerEnv, LogFn> =>
   ({ pinoLogger }) =>
-    (message, context) =>
-      () => pinoLogger[level](withContext(context), message);
+    (msgOrObj: any, ...args: any[]) =>
+      pinoLogger[level](msgOrObj, ...args);
 
 /**
  * Creates a child logger with additional context
@@ -29,6 +28,8 @@ export const createLoggerAdapter = (pinoLogger: PinoLogger): Logger => {
   const env: LoggerEnv = { pinoLogger };
 
   return {
+    level: pinoLogger.level,
+    silent: false,
     trace: pipe(createLogFn('trace')(env)),
     debug: pipe(createLogFn('debug')(env)),
     info: pipe(createLogFn('info')(env)),

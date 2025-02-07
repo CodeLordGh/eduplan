@@ -1,63 +1,87 @@
-import { pipe } from 'fp-ts/function';
-import * as O from 'fp-ts/Option';
-import * as TE from 'fp-ts/TaskEither';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { Logger, LogContext } from '@eduflow/types';
+import { FastifyRequest, FastifyReply, HookHandlerDoneFunction } from 'fastify';
+import { Logger, RequestContext } from '@eduflow/types';
+
+type ExtendedLogger = Logger & {
+  request: (context: Partial<RequestContext>) => void;
+  response: (context: Partial<RequestContext> & { statusCode: number; duration: number }) => void;
+};
 
 /**
  * Extract relevant request information for logging
  */
-const extractRequestInfo = (request: FastifyRequest): Partial<LogContext> => ({
+const extractRequestInfo = (request: FastifyRequest): Partial<RequestContext> => ({
   correlationId: request.id,
   method: request.method,
-  url: request.url,
+  path: request.url,
   ip: request.ip,
   userAgent: request.headers['user-agent'],
-  requestId: request.id
+  sessionId: request.id
 });
 
 /**
  * Extract relevant response information for logging
  */
-const extractResponseInfo = (reply: FastifyReply): Partial<LogContext> => ({
+const extractResponseInfo = (reply: FastifyReply): { statusCode: number; duration: number } => ({
   statusCode: reply.statusCode,
-  responseTime: reply.elapsedTime
+  duration: reply.elapsedTime || 0
 });
 
 /**
- * Create request logger middleware
+ * Creates a request logger with specialized request logging methods
  */
-export const createRequestLogger = (logger: Logger) => {
-  const requestLogger = logger.child({ component: 'http' });
+export const createRequestLogger = (logger: Logger): ExtendedLogger => {
+  const requestLogger = logger.child({ component: 'request' }) as ExtendedLogger;
 
-  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+  requestLogger.request = (context: Partial<RequestContext>) => {
+    requestLogger.info('Incoming request', {
+      ...context,
+      type: 'request',
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  requestLogger.response = (context: Partial<RequestContext> & { statusCode: number; duration: number }) => {
+    const level = context.statusCode >= 500 ? 'error' : 
+                 context.statusCode >= 400 ? 'warn' : 
+                 'info';
+
+    requestLogger[level]('Request completed', {
+      ...context,
+      type: 'response',
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  return requestLogger;
+};
+
+/**
+ * Creates a Fastify middleware for request logging
+ */
+export const createRequestLoggingMiddleware = (logger: Logger) => {
+  const requestLogger = createRequestLogger(logger);
+
+  return (request: FastifyRequest, reply: FastifyReply, done: HookHandlerDoneFunction) => {
     const requestInfo = extractRequestInfo(request);
-    
-    // Log request
-    await pipe(
-      TE.tryCatch(
-        () => Promise.resolve(
-          requestLogger.info('Incoming request', requestInfo)
-        ),
-        (error) => new Error(`Failed to log request: ${error}`)
-      )
-    )();
+    const startTime = process.hrtime();
 
-    // Log response using onSend hook
-    reply.raw.on('finish', async () => {
+    requestLogger.request(requestInfo);
+
+    reply.raw.on('finish', () => {
+      const [seconds, nanoseconds] = process.hrtime(startTime);
+      const duration = seconds * 1000 + nanoseconds / 1000000;
+
       const responseInfo = {
-        ...requestInfo,
-        ...extractResponseInfo(reply)
+        statusCode: reply.statusCode,
+        duration
       };
 
-      await pipe(
-        TE.tryCatch(
-          () => Promise.resolve(
-            requestLogger.info('Request completed', responseInfo)
-          ),
-          (error) => new Error(`Failed to log response: ${error}`)
-        )
-      )();
+      requestLogger.response({
+        ...requestInfo,
+        ...responseInfo
+      });
     });
+
+    done();
   };
 }; 

@@ -1,7 +1,7 @@
 # Logger Library Documentation
 
 ## Overview
-The logger library provides a robust, functional logging system built on top of Pino. This documentation covers the complete implementation details and core functionality. For integration patterns and examples, see the [Logger Integration Guide](../../docs/logger-integration.md).
+The logger library provides a robust, standardized logging system built on top of Pino. This documentation covers the implementation details and core functionality. For integration patterns and examples, see the [Logger Usage Guide](../../apps/docs/logger-usage.md).
 
 ## Architecture
 
@@ -55,157 +55,103 @@ sequenceDiagram
     P->>T: Write Log
 ```
 
-This document provides a comprehensive overview of all functions and utilities exported from the logger library. For type definitions and interfaces, please refer to the [Types Documentation](../../types/docs/types.md#logger-types).
+## Core Components
 
-## Table of Contents
-- [Core Logger](#core-logger)
-  - [Main Functions](#main-functions)
-  - [Internal Utilities](#internal-utilities)
-- [Request Logger](#request-logger)
-  - [Main Functions](#request-logger-functions)
-  - [Internal Utilities](#request-logger-utilities)
-- [Error Logger](#error-logger)
-  - [Main Functions](#error-logger-functions)
-  - [Internal Utilities](#error-logger-utilities)
-- [Implementation Details](#implementation-details)
+### 1. Core Logger (`src/index.ts`)
 
-## Core Logger
+The core logger provides the foundation for all logging functionality:
 
-Located in `src/base.ts`, provides the foundation for all logging functionality.
+```typescript
+const logger = createLogger({
+  service: 'my-service',
+  environment: 'production',
+  minLevel: 'info',
+  redactPaths: ['password', 'token']
+});
+```
 
-### Main Functions
+#### Features
+- Type-safe logging methods (trace, debug, info, warn, error, fatal)
+- Automatic timestamp and service context
+- Configurable log levels
+- Sensitive data redaction
+- Child logger creation
+- JSON structured output
 
-- `createLogger(options: LoggerOptions): Logger`
-  - Creates a new logger instance with the given options
-  - Parameters:
-    - `options`: See [LoggerOptions](../../types/docs/types.md#logger-types)
-  - Returns: [Logger](../../types/docs/types.md#logger-types) instance
-  - Features:
-    - Configurable log levels
-    - Environment-aware logging
-    - Automatic timestamp addition
-    - Field redaction for sensitive data
-    - Child logger creation
+### 2. Request Logger (`src/request.ts`)
 
-### Internal Utilities
+Specialized logger for HTTP request handling:
 
-- `createPinoLogger(options: LoggerOptions): pino.Logger`
-  - Internal function to create a Pino logger instance
-  - Configures serializers, timestamps, and base context
-  - Used by: `createLogger`
+```typescript
+const requestLogger = createRequestLogger(logger);
+app.addHook('onRequest', createRequestLoggingMiddleware(logger));
+```
 
-- `createLogFunction(pinoLogger: pino.Logger, baseContext: LogContext, level: LogLevel): LogFn`
-  - Creates a log function for a specific level
-  - Used by: `createLogger`
-  - For log levels, see [LogLevel](../../types/docs/types.md#logger-types)
+#### Features
+- Automatic request/response logging
+- Duration tracking
+- Status code-based log levels
+- Correlation ID tracking
+- Request context preservation
 
-## Request Logger
+### 3. Error Logger (`src/error.ts`)
 
-Located in `src/request.ts`, provides HTTP request logging middleware.
+Specialized logger for error handling:
 
-### Request Logger Functions
+```typescript
+const errorLogger = createErrorLogger(logger);
+errorLogger.logError(error, { userId: '123' });
+```
 
-- `createRequestLogger(logger: Logger): RequestLogger`
-  - Creates request logging middleware for Fastify
-  - Parameters:
-    - `logger`: [Logger](../../types/docs/types.md#logger-types) instance
-  - Returns: Fastify middleware function
-  - Features:
-    - Automatic request/response logging
-    - Correlation ID tracking
-    - Response time measurement
-    - Request context preservation
+#### Features
+- Structured error logging
+- Stack trace preservation
+- Error context handling
+- Error return utilities
+- Type-safe error handling
 
-### Request Logger Utilities
+## Type System
 
-- `extractRequestInfo(request: FastifyRequest): LogContext`
-  - Extracts relevant information from request object
-  - Used by: `createRequestLogger`
-  - Returns: [RequestContext](../../types/docs/types.md#logger-types)
+### Core Types
 
-- `extractResponseInfo(reply: FastifyReply): LogContext`
-  - Extracts relevant information from response object
-  - Used by: `createRequestLogger`
-  - Returns response information in [LogContext](../../types/docs/types.md#logger-types) format
+```typescript
+interface LoggerOptions {
+  service: string;
+  environment?: string;
+  minLevel?: LogLevel;
+  redactPaths?: string[];
+}
 
-## Error Logger
-
-Located in `src/error.ts`, provides error logging utilities.
-
-### Error Logger Functions
-
-- `createErrorLogger(logger: Logger): ErrorLogger`
-  - Creates an error logger with specialized methods
-  - Parameters:
-    - `logger`: [Logger](../../types/docs/types.md#logger-types) instance
-  - Returns: Object with error logging methods:
-    - `logError`: Logs error with full context
-    - `logErrorAndReturn`: Logs error and returns it (for fp-ts pipes)
-  - Features:
-    - Structured error logging
-    - Error stack preservation
-    - Error metadata handling
-    - fp-ts integration
-
-### Error Logger Utilities
-
-- `extractErrorDetails(error: AppError): ErrorContext`
-  - Extracts error details for logging
-  - Used by: `createErrorLogger`
-  - Returns: [ErrorContext](../../types/docs/types.md#logger-types)
-
-## Implementation Details
-
-The logger library is built on top of Pino and integrates with fp-ts for functional programming patterns. It provides:
-
-- Type-safe logging through TypeScript
-- Structured logging with JSON output
-- Performance optimized through Pino
-- Functional programming support via fp-ts
-- Automatic context propagation
-- Request/Response correlation
-- Error handling utilities
-
-For implementation details about the logger types and interfaces, please refer to:
-- [Logger Types Documentation](../../types/docs/types.md#logger-types)
-- [Error Types](../../types/docs/types.md#error-types)
-
-## Type Exports
-
-The library re-exports all types from `@eduflow/types`. For type definitions, see:
-- [Logger Types](../../types/docs/types.md#logger-types)
-- [Error Types](../../types/docs/types.md#error-types)
-- [Context Types](../../types/docs/types.md#context-types)
-
-## Related Documentation
-- [Types Library](../../types/docs/types.md)
-- [Error Handling](../../common/docs/error-handling.md)
-- [Events Integration](../events/docs/events.md)
-
-## Context Management
+interface Logger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  fatal: LogFn;
+  child: (bindings: Record<string, unknown>) => Logger;
+}
+```
 
 ### Context Types
-```typescript
-type ServiceContext = 'api' | 'database' | 'cache' | 'queue' | 'auth' | 'file' | 'integration';
 
+```typescript
 interface BaseContext {
   service: string;
   environment: string;
-  version?: string;
-}
-
-interface OperationContext extends BaseContext {
-  operation: string;
-  duration?: number;
-  result: 'success' | 'failure';
+  timestamp?: string;
+  correlationId?: string;
 }
 
 interface RequestContext extends BaseContext {
-  requestId: string;
-  method: string;
   path: string;
-  statusCode?: number;
+  method: string;
+  userAgent?: string;
+  ip?: string;
+  userId?: string;
+  sessionId?: string;
   duration?: number;
+  statusCode?: number;
 }
 
 interface ErrorContext extends BaseContext {
@@ -217,116 +163,99 @@ interface ErrorContext extends BaseContext {
 }
 ```
 
-### Context Propagation
+## Best Practices
+
+### 1. Logger Creation
 ```typescript
-const createContextLogger = (baseContext: BaseContext) => {
-  const logger = createLogger(baseContext);
-  
-  return {
-    withContext: <T>(context: Partial<BaseContext>, operation: () => Promise<T>) =>
-      pipe(
-        TE.tryCatch(
-          () => operation(),
-          (error) => error as Error
-        ),
-        TE.tap((result) =>
-          TE.right(
-            logger.child(context).info('Operation completed', { result })
-          )
-        )
-      )
-  };
-};
+// Create a single logger instance per service
+const logger = createLogger({
+  service: 'api-service',
+  environment: process.env.NODE_ENV,
+  minLevel: process.env.LOG_LEVEL || 'info',
+  redactPaths: ['password', 'token']
+});
 ```
 
-## Performance Guidelines
-
-### Logging Levels
+### 2. Context Usage
 ```typescript
-enum LogLevel {
-  ERROR = 'error',
-  WARN = 'warn',
-  INFO = 'info',
-  DEBUG = 'debug',
-  TRACE = 'trace'
-}
-
-const isEnabled = (level: LogLevel): boolean => {
-  const currentLevel = process.env.LOG_LEVEL || 'info';
-  const levels = {
-    error: 0,
-    warn: 1,
-    info: 2,
-    debug: 3,
-    trace: 4
-  };
-  return levels[level] <= levels[currentLevel as keyof typeof levels];
-};
-```
-
-### Performance Optimizations
-```typescript
-// Lazy evaluation of expensive operations
-const logWithPerformance = (logger: Logger) => ({
-  debug: (message: string, expensiveContext: () => object) => {
-    if (isEnabled('debug')) {
-      logger.debug(message, expensiveContext());
-    }
-  }
+// Add context through child loggers
+const requestLogger = logger.child({
+  correlationId: request.id,
+  userId: request.user?.id
 });
 
-// Reusable child loggers
-const createServiceLogger = (service: string) => {
-  const baseLogger = createLogger({ service });
-  const childLoggers = new Map<string, Logger>();
-
-  return {
-    forContext: (context: string): Logger => {
-      if (!childLoggers.has(context)) {
-        childLoggers.set(
-          context,
-          baseLogger.child({ context })
-        );
-      }
-      return childLoggers.get(context)!;
-    }
-  };
-};
+// Log with additional context
+requestLogger.info('Operation completed', {
+  duration: 123,
+  result: 'success'
+});
 ```
+
+### 3. Error Handling
+```typescript
+const errorLogger = createErrorLogger(logger);
+
+try {
+  // ... operation
+} catch (error) {
+  errorLogger.logError(error, {
+    operation: 'user_creation',
+    userId: user.id
+  });
+}
+```
+
+### 4. Request Handling
+```typescript
+const requestLogger = createRequestLogger(logger);
+
+app.addHook('onRequest', createRequestLoggingMiddleware(logger));
+
+// Additional request context
+app.addHook('preHandler', (request, reply, done) => {
+  request.log = requestLogger.child({
+    userId: request.user?.id,
+    sessionId: request.session?.id
+  });
+  done();
+});
+```
+
+## Performance Considerations
+
+1. **Log Level Checks**
+   - Log levels are checked at the Pino level
+   - No performance impact from disabled levels
+   - Use appropriate log levels for different environments
+
+2. **Child Loggers**
+   - Child loggers are lightweight
+   - Reuse child loggers when possible
+   - Context is efficiently merged
+
+3. **Serialization**
+   - JSON serialization is handled by Pino
+   - Custom serializers for specific types
+   - Efficient error serialization
 
 ## Security Guidelines
 
-### Sensitive Data Handling
-```typescript
-const sensitiveFields = ['password', 'token', 'key', 'secret'];
+1. **Sensitive Data**
+   - Use redactPaths for sensitive fields
+   - Never log credentials or tokens
+   - Sanitize error messages
 
-const redactSensitiveData = (data: object): object =>
-  Object.entries(data).reduce(
-    (acc, [key, value]) => ({
-      ...acc,
-      [key]: sensitiveFields.includes(key.toLowerCase())
-        ? '[REDACTED]'
-        : value
-    }),
-    {}
-  );
+2. **Production Settings**
+   - Limit stack traces in production
+   - Use appropriate log levels
+   - Implement proper log shipping
 
-const createSecureLogger = (logger: Logger): Logger => ({
-  ...logger,
-  info: (message: string, context?: object) =>
-    logger.info(message, context ? redactSensitiveData(context) : undefined)
-  // ... implement for other levels
-});
-```
+3. **Context Validation**
+   - Validate log context data
+   - Sanitize user input
+   - Limit context object size
 
-### Sanitization
-```typescript
-const sanitizeError = (error: Error): ErrorContext => ({
-  message: error.message,
-  stack: process.env.NODE_ENV === 'production'
-    ? undefined
-    : error.stack,
-  code: isAppError(error) ? error.code : 'UNKNOWN_ERROR',
-  statusCode: isAppError(error) ? error.statusCode : 500
-});
-```
+## Related Documentation
+- [Logger Usage Guide](../../apps/docs/logger-usage.md)
+- [Types Documentation](../../types/docs/types.md)
+- [Error Handling](../../common/docs/error-handling.md)

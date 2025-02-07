@@ -1,11 +1,11 @@
-# Logger Usage Guide for Microservices
+# Logger Usage Guide
 
 ## Overview
-This guide explains how to effectively use the logger library in microservices under the `apps` folder. The logger implementation follows functional programming principles, avoiding classes and mutable state.
+This guide explains how to effectively use the logger library in your applications. The logger provides structured, type-safe logging with specialized support for HTTP requests and error handling.
 
-## Setup
+## Quick Start
 
-### 1. Install Dependencies
+### 1. Installation
 ```json
 {
   "dependencies": {
@@ -14,226 +14,236 @@ This guide explains how to effectively use the logger library in microservices u
 }
 ```
 
-### 2. Initialize Logger
+### 2. Basic Setup
 ```typescript
 import { createLogger } from '@eduplan/logger';
-import type { Logger, LogContext } from '@eduplan/logger';
 
-// Create a single logger instance for the service
-export const logger = createLogger({
-  service: 'your-service-name',
+const logger = createLogger({
+  service: 'my-service',
   environment: process.env.NODE_ENV,
   minLevel: process.env.LOG_LEVEL || 'info',
   redactPaths: [
-    'body.password', 
-    'headers.authorization',
-    '*.token',
+    'password',
+    'token',
+    'authorization',
     '*.secret'
   ]
 });
-
-// Export types for consumers
-export type { Logger, LogContext };
 ```
 
-## Usage Patterns
+## Core Features
 
-### 1. HTTP Request Handling
+### 1. Standard Logging
 ```typescript
-import { createLogger, createRequestLogger } from '@eduplan/logger';
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import { pipe } from 'fp-ts/function';
-import * as TE from 'fp-ts/TaskEither';
+// Basic logging
+logger.info('Application started');
 
-const logger = createLogger({ service: 'api-service' });
+// Logging with context
+logger.info('User action completed', {
+  userId: '123',
+  action: 'profile_update',
+  duration: 150
+});
+
+// Different log levels
+logger.debug('Debug information');
+logger.warn('Warning message');
+logger.error('Error occurred');
+```
+
+### 2. Child Loggers
+```typescript
+// Create a child logger with fixed context
+const userLogger = logger.child({
+  component: 'user-service',
+  version: '1.0.0'
+});
+
+userLogger.info('User created', {
+  userId: '123',
+  email: 'user@example.com'
+});
+```
+
+### 3. Request Logging
+```typescript
+import { createRequestLogger, createRequestLoggingMiddleware } from '@eduplan/logger';
+import fastify from 'fastify';
+
+const app = fastify();
 const requestLogger = createRequestLogger(logger);
 
-// Add automatic request logging middleware
-app.addHook('onRequest', requestLogger);
+// Add automatic request logging
+app.addHook('onRequest', createRequestLoggingMiddleware(logger));
 
-// Route handler with context-aware logging
-const handleUserCreate = async (req: FastifyRequest, reply: FastifyReply) => {
-  const routeLogger = logger.child({
-    path: req.url,
-    method: req.method,
-    userId: req.user?.id,
-    correlationId: req.id
+// Add custom request context
+app.addHook('preHandler', (request, reply, done) => {
+  request.log = requestLogger.child({
+    userId: request.user?.id,
+    tenant: request.headers['x-tenant-id']
   });
+  done();
+});
 
-  routeLogger.info('Processing user creation request');
-
-  return pipe(
-    createUser(req.body),
-    TE.tap(() => TE.right(routeLogger.info('User created successfully'))),
-    TE.mapLeft((error) => {
-      routeLogger.error('User creation failed', { error });
-      return error;
-    })
-  )();
-};
+// Use in route handlers
+app.post('/users', async (request, reply) => {
+  request.log.info('Creating user', {
+    email: request.body.email,
+    role: request.body.role
+  });
+  // ... handler logic
+});
 ```
 
-### 2. Service Layer Operations
+### 4. Error Logging
 ```typescript
-import { logger } from './logger';
-import type { TaskEither } from 'fp-ts/TaskEither';
-import { pipe } from 'fp-ts/function';
-import * as TE from 'fp-ts/TaskEither';
+import { createErrorLogger } from '@eduplan/logger';
 
-export const processUserData = (
-  userId: string,
-  data: UserData
-): TaskEither<Error, ProcessedData> => {
-  const operationLogger = logger.child({
-    operation: 'processUserData',
-    userId,
-    dataType: data.type
+const errorLogger = createErrorLogger(logger);
+
+// Basic error logging
+try {
+  await someOperation();
+} catch (error) {
+  errorLogger.logError(error, {
+    operation: 'user_creation',
+    userId: user.id
   });
+}
 
-  return pipe(
-    TE.tryCatch(
-      () => validateData(data),
-      (error) => error as Error
-    ),
-    TE.chain((validData) => 
-      TE.tryCatch(
-        () => transformData(validData),
-        (error) => error as Error
-      )
-    ),
-    TE.tap((result) => 
-      TE.right(operationLogger.info('Data processing completed', { result }))
-    ),
-    TE.mapLeft((error) => {
-      operationLogger.error('Data processing failed', { error });
-      return error;
+// Error logging with return
+const result = await pipe(
+  someOperation(),
+  TE.mapLeft(error => 
+    errorLogger.logErrorAndReturn(error, {
+      context: 'payment_processing'
     })
-  );
-};
-```
-
-### 3. Background Jobs
-```typescript
-import { logger } from './logger';
-import type { TaskEither } from 'fp-ts/TaskEither';
-import { pipe } from 'fp-ts/function';
-import * as TE from 'fp-ts/TaskEither';
-
-export const processEmailQueue = (job: EmailJob): TaskEither<Error, void> => {
-  const jobLogger = logger.child({
-    jobId: job.id,
-    operation: 'processEmail',
-    emailType: job.type
-  });
-
-  return pipe(
-    TE.tryCatch(
-      () => sendEmail(job.data),
-      (error) => error as Error
-    ),
-    TE.tap(() => 
-      TE.right(jobLogger.info('Email sent successfully'))
-    ),
-    TE.mapLeft((error) => {
-      jobLogger.error('Email sending failed', { error });
-      return error;
-    })
-  );
-};
+  )
+);
 ```
 
 ## Best Practices
 
 ### 1. Service Configuration
-- Create a single logger instance per service
-- Configure appropriate log levels per environment
-- Use meaningful service names
-- Set up proper redaction patterns
-
-### 2. Request Handling
-- Use request logging middleware
-- Create child loggers with request context
-- Include correlation IDs
-- Log request validation errors
-
-### 3. Error Management
-- Use FP-TS for error handling
-- Log errors with full context
-- Include stack traces in development
-- Use appropriate error levels
-
-### 4. Context and Type Safety
-- Use TypeScript types for all contexts
-- Follow the logger's type system
-- Maintain consistent context fields
-- Include relevant business context
-
-### 5. Performance
-- Check log levels before expensive operations
-- Use child loggers efficiently
-- Configure appropriate sampling
-- Monitor log volume
-
-### 6. Security
-- Never log sensitive data
-- Use redaction patterns
-- Validate log data
-- Audit logging practices
-
-## Available Context Types
-
-### Request Context
 ```typescript
-interface RequestContext extends BaseContext {
-  path: string;
-  method: string;
-  userAgent?: string;
-  ip?: string;
-  userId?: string;
-  sessionId?: string;
-}
+// config/logger.ts
+export const createServiceLogger = () => createLogger({
+  service: process.env.SERVICE_NAME || 'unknown-service',
+  environment: process.env.NODE_ENV,
+  minLevel: process.env.LOG_LEVEL || 'info',
+  redactPaths: [
+    'password',
+    'token',
+    'authorization',
+    '*.secret',
+    'body.creditCard',
+    'headers.cookie'
+  ]
+});
 ```
 
-### Operation Context
+### 2. Request Context
 ```typescript
-interface OperationContext extends BaseContext {
-  operation: string;
-  duration?: number;
-  result: 'success' | 'failure';
-}
+// middleware/logging.ts
+export const addRequestLogging = (app: FastifyInstance) => {
+  const requestLogger = createRequestLogger(logger);
+  
+  app.addHook('onRequest', createRequestLoggingMiddleware(logger));
+  
+  app.addHook('preHandler', (request, reply, done) => {
+    request.log = requestLogger.child({
+      correlationId: request.id,
+      userId: request.user?.id,
+      tenant: request.headers['x-tenant-id'],
+      clientVersion: request.headers['x-client-version']
+    });
+    done();
+  });
+};
 ```
 
-For a complete list of available types and functions, refer to the [Logger Implementation Documentation](../../libs/logger/docs/logger-implementation.md).
+### 3. Error Handling
+```typescript
+// utils/error-handling.ts
+export const handleError = (
+  error: unknown,
+  context: Record<string, unknown>
+) => {
+  const errorLogger = createErrorLogger(logger);
+  
+  if (error instanceof AppError) {
+    errorLogger.logError(error, context);
+    return error;
+  }
+  
+  const wrappedError = createAppError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'An unexpected error occurred',
+    cause: error
+  });
+  
+  errorLogger.logError(wrappedError, context);
+  return wrappedError;
+};
+```
 
-## Monitoring and Alerts
+### 4. Performance Logging
+```typescript
+// utils/performance.ts
+export const withPerformanceLogging = async <T>(
+  operation: string,
+  fn: () => Promise<T>,
+  context: Record<string, unknown> = {}
+): Promise<T> => {
+  const start = process.hrtime();
+  
+  try {
+    const result = await fn();
+    const [seconds, nanoseconds] = process.hrtime(start);
+    const duration = seconds * 1000 + nanoseconds / 1000000;
+    
+    logger.info(`Operation ${operation} completed`, {
+      ...context,
+      operation,
+      duration,
+      success: true
+    });
+    
+    return result;
+  } catch (error) {
+    const [seconds, nanoseconds] = process.hrtime(start);
+    const duration = seconds * 1000 + nanoseconds / 1000000;
+    
+    errorLogger.logError(error, {
+      ...context,
+      operation,
+      duration,
+      success: false
+    });
+    
+    throw error;
+  }
+};
+```
 
-### Common Patterns
-1. Error Rate Monitoring
-   ```typescript
-   logger.error('Critical operation failed', {
-     operation: 'payment_processing',
-     errorCode: 'PAYMENT_DECLINED',
-     severity: 'critical'
-   });
-   ```
+## Security Considerations
 
-2. Performance Tracking
-   ```typescript
-   const start = performance.now();
-   // ... operation ...
-   logger.info('Operation completed', {
-     operation: 'data_sync',
-     duration: performance.now() - start,
-     itemsProcessed: 1000
-   });
-   ```
+1. **Never Log Sensitive Data**
+   - Use redactPaths for sensitive fields
+   - Be careful with error messages
+   - Validate logged data
 
-### Alert Configuration
-- Set up alerts for error-level logs
-- Monitor operation durations
-- Track error rates by service
-- Alert on security events
+2. **Production Settings**
+   - Use appropriate log levels
+   - Limit stack traces
+   - Configure proper log rotation
+
+3. **Context Validation**
+   - Sanitize user input
+   - Validate context objects
+   - Limit context size
 
 ## Related Documentation
-- [Logger Implementation Details](../../libs/logger/docs/logger-implementation.md)
-- [Library Integration Guide](../../libs/docs/logger-integration.md)
+- [Logger Implementation](../../libs/logger/docs/logger.md)
+- [Types Documentation](../../libs/types/docs/types.md)
+- [Error Handling Guide](../../libs/common/docs/error-handling.md)
