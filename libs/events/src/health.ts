@@ -3,7 +3,7 @@ import * as TE from 'fp-ts/TaskEither';
 import * as E from 'fp-ts/Either';
 import { Channel, Connection } from 'amqplib';
 import Redis from 'ioredis';
-import { EventBusState } from './types';
+import { EventBusState } from '@eduflow/types';
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy';

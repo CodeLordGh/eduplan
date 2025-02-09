@@ -1,7 +1,7 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { createLogger } from '@eduflow/logger';
-import { EventBusConfig } from './types';
+import { EventBusConfig } from '@eduflow/types';
 import { createEventBusState, initialize, publish, subscribe, unsubscribe, close } from './event-bus';
 
 export type EventBusOperations = {

@@ -1,8 +1,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { AppError, Logger } from '@eduflow/types';
-import { Logger as PinoLogger } from 'pino';
-import { createAppError, createErrorResponse } from './base.error';
 import { createErrorLogger } from '@eduflow/logger';
+import { createAppError, createErrorResponse } from './base.error';
 
 // Export error types and utilities
 export * from './base.error';
@@ -34,7 +33,7 @@ export const errorHandler = (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const errorLogger = createErrorLogger(logger as unknown as PinoLogger);
+  const errorLogger = createErrorLogger(logger);
 
   if ((error as AppError).code) {
     const appError = error as AppError;

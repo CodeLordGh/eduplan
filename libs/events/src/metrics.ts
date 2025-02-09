@@ -1,7 +1,7 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import * as E from 'fp-ts/Either';
-import { Event } from './types';
+import { Event } from '@eduflow/types';
 import { Logger } from '@eduflow/logger';
 
 interface MetricsState {

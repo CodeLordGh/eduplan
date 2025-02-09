@@ -5,6 +5,7 @@ export * from './database'
 export * from './file/types'
 export * from './errors'
 export * from './errors/types';
+export * from './user/types';
 
 // Logger types exports
 export {

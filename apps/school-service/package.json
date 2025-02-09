@@ -1,0 +1,35 @@
+{
+  "name": "@eduflow/school-service",
+  "version": "1.0.0",
+  "description": "School registration and management service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "test": "jest",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "@eduflow/common": "workspace:*",
+    "@eduflow/constants": "workspace:*",
+    "@eduflow/events": "workspace:*",
+    "@eduflow/logger": "workspace:*",
+    "@eduflow/middleware": "workspace:*",
+    "@eduflow/types": "workspace:*",
+    "dotenv": "^16.0.3",
+    "fastify": "^4.24.0",
+    "fp-ts": "^2.16.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.2.4",
+    "@types/node": "^18.11.17",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "@typescript-eslint/parser": "^5.47.0",
+    "eslint": "^8.30.0",
+    "jest": "^29.3.1",
+    "ts-jest": "^29.0.3",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}

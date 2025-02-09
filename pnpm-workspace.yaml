@@ -4,7 +4,7 @@ packages:
   # all packages in subdirs of libs/ and their descendants
   - 'libs/*'
   # all packages in subdirs of packages/
-  - 'packages/**'
+  - 'packages/*'
   # exclude files marked as private
   - '!**/node_modules/**'
   - '!**/test/**'

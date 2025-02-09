@@ -97,6 +97,10 @@ export interface ErrorContext extends BaseContext {
   statusCode: number;
   metadata?: ErrorMetadata;
   stack?: string;
+  requestId?: string;
+  path?: string;
+  method?: string;
+  originalError?: unknown;
 }
 
 export interface OperationContext extends BaseContext {
