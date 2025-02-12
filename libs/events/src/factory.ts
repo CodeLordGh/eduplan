@@ -2,7 +2,14 @@ import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { createLogger } from '@eduflow/logger';
 import { EventBusConfig } from '@eduflow/types';
-import { createEventBusState, initialize, publish, subscribe, unsubscribe, close } from './event-bus';
+import {
+  createEventBusState,
+  initialize,
+  publish,
+  subscribe,
+  unsubscribe,
+  close,
+} from './event-bus';
 
 export type EventBusOperations = {
   publish: ReturnType<typeof publish>;
@@ -11,20 +18,22 @@ export type EventBusOperations = {
   close: typeof close;
 };
 
-export const createEventBus = (config: EventBusConfig): TE.TaskEither<Error, EventBusOperations> => {
+export const createEventBus = (
+  config: EventBusConfig
+): TE.TaskEither<Error, EventBusOperations> => {
   const logger = createLogger({
     service: config.serviceName,
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
   });
 
   return pipe(
     createEventBusState(config, logger),
     initialize,
-    TE.map(state => ({
+    TE.map((state) => ({
       publish: publish(state),
       subscribe: subscribe(state),
       unsubscribe: unsubscribe(state),
-      close: () => close(state)
+      close: () => close(state),
     }))
   );
-}; 
+};

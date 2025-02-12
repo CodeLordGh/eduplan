@@ -21,25 +21,23 @@ interface MetricsState {
 
 const createMetricsState = (): MetricsState => ({
   requestCount: 0,
-  activeConnections: 0
+  activeConnections: 0,
 });
 
-const updateMetricsState = (
-  state: MetricsState,
-  update: Partial<MetricsState>
-): MetricsState => ({
+const updateMetricsState = (state: MetricsState, update: Partial<MetricsState>): MetricsState => ({
   ...state,
-  ...update
+  ...update,
 });
 
 const calculateCpuUsage = (): number => {
   const cpus = os.cpus();
-  const cpuUsage = cpus.reduce((acc, cpu) => {
-    const total = Object.values(cpu.times).reduce((a, b) => a + b);
-    const idle = cpu.times.idle;
-    return acc + ((total - idle) / total) * 100;
-  }, 0) / cpus.length;
-  
+  const cpuUsage =
+    cpus.reduce((acc, cpu) => {
+      const total = Object.values(cpu.times).reduce((a, b) => a + b);
+      const idle = cpu.times.idle;
+      return acc + ((total - idle) / total) * 100;
+    }, 0) / cpus.length;
+
   return Math.round(cpuUsage * 100) / 100;
 };
 
@@ -47,7 +45,7 @@ const calculateMemoryUsage = (): number => {
   const totalMemory = os.totalmem();
   const freeMemory = os.freemem();
   const memoryUsage = ((totalMemory - freeMemory) / totalMemory) * 100;
-  
+
   return Math.round(memoryUsage * 100) / 100;
 };
 
@@ -56,7 +54,7 @@ const collectMetrics = async (state: MetricsState): Promise<SystemMetrics> => ({
   memory: calculateMemoryUsage(),
   eventQueueSize: process.listenerCount('beforeExit'),
   activeConnections: state.activeConnections,
-  requestRate: state.requestCount
+  requestRate: state.requestCount,
 });
 
 export const createMetricsCollector = () => {
@@ -78,14 +76,14 @@ export const createMetricsCollector = () => {
     const interval = setInterval(async () => {
       try {
         const metrics = await collectMetrics(state);
-        
+
         logMetrics({
           metrics,
           thresholds: {
             cpu: CPU_THRESHOLD,
             memory: MEMORY_THRESHOLD,
-            requestRate: REQUEST_RATE_THRESHOLD
-          }
+            requestRate: REQUEST_RATE_THRESHOLD,
+          },
         });
 
         // Reset request count after logging
@@ -104,6 +102,6 @@ export const createMetricsCollector = () => {
     incrementRequestCount,
     incrementConnections,
     decrementConnections,
-    startCollection
+    startCollection,
   };
-}; 
+};

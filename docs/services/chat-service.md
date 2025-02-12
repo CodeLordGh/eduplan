@@ -1,29 +1,32 @@
 # Chat Service Development Plan
 
 ## Service Overview
+
 The Chat Service handles real-time messaging, group chats, announcements, and message history. It provides specialized features for school-parent communication and educational context messaging.
 
 ## Dependencies
 
 ### Shared Libraries
+
 ```typescript
 // From @eduflow/common
-import { createLogger, ErrorHandler, MessageUtils } from '@eduflow/common'
+import { createLogger, ErrorHandler, MessageUtils } from '@eduflow/common';
 
 // From @eduflow/types
-import { Chat, Message, ChatType, ParticipantRole } from '@eduflow/types'
+import { Chat, Message, ChatType, ParticipantRole } from '@eduflow/types';
 
 // From @eduflow/validators
-import { validateMessage, validateParticipant } from '@eduflow/validators'
+import { validateMessage, validateParticipant } from '@eduflow/validators';
 
 // From @eduflow/middleware
-import { authGuard, roleGuard, chatGuard } from '@eduflow/middleware'
+import { authGuard, roleGuard, chatGuard } from '@eduflow/middleware';
 
 // From @eduflow/constants
-import { CHAT_TYPES, MESSAGE_TYPES, PARTICIPANT_ROLES } from '@eduflow/constants'
+import { CHAT_TYPES, MESSAGE_TYPES, PARTICIPANT_ROLES } from '@eduflow/constants';
 ```
 
 ### External Dependencies
+
 ```json
 {
   "dependencies": {
@@ -41,7 +44,7 @@ import { CHAT_TYPES, MESSAGE_TYPES, PARTICIPANT_ROLES } from '@eduflow/constants
     "@fastify/redis": "^6.1.1",
     "ioredis": "^5.3.2",
     "bull": "^4.11.3",
-    "firebase-admin": "^11.10.1"  // For push notifications
+    "firebase-admin": "^11.10.1" // For push notifications
   },
   "devDependencies": {
     "prisma": "^5.2.0",
@@ -52,6 +55,7 @@ import { CHAT_TYPES, MESSAGE_TYPES, PARTICIPANT_ROLES } from '@eduflow/constants
 ```
 
 ## Database Schema (Prisma)
+
 ```prisma
 model Chat {
   id          String    @id @default(uuid())
@@ -142,160 +146,169 @@ model ChatSettings {
 ## Event System
 
 ### Events Published
+
 ```typescript
 type ChatEvents = {
   MESSAGE_SENT: {
-    messageId: string
-    chatId: string
-    senderId: string
-    type: MessageType
-    timestamp: Date
-  }
+    messageId: string;
+    chatId: string;
+    senderId: string;
+    type: MessageType;
+    timestamp: Date;
+  };
   MESSAGE_DELIVERED: {
-    messageId: string
-    userId: string
-    timestamp: Date
-  }
+    messageId: string;
+    userId: string;
+    timestamp: Date;
+  };
   MESSAGE_READ: {
-    messageId: string
-    userId: string
-    timestamp: Date
-  }
+    messageId: string;
+    userId: string;
+    timestamp: Date;
+  };
   ANNOUNCEMENT_SENT: {
-    messageId: string
-    schoolId: string
-    targetGroups: string[]
-    timestamp: Date
-  }
+    messageId: string;
+    schoolId: string;
+    targetGroups: string[];
+    timestamp: Date;
+  };
   CHAT_CREATED: {
-    chatId: string
-    type: ChatType
-    creatorId: string
-    timestamp: Date
-  }
+    chatId: string;
+    type: ChatType;
+    creatorId: string;
+    timestamp: Date;
+  };
   PARTICIPANT_ADDED: {
-    chatId: string
-    userId: string
-    role: ParticipantRole
-    timestamp: Date
-  }
-}
+    chatId: string;
+    userId: string;
+    role: ParticipantRole;
+    timestamp: Date;
+  };
+};
 ```
 
 ### Events Consumed
+
 ```typescript
 type ConsumedEvents = {
   USER_CREATED: {
-    userId: string
-    role: string
-  }
+    userId: string;
+    role: string;
+  };
   SCHOOL_CREATED: {
-    schoolId: string
-    name: string
-  }
+    schoolId: string;
+    name: string;
+  };
   CLASS_CREATED: {
-    classId: string
-    schoolId: string
-  }
+    classId: string;
+    schoolId: string;
+  };
   STUDENT_ENROLLED: {
-    studentId: string
-    schoolId: string
-    classId: string
-  }
+    studentId: string;
+    schoolId: string;
+    classId: string;
+  };
   PARENT_LINKED: {
-    parentId: string
-    studentId: string
-    schoolId: string
-  }
-}
+    parentId: string;
+    studentId: string;
+    schoolId: string;
+  };
+};
 ```
 
 ## API Endpoints
 
 ### Chat Management
+
 ```typescript
 // POST /chats
 type CreateChatRequest = {
-  type: ChatType
-  schoolId?: string
-  classId?: string
-  title?: string
+  type: ChatType;
+  schoolId?: string;
+  classId?: string;
+  title?: string;
   participants: Array<{
-    userId: string
-    role: ParticipantRole
-  }>
-  metadata?: Record<string, unknown>
-}
+    userId: string;
+    role: ParticipantRole;
+  }>;
+  metadata?: Record<string, unknown>;
+};
 
 // POST /chats/:chatId/messages
 type SendMessageRequest = {
-  content: string
-  type: MessageType
-  attachments?: string[]
-  isAnnouncement?: boolean
-  targetGroups?: string[]
-  metadata?: Record<string, unknown>
-}
+  content: string;
+  type: MessageType;
+  attachments?: string[];
+  isAnnouncement?: boolean;
+  targetGroups?: string[];
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ### School Announcements
+
 ```typescript
 // POST /schools/:schoolId/announcements
 type SendAnnouncementRequest = {
-  title: string
-  content: string
-  targetGroups: string[] // Group IDs or special groups like "ALL_PARENTS"
-  attachments?: string[]
-  metadata?: Record<string, unknown>
-}
+  title: string;
+  content: string;
+  targetGroups: string[]; // Group IDs or special groups like "ALL_PARENTS"
+  attachments?: string[];
+  metadata?: Record<string, unknown>;
+};
 
 // POST /schools/:schoolId/groups
 type CreateAnnouncementGroupRequest = {
-  name: string
-  description?: string
-  members: string[]
-  metadata?: Record<string, unknown>
-}
+  name: string;
+  description?: string;
+  members: string[];
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ### Message Management
+
 ```typescript
 // GET /chats/:chatId/messages
 type GetMessagesRequest = {
-  limit?: number
-  before?: Date
-  after?: Date
-  type?: MessageType
-}
+  limit?: number;
+  before?: Date;
+  after?: Date;
+  type?: MessageType;
+};
 
 // PUT /messages/:messageId/status
 type UpdateMessageStatusRequest = {
-  status: DeliveryStatus
-  metadata?: Record<string, unknown>
-}
+  status: DeliveryStatus;
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ## Implementation Plan
 
 ### Phase 1: Core Messaging
+
 1. Real-time messaging
 2. Message delivery
 3. Read receipts
 4. Basic groups
 
 ### Phase 2: School Features
+
 1. School announcements
 2. Parent groups
 3. Class chats
 4. Targeted messaging
 
 ### Phase 3: Advanced Features
+
 1. Rich media support
 2. Message threading
 3. Message search
 4. Chat archiving
 
 ### Phase 4: Optimization
+
 1. Push notifications
 2. Message queuing
 3. Performance scaling
@@ -304,35 +317,38 @@ type UpdateMessageStatusRequest = {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 // Message service tests
 describe('MessageService', () => {
-  test('should send messages')
-  test('should handle delivery')
-  test('should track status')
-})
+  test('should send messages');
+  test('should handle delivery');
+  test('should track status');
+});
 
 // Announcement service tests
 describe('AnnouncementService', () => {
-  test('should send announcements')
-  test('should target groups')
-  test('should notify parents')
-})
+  test('should send announcements');
+  test('should target groups');
+  test('should notify parents');
+});
 ```
 
 ### Integration Tests
+
 ```typescript
 describe('Chat API', () => {
-  test('should handle real-time messages')
-  test('should manage groups')
-  test('should deliver announcements')
-  test('should track notifications')
-})
+  test('should handle real-time messages');
+  test('should manage groups');
+  test('should deliver announcements');
+  test('should track notifications');
+});
 ```
 
 ## Monitoring & Logging
 
 ### Metrics
+
 - Message delivery rate
 - Real-time performance
 - Group activity
@@ -340,19 +356,21 @@ describe('Chat API', () => {
 - System latency
 
 ### Logging
+
 ```typescript
 const logger = createLogger({
   service: 'chat-service',
   level: process.env.LOG_LEVEL || 'info',
   metadata: {
-    version: process.env.APP_VERSION
-  }
-})
+    version: process.env.APP_VERSION,
+  },
+});
 ```
 
 ## Security Measures
+
 1. Message encryption
 2. Access control
 3. Rate limiting
 4. Content filtering
-5. Privacy protection 
+5. Privacy protection

@@ -10,8 +10,7 @@ export const isRoleAuthorized = (
   userRole: Role,
   requiredRole: Role,
   roleHierarchy: Record<Role, Role[]>
-): boolean =>
-  userRole === requiredRole || roleHierarchy[requiredRole].includes(userRole);
+): boolean => userRole === requiredRole || roleHierarchy[requiredRole].includes(userRole);
 
 // Security Headers
 export const getSecurityHeaders = (): Record<string, string> => ({
@@ -20,5 +19,5 @@ export const getSecurityHeaders = (): Record<string, string> => ({
   'X-Content-Type-Options': 'nosniff',
   'X-XSS-Protection': '1; mode=block',
   'Content-Security-Policy': "default-src 'self'",
-  'Referrer-Policy': 'strict-origin-when-cross-origin'
-}); 
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+});

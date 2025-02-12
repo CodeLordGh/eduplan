@@ -8,5 +8,5 @@ export type {
   ReportCardRemarks,
   ReportCard,
   ReportCardAccess,
-  ReportCardTemplate
-} from './validation'; 
+  ReportCardTemplate,
+} from './validation';

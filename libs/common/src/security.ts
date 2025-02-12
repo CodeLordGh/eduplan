@@ -16,7 +16,7 @@ const getConfig = () => ({
   jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-  encryptionKey: process.env.ENCRYPTION_KEY || ''
+  encryptionKey: process.env.ENCRYPTION_KEY || '',
 });
 
 // Password Hashing
@@ -25,7 +25,7 @@ export const hashPassword = (password: string): Promise<string> =>
     type: argon2.argon2id,
     memoryCost: 2 ** 16,
     timeCost: 3,
-    parallelism: 1
+    parallelism: 1,
   });
 
 export const verifyPassword = (hash: string, password: string): Promise<boolean> =>
@@ -34,11 +34,10 @@ export const verifyPassword = (hash: string, password: string): Promise<boolean>
 // JWT Handling
 export const generateJWT = (payload: JWTPayload): string =>
   jwt.sign(payload, getConfig().jwtSecret, {
-    expiresIn: getConfig().jwtExpiresIn
+    expiresIn: getConfig().jwtExpiresIn,
   });
 
-export const generateRefreshToken = (): string =>
-  randomBytes(40).toString('hex');
+export const generateRefreshToken = (): string => randomBytes(40).toString('hex');
 
 export const verifyJWT = (token: string): JWTPayload =>
   jwt.verify(token, getConfig().jwtSecret) as JWTPayload;
@@ -54,17 +53,15 @@ export const generateOTP = (): string =>
   );
 
 // Token Encryption
-const generateIV = (): Buffer =>
-  randomBytes(16);
+const generateIV = (): Buffer => randomBytes(16);
 
-const getEncryptionKey = (): Buffer =>
-  Buffer.from(getConfig().encryptionKey, 'hex');
+const getEncryptionKey = (): Buffer => Buffer.from(getConfig().encryptionKey, 'hex');
 
 export const encryptToken = (token: string): string => {
   const iv = generateIV();
   const key = getEncryptionKey();
   const cipher = createCipheriv('aes-256-cbc', key, iv);
-  
+
   return pipe(
     cipher.update(token, 'utf8', 'hex'),
     (encrypted: string): string => encrypted + cipher.final('hex'),
@@ -77,7 +74,7 @@ export const decryptToken = (encryptedToken: string): string => {
   const iv = Buffer.from(ivHex, 'hex');
   const key = getEncryptionKey();
   const decipher = createDecipheriv('aes-256-cbc', key, iv);
-  
+
   return pipe(
     decipher.update(encrypted, 'hex', 'utf8'),
     (decrypted: string): string => decrypted + decipher.final('utf8')
@@ -88,15 +85,13 @@ export const decryptToken = (encryptedToken: string): string => {
 export const hasPermission = (
   userPermissions: Permission[],
   requiredPermission: Permission
-): boolean =>
-  userPermissions.includes(requiredPermission);
+): boolean => userPermissions.includes(requiredPermission);
 
 export const isRoleAuthorized = (
   userRole: Role,
   requiredRole: Role,
   roleHierarchy: Record<Role, Role[]>
-): boolean =>
-  userRole === requiredRole || roleHierarchy[requiredRole].includes(userRole);
+): boolean => userRole === requiredRole || roleHierarchy[requiredRole].includes(userRole);
 
 // Security Headers
 export const getSecurityHeaders = (): Record<string, string> => ({
@@ -105,5 +100,5 @@ export const getSecurityHeaders = (): Record<string, string> => ({
   'X-Content-Type-Options': 'nosniff',
   'X-XSS-Protection': '1; mode=block',
   'Content-Security-Policy': "default-src 'self'",
-  'Referrer-Policy': 'strict-origin-when-cross-origin'
-}); 
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+});

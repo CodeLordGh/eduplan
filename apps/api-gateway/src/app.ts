@@ -7,14 +7,14 @@ import { setupRedis } from './config/redis';
 import { setupRoutes } from './routes';
 import { setupProxies } from './config/proxy';
 import { errorHandler } from './utils/error-handler';
-import { 
-  logger, 
-  requestLogger, 
-  createResponseContext, 
+import {
+  logger,
+  requestLogger,
+  createResponseContext,
   createSecurityContext,
   createPerformanceContext,
   logSecurityEvent,
-  logPerformanceMetric
+  logPerformanceMetric,
 } from './config/logger';
 import { createVersionManager } from './services/version.service';
 import { Server, IncomingMessage, ServerResponse } from 'http';
@@ -23,7 +23,7 @@ import { createCorrelationContext, withCorrelation } from './utils/correlation';
 import { trackMemoryUsage } from './utils/performance';
 
 const server = fastify<Server, IncomingMessage, ServerResponse>({
-  logger: logger
+  logger: logger,
 });
 
 async function start() {
@@ -46,14 +46,14 @@ async function start() {
         // Try URL path first
         const pathMatch = request.url.match(/\/api\/(v\d+)\//);
         if (pathMatch) return pathMatch[1];
-        
+
         // Try header next
         const headerVersion = request.headers['api-version'];
         if (headerVersion) return headerVersion.toString();
-        
+
         // Fall back to default
         return 'v1';
-      }
+      },
     });
 
     // Add correlation ID, metrics tracking, and version middleware
@@ -73,35 +73,31 @@ async function start() {
     server.addHook('onResponse', async (request, reply) => {
       metricsCollector.decrementConnections();
       const responseTime = reply.getResponseTime();
-      
+
       await withCorrelation(createCorrelationContext(request), async () => {
         const context = createResponseContext(request, reply.statusCode, responseTime);
         logger.info('Request completed', context);
 
         // Log performance metric if response time is significant
-        if (responseTime > 1000) { // 1 second threshold
-          logPerformanceMetric(createPerformanceContext(
-            request,
-            'response_time',
-            responseTime,
-            'ms',
-            1000
-          ));
+        if (responseTime > 1000) {
+          // 1 second threshold
+          logPerformanceMetric(
+            createPerformanceContext(request, 'response_time', responseTime, 'ms', 1000)
+          );
         }
 
         // Log security events for significant status codes
         if (reply.statusCode === 401 || reply.statusCode === 403) {
-          logSecurityEvent(createSecurityContext(
-            request,
-            'authentication_failure',
-            'medium',
-            'blocked',
-            { statusCode: reply.statusCode }
-          ));
+          logSecurityEvent(
+            createSecurityContext(request, 'authentication_failure', 'medium', 'blocked', {
+              statusCode: reply.statusCode,
+            })
+          );
         }
 
         // Track memory usage periodically
-        if (Math.random() < 0.1) { // 10% sampling
+        if (Math.random() < 0.1) {
+          // 10% sampling
           trackMemoryUsage(request);
         }
       });
@@ -127,13 +123,13 @@ async function start() {
       const status = {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        version: versionManager.getCurrentVersion()
+        version: versionManager.getCurrentVersion(),
       };
-      
+
       await withCorrelation(createCorrelationContext(request), async () => {
         logger.info('Health check', status);
       });
-      
+
       return status;
     });
 
@@ -143,13 +139,13 @@ async function start() {
       service: 'api-gateway',
       environment: process.env.NODE_ENV || 'development',
       supportedVersions: versionManager.getSupportedVersions(),
-      deprecatedVersions: versionManager.getDeprecatedVersions()
+      deprecatedVersions: versionManager.getDeprecatedVersions(),
     });
   } catch (err) {
-    logger.error('Error starting server:', { 
+    logger.error('Error starting server:', {
       service: 'api-gateway',
       environment: process.env.NODE_ENV || 'development',
-      error: err instanceof Error ? err.stack : err 
+      error: err instanceof Error ? err.stack : err,
     });
     process.exit(1);
   }
@@ -165,4 +161,4 @@ const shutdown = async () => {
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
-start(); 
+start();

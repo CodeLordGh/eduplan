@@ -22,8 +22,8 @@ const getEmailConfig = (): EmailConfig => ({
   secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || ''
-  }
+    pass: process.env.SMTP_PASS || '',
+  },
 });
 
 const transporter = nodemailer.createTransport(getEmailConfig());
@@ -51,13 +51,16 @@ export const sendOTPEmail = (
           to,
           subject,
           text,
-          html
+          html,
         });
 
         logger.info(`OTP email sent to ${to} for ${purpose}`);
       },
       (error: unknown) => {
-        logger.error('Failed to send OTP email', error instanceof Error ? error : new Error(String(error)));
+        logger.error(
+          'Failed to send OTP email',
+          error instanceof Error ? error : new Error(String(error))
+        );
         return createEmailError(error instanceof Error ? error : new Error(String(error)));
       }
     )

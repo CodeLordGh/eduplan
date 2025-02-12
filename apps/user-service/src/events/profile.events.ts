@@ -36,16 +36,16 @@ export const handleUserCreated = async (
       city: '',
       state: '',
       country: '',
-      postalCode: ''
+      postalCode: '',
     },
-    occupation
+    occupation,
   });
 
   // Publish profile created event
   await publishEvent(EVENTS.PROFILE_CREATED, {
     userId,
     occupation,
-    timestamp: new Date()
+    timestamp: new Date(),
   });
 };
 
@@ -64,13 +64,13 @@ export const handleUserDeleted = async (
 
   // Delete profile
   await prisma.profile.delete({
-    where: { userId }
+    where: { userId },
   });
 
   // Publish profile deleted event
   await publishEvent(EVENTS.PROFILE_DELETED, {
     userId,
-    timestamp: new Date()
+    timestamp: new Date(),
   });
 };
 
@@ -90,15 +90,15 @@ export const handleKYCVerified = async (
     data: {
       metadata: {
         kycVerified: true,
-        kycVerifiedAt: new Date()
-      }
-    }
+        kycVerifiedAt: new Date(),
+      },
+    },
   });
 
   // Publish profile updated event
   await publishEvent(EVENTS.PROFILE_UPDATED, {
     userId,
     updates: { metadata: { kycVerified: true } },
-    timestamp: new Date()
+    timestamp: new Date(),
   });
-}; 
+};

@@ -84,7 +84,7 @@ export interface EmploymentEligibilityUpdatedEvent {
 }
 
 // Event type unions
-export type AuthEvent = 
+export type AuthEvent =
   | UserCreatedEvent
   | UserUpdatedEvent
   | UserDeletedEvent
@@ -96,12 +96,25 @@ export type ConsumedAuthEvent =
   | KYCRejectedEvent
   | EmploymentEligibilityUpdatedEvent;
 
-// Re-export event type constants
-export { EVENT_TYPES, EventType } from './constants';
+// Export core event types and utilities
+export {
+  Event,
+  EventType,
+  EventDataMap,
+  TypedEvent,
+  AuthEventType,
+  AuthEventDataMap,
+  KYCEventType,
+  KYCEventDataMap,
+} from './types';
 
-// Re-export all event types
+export { validateEvent, EventMetadata } from './validation';
+
+// Export event constants
+export { EVENT_TYPES } from './constants';
+
+// Export additional event utilities
 export * from './config';
 export * from './state';
 export * from './handlers';
-export * from './constants';
-export * from './academic'; 
+export * from './academic';

@@ -45,26 +45,26 @@ export async function createApp(): Promise<FastifyInstance> {
         version: '1.0.0',
         contact: {
           name: 'API Support',
-          email: 'support@eduflow.com'
-        }
+          email: 'support@eduflow.com',
+        },
       },
       servers: [
         {
           url: 'http://localhost:3002',
-          description: 'Development server'
-        }
+          description: 'Development server',
+        },
       ],
       tags: [
         { name: 'documents', description: 'KYC Document operations' },
-        { name: 'verification', description: 'Verification operations' }
+        { name: 'verification', description: 'Verification operations' },
       ],
       components: {
         securitySchemes: {
           bearerAuth: {
             type: 'http',
             scheme: 'bearer',
-            bearerFormat: 'JWT'
-          }
+            bearerFormat: 'JWT',
+          },
         },
         schemas: {
           Error: {
@@ -72,26 +72,26 @@ export async function createApp(): Promise<FastifyInstance> {
             properties: {
               error: { type: 'string' },
               code: { type: 'string' },
-              statusCode: { type: 'number' }
-            }
-          }
-        }
+              statusCode: { type: 'number' },
+            },
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
     },
-    hideUntagged: true
+    hideUntagged: true,
   };
 
   await app.register(swagger, swaggerOptions);
-  
+
   // Register Swagger UI
   await app.register(swaggerUi, {
     routePrefix: '/documentation',
     uiConfig: {
       docExpansion: 'list',
-      deepLinking: true
+      deepLinking: true,
     },
-    staticCSP: false
+    staticCSP: false,
   });
 
   // Register routes with prefix
@@ -100,7 +100,9 @@ export async function createApp(): Promise<FastifyInstance> {
   // Log swagger documentation state after ready
   app.addHook('onReady', async () => {
     const swaggerDoc = app.swagger();
-    app.log.info(`KYC Service documentation paths: ${Object.keys(swaggerDoc.paths || {}).join(', ')}`);
+    app.log.info(
+      `KYC Service documentation paths: ${Object.keys(swaggerDoc.paths || {}).join(', ')}`
+    );
   });
 
   // Error handler
@@ -114,15 +116,17 @@ if (require.main === module) {
   const start = async () => {
     try {
       const app = await createApp();
-      await app.listen({ 
-        port: parseInt(process.env.PORT || '3002'), 
-        host: '0.0.0.0' 
+      await app.listen({
+        port: parseInt(process.env.PORT || '3002'),
+        host: '0.0.0.0',
       });
-      app.log.info(`Documentation available at http://localhost:${process.env.PORT || '3002'}/documentation`);
+      app.log.info(
+        `Documentation available at http://localhost:${process.env.PORT || '3002'}/documentation`
+      );
     } catch (err) {
       console.error(err);
       process.exit(1);
     }
   };
   start();
-} 
+}

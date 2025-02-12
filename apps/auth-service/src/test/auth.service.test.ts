@@ -9,7 +9,7 @@ describe('Auth Service', () => {
     const registerInput = {
       email: 'test@example.com',
       password: 'Password123!',
-      role: Role.TEACHER
+      role: Role.TEACHER,
     };
 
     beforeEach(() => {
@@ -20,7 +20,7 @@ describe('Auth Service', () => {
       (userRepo.findUserByEmail as jest.Mock).mockResolvedValue(null);
       (userRepo.createUser as jest.Mock).mockResolvedValue({
         id: '123',
-        ...registerInput
+        ...registerInput,
       });
 
       const result = await register(registerInput)();
@@ -30,7 +30,7 @@ describe('Auth Service', () => {
     it('should return error if email already exists', async () => {
       (userRepo.findUserByEmail as jest.Mock).mockResolvedValue({
         id: '123',
-        email: registerInput.email
+        email: registerInput.email,
       });
 
       const result = await register(registerInput)();

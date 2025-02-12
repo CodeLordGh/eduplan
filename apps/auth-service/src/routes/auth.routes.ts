@@ -10,19 +10,19 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   const loginLimiter = createRateLimiter(fastify.redis, {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5,
-    keyPrefix: 'login:'
+    keyPrefix: 'login:',
   });
 
   const registerLimiter = createRateLimiter(fastify.redis, {
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 3,
-    keyPrefix: 'register:'
+    keyPrefix: 'register:',
   });
 
   const refreshLimiter = createRateLimiter(fastify.redis, {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10,
-    keyPrefix: 'refresh:'
+    keyPrefix: 'refresh:',
   });
 
   fastify.post<{
@@ -30,7 +30,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       email: string;
       password: string;
       role: Role;
-    }
+    };
   }>('/register', {
     schema: {
       body: {
@@ -39,9 +39,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         properties: {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 8 },
-          role: { type: 'string', enum: Object.values(Role) }
-        }
-      }
+          role: { type: 'string', enum: Object.values(Role) },
+        },
+      },
     },
     preHandler: registerLimiter,
     handler: async (request, reply) => {
@@ -62,14 +62,14 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         )
       )();
       return result;
-    }
+    },
   });
 
   fastify.post<{
     Body: {
       email: string;
       password: string;
-    }
+    };
   }>('/login', {
     schema: {
       body: {
@@ -77,9 +77,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         required: ['email', 'password'],
         properties: {
           email: { type: 'string', format: 'email' },
-          password: { type: 'string' }
-        }
-      }
+          password: { type: 'string' },
+        },
+      },
     },
     preHandler: loginLimiter,
     handler: async (request, reply) => {
@@ -87,7 +87,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         authService.login(fastify.redis, {
           ...request.body,
           ipAddress: request.ip,
-          userAgent: request.headers['user-agent'] || 'unknown'
+          userAgent: request.headers['user-agent'] || 'unknown',
         }),
         TE.match(
           (error) => {
@@ -105,32 +105,32 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'strict',
               path: '/auth/refresh',
-              maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
+              maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
             });
             return reply.code(200).send({
               user: authResult.user,
-              accessToken: authResult.accessToken
+              accessToken: authResult.accessToken,
             });
           }
         )
       )();
       return result;
-    }
+    },
   });
 
   fastify.post<{
     Body: {
       refreshToken: string;
-    }
+    };
   }>('/refresh', {
     schema: {
       body: {
         type: 'object',
         required: ['refreshToken'],
         properties: {
-          refreshToken: { type: 'string' }
-        }
-      }
+          refreshToken: { type: 'string' },
+        },
+      },
     },
     preHandler: refreshLimiter,
     handler: async (request, reply) => {
@@ -156,32 +156,32 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'strict',
               path: '/auth/refresh',
-              maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
+              maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
             });
             return reply.code(200).send({
               user: authResult.user,
-              accessToken: authResult.accessToken
+              accessToken: authResult.accessToken,
             });
           }
         )
       )();
       return result;
-    }
+    },
   });
 
   fastify.post<{
     Body: {
       refreshToken: string;
-    }
+    };
   }>('/logout', {
     schema: {
       body: {
         type: 'object',
         required: ['refreshToken'],
         properties: {
-          refreshToken: { type: 'string' }
-        }
-      }
+          refreshToken: { type: 'string' },
+        },
+      },
     },
     handler: async (request, reply) => {
       const result = await pipe(
@@ -195,7 +195,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         )
       )();
       return result;
-    }
+    },
   });
 };
 

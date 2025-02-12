@@ -225,4 +225,4 @@ export interface CustomEvaluator {
 export interface Subscription {
   schoolId: string;
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
-} 
+}

@@ -4,4 +4,4 @@ export * from './factory';
 export * from './validation';
 export * from './metrics';
 export * from './health';
-export { EVENT_TYPES, EventType } from '@eduflow/types'; 
+export { EVENT_TYPES, EventType } from '@eduflow/types';

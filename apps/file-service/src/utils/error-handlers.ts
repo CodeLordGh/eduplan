@@ -1,11 +1,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { BaseError } from '@eduflow/common';
 
-export const errorHandler = (
-  error: FastifyError,
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
+export const errorHandler = (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
   request.log.error(error);
 
   // If it's already a BaseError, use its status code and name
@@ -13,13 +9,13 @@ export const errorHandler = (
     const response = {
       statusCode: error.statusCode,
       error: error.name,
-      message: error.message
+      message: error.message,
     };
-    
+
     if (error.cause) {
       Object.assign(response, { cause: error.cause });
     }
-    
+
     return reply.status(error.statusCode).send(response);
   }
 
@@ -29,7 +25,7 @@ export const errorHandler = (
       statusCode: 400,
       error: 'Bad Request',
       message: error.message,
-      validation: error.validation
+      validation: error.validation,
     });
   }
 
@@ -38,7 +34,7 @@ export const errorHandler = (
     return reply.status(413).send({
       statusCode: 413,
       error: 'Payload Too Large',
-      message: error.message
+      message: error.message,
     });
   }
 
@@ -47,7 +43,7 @@ export const errorHandler = (
     return reply.status(415).send({
       statusCode: 415,
       error: 'Unsupported Media Type',
-      message: error.message
+      message: error.message,
     });
   }
 
@@ -56,7 +52,7 @@ export const errorHandler = (
     return reply.status(507).send({
       statusCode: 507,
       error: 'Insufficient Storage',
-      message: error.message
+      message: error.message,
     });
   }
 
@@ -65,7 +61,7 @@ export const errorHandler = (
     return reply.status(403).send({
       statusCode: 403,
       error: 'Forbidden',
-      message: error.message
+      message: error.message,
     });
   }
 
@@ -74,7 +70,7 @@ export const errorHandler = (
     return reply.status(404).send({
       statusCode: 404,
       error: 'Not Found',
-      message: error.message
+      message: error.message,
     });
   }
 
@@ -82,6 +78,6 @@ export const errorHandler = (
   return reply.status(500).send({
     statusCode: 500,
     error: 'Internal Server Error',
-    message: 'An internal server error occurred'
+    message: 'An internal server error occurred',
   });
 };

@@ -1,7 +1,12 @@
 import { FastifyPluginAsync } from 'fastify';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { createRateLimiter, RateLimitConfig, authenticate, AuthenticatedUser } from '@eduflow/middleware';
+import {
+  createRateLimiter,
+  RateLimitConfig,
+  authenticate,
+  AuthenticatedUser,
+} from '@eduflow/middleware';
 import * as otpService from '../service/otp.service';
 
 interface OTPGenerateBody {
@@ -18,7 +23,7 @@ const otpRoutes: FastifyPluginAsync = async (fastify) => {
   const otpLimiter = createRateLimiter(fastify.redis, {
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
-    keyPrefix: 'otp:'
+    keyPrefix: 'otp:',
   } as RateLimitConfig);
 
   fastify.post<{ Body: OTPGenerateBody }>('/generate', {
@@ -29,32 +34,27 @@ const otpRoutes: FastifyPluginAsync = async (fastify) => {
         properties: {
           purpose: {
             type: 'string',
-            enum: Object.values(otpService.OTPPurpose)
+            enum: Object.values(otpService.OTPPurpose),
           },
           email: {
             type: 'string',
-            format: 'email'
-          }
-        }
-      }
+            format: 'email',
+          },
+        },
+      },
     },
     preHandler: [authenticate, otpLimiter],
     handler: async (request, reply) => {
       const user = request.user as AuthenticatedUser;
       const result = await pipe(
-        otpService.generateOTP(
-          fastify.redis,
-          user.id,
-          request.body.email,
-          request.body.purpose
-        ),
+        otpService.generateOTP(fastify.redis, user.id, request.body.email, request.body.purpose),
         TE.match(
           (error) => reply.code(500).send(error),
           (code) => reply.code(200).send({ code })
         )
       )();
       return result;
-    }
+    },
   });
 
   fastify.post<{ Body: OTPVerifyBody }>('/verify', {
@@ -66,21 +66,16 @@ const otpRoutes: FastifyPluginAsync = async (fastify) => {
           code: { type: 'string' },
           purpose: {
             type: 'string',
-            enum: Object.values(otpService.OTPPurpose)
-          }
-        }
-      }
+            enum: Object.values(otpService.OTPPurpose),
+          },
+        },
+      },
     },
     preHandler: authenticate,
     handler: async (request, reply) => {
       const user = request.user as AuthenticatedUser;
       const result = await pipe(
-        otpService.verifyOTP(
-          fastify.redis,
-          user.id,
-          request.body.code,
-          request.body.purpose
-        ),
+        otpService.verifyOTP(fastify.redis, user.id, request.body.code, request.body.purpose),
         TE.match(
           (error) => reply.code(500).send(error),
           (isValid) =>
@@ -90,7 +85,7 @@ const otpRoutes: FastifyPluginAsync = async (fastify) => {
         )
       )();
       return result;
-    }
+    },
   });
 };
 

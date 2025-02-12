@@ -1,29 +1,32 @@
 # Payment Service Development Plan
 
 ## Service Overview
+
 The Payment Service handles all financial transactions, including school fees, feeding fees, and other charges. It manages payment processing, transaction tracking, and invoice generation.
 
 ## Dependencies
 
 ### Shared Libraries
+
 ```typescript
 // From @eduflow/common
-import { createLogger, ErrorHandler, CurrencyUtils } from '@eduflow/common'
+import { createLogger, ErrorHandler, CurrencyUtils } from '@eduflow/common';
 
 // From @eduflow/types
-import { Transaction, Invoice, PaymentMethod, PaymentStatus } from '@eduflow/types'
+import { Transaction, Invoice, PaymentMethod, PaymentStatus } from '@eduflow/types';
 
 // From @eduflow/validators
-import { validatePayment, validateInvoice } from '@eduflow/validators'
+import { validatePayment, validateInvoice } from '@eduflow/validators';
 
 // From @eduflow/middleware
-import { authGuard, roleGuard, paymentGuard } from '@eduflow/middleware'
+import { authGuard, roleGuard, paymentGuard } from '@eduflow/middleware';
 
 // From @eduflow/constants
-import { PAYMENT_TYPES, TRANSACTION_STATUS } from '@eduflow/constants'
+import { PAYMENT_TYPES, TRANSACTION_STATUS } from '@eduflow/constants';
 ```
 
 ### External Dependencies
+
 ```json
 {
   "dependencies": {
@@ -48,6 +51,7 @@ import { PAYMENT_TYPES, TRANSACTION_STATUS } from '@eduflow/constants'
 ```
 
 ## Database Schema (Prisma)
+
 ```prisma
 model Transaction {
   id            String            @id @default(uuid())
@@ -127,147 +131,156 @@ model WalletTransaction {
 ## Event System
 
 ### Events Published
+
 ```typescript
 type PaymentEvents = {
   PAYMENT_PROCESSED: {
-    transactionId: string
-    userId: string
-    amount: number
-    currency: string
-    status: TransactionStatus
-    timestamp: Date
-  }
+    transactionId: string;
+    userId: string;
+    amount: number;
+    currency: string;
+    status: TransactionStatus;
+    timestamp: Date;
+  };
   PAYMENT_FAILED: {
-    transactionId: string
-    userId: string
-    reason: string
-    timestamp: Date
-  }
+    transactionId: string;
+    userId: string;
+    reason: string;
+    timestamp: Date;
+  };
   INVOICE_GENERATED: {
-    invoiceId: string
-    userId: string
-    amount: number
-    dueDate: Date
-    timestamp: Date
-  }
+    invoiceId: string;
+    userId: string;
+    amount: number;
+    dueDate: Date;
+    timestamp: Date;
+  };
   WALLET_UPDATED: {
-    walletId: string
-    userId: string
-    balance: number
-    type: 'CREDIT' | 'DEBIT'
-    timestamp: Date
-  }
-}
+    walletId: string;
+    userId: string;
+    balance: number;
+    type: 'CREDIT' | 'DEBIT';
+    timestamp: Date;
+  };
+};
 ```
 
 ### Events Consumed
+
 ```typescript
 type ConsumedEvents = {
   USER_CREATED: {
-    userId: string
-    email: string
-  }
+    userId: string;
+    email: string;
+  };
   SCHOOL_CREATED: {
-    schoolId: string
-    name: string
-  }
+    schoolId: string;
+    name: string;
+  };
   KYC_VERIFIED: {
-    userId: string
-    documentType: string
-  }
+    userId: string;
+    documentType: string;
+  };
   SCHOOL_VERIFIED: {
-    schoolId: string
-    verificationId: string
-  }
-}
+    schoolId: string;
+    verificationId: string;
+  };
+};
 ```
 
 ## API Endpoints
 
 ### Payment Processing
+
 ```typescript
 // POST /payments
 type CreatePaymentRequest = {
-  userId: string
-  amount: number
-  currency: string
-  type: PaymentType
-  paymentMethod: PaymentMethod
-  metadata?: Record<string, unknown>
-}
+  userId: string;
+  amount: number;
+  currency: string;
+  type: PaymentType;
+  paymentMethod: PaymentMethod;
+  metadata?: Record<string, unknown>;
+};
 
 // GET /payments/:paymentId
 type GetPaymentResponse = Transaction & {
-  receipt?: string // URL to receipt
-}
+  receipt?: string; // URL to receipt
+};
 ```
 
 ### Invoice Management
+
 ```typescript
 // POST /invoices
 type CreateInvoiceRequest = {
-  userId: string
-  schoolId: string
+  userId: string;
+  schoolId: string;
   items: Array<{
-    description: string
-    amount: number
-    quantity: number
-  }>
-  dueDate: Date
-  metadata?: Record<string, unknown>
-}
+    description: string;
+    amount: number;
+    quantity: number;
+  }>;
+  dueDate: Date;
+  metadata?: Record<string, unknown>;
+};
 
 // GET /users/:userId/invoices
 type GetInvoicesResponse = {
-  invoices: Invoice[]
+  invoices: Invoice[];
   summary: {
-    total: number
-    paid: number
-    pending: number
-  }
-}
+    total: number;
+    paid: number;
+    pending: number;
+  };
+};
 ```
 
 ### Wallet Management
+
 ```typescript
 // POST /wallets/:walletId/deposit
 type WalletDepositRequest = {
-  amount: number
-  paymentMethod: PaymentMethod
-  metadata?: Record<string, unknown>
-}
+  amount: number;
+  paymentMethod: PaymentMethod;
+  metadata?: Record<string, unknown>;
+};
 
 // POST /wallets/:walletId/withdraw
 type WalletWithdrawRequest = {
-  amount: number
+  amount: number;
   bankAccount: {
-    accountNumber: string
-    bankCode: string
-  }
-}
+    accountNumber: string;
+    bankCode: string;
+  };
+};
 ```
 
 ## Implementation Plan
 
 ### Phase 1: Core Payment Processing
+
 1. Payment gateway integration
 2. Transaction handling
 3. Receipt generation
 4. Payment validation
 
 ### Phase 2: Invoice System
+
 1. Invoice generation
 2. Payment plans
 3. Due date tracking
 4. Automated reminders
 
 ### Phase 3: Wallet System
+
 1. Wallet management
 2. Balance tracking
 3. Transaction history
 4. Auto-deduction setup
 
 ### Phase 4: Integration Features
+
 1. Multiple payment methods
 2. Payment analytics
 3. Reporting system
@@ -276,35 +289,38 @@ type WalletWithdrawRequest = {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 // Payment service tests
 describe('PaymentService', () => {
-  test('should process payments')
-  test('should handle failed payments')
-  test('should generate receipts')
-})
+  test('should process payments');
+  test('should handle failed payments');
+  test('should generate receipts');
+});
 
 // Invoice service tests
 describe('InvoiceService', () => {
-  test('should generate invoices')
-  test('should calculate totals')
-  test('should track due dates')
-})
+  test('should generate invoices');
+  test('should calculate totals');
+  test('should track due dates');
+});
 ```
 
 ### Integration Tests
+
 ```typescript
 describe('Payment API', () => {
-  test('should handle payment flow')
-  test('should manage invoices')
-  test('should handle wallet operations')
-  test('should integrate with payment gateways')
-})
+  test('should handle payment flow');
+  test('should manage invoices');
+  test('should handle wallet operations');
+  test('should integrate with payment gateways');
+});
 ```
 
 ## Monitoring & Logging
 
 ### Metrics
+
 - Transaction success rate
 - Payment processing time
 - Invoice payment rate
@@ -312,19 +328,21 @@ describe('Payment API', () => {
 - Gateway response times
 
 ### Logging
+
 ```typescript
 const logger = createLogger({
   service: 'payment-service',
   level: process.env.LOG_LEVEL || 'info',
   metadata: {
-    version: process.env.APP_VERSION
-  }
-})
+    version: process.env.APP_VERSION,
+  },
+});
 ```
 
 ## Security Measures
+
 1. Payment data encryption
 2. Secure gateway integration
 3. Transaction verification
 4. Fraud detection rules
-5. Audit trail maintenance 
+5. Audit trail maintenance

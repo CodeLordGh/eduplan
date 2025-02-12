@@ -50,32 +50,32 @@ interface UserNotFoundError extends AuthError {
 export const createValidationError = (message: string, details?: unknown): ValidationError => ({
   code: ERROR_CODES.VALIDATION_ERROR,
   message,
-  details
+  details,
 });
 
 export const createDatabaseError = (error: Error): DatabaseError => ({
   code: ERROR_CODES.DATABASE_ERROR,
   message: 'Database operation failed',
-  cause: error
+  cause: error,
 });
 
 export const createDuplicateEmailError = (): DuplicateEmailError => ({
   code: ERROR_CODES.DUPLICATE_EMAIL,
-  message: 'Email already exists'
+  message: 'Email already exists',
 });
 
 export const createInvalidCredentialsError = (): InvalidCredentialsError => ({
   code: ERROR_CODES.INVALID_CREDENTIALS,
-  message: 'Invalid credentials'
+  message: 'Invalid credentials',
 });
 
 export const createUserNotFoundError = (): UserNotFoundError => ({
   code: ERROR_CODES.USER_NOT_FOUND,
-  message: 'User not found'
+  message: 'User not found',
 });
 
 export const createEmailError = (error?: Error): EmailError => ({
   code: ERROR_CODES.EMAIL_ERROR,
   message: 'Failed to send email',
-  cause: error
+  cause: error,
 });

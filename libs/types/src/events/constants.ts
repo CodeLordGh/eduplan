@@ -53,7 +53,7 @@ export const EVENT_TYPES = {
 
   // File Events
   FILE_UPLOADED: 'FILE_UPLOADED',
-  FILE_DELETED: 'FILE_DELETED'
+  FILE_DELETED: 'FILE_DELETED',
 } as const;
 
-export type EventType = keyof typeof EVENT_TYPES; 
+export type EventType = keyof typeof EVENT_TYPES;

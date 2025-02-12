@@ -12,11 +12,11 @@ export const initSwagger = (server: FastifyInstance): TE.TaskEither<BaseError, v
             info: {
               title: 'File Service API',
               description: 'API documentation for the EduPlan File Service',
-              version: '1.0.0'
+              version: '1.0.0',
             },
             externalDocs: {
               url: 'https://eduplan.dev/docs',
-              description: 'Find more info here'
+              description: 'Find more info here',
             },
             host: process.env.API_HOST,
             schemes: ['http', 'https'],
@@ -24,24 +24,24 @@ export const initSwagger = (server: FastifyInstance): TE.TaskEither<BaseError, v
             produces: ['application/json'],
             tags: [
               { name: 'files', description: 'File related end-points' },
-              { name: 'quota', description: 'Storage quota related end-points' }
+              { name: 'quota', description: 'Storage quota related end-points' },
             ],
             securityDefinitions: {
               apiKey: {
                 type: 'apiKey',
                 name: 'Authorization',
-                in: 'header'
-              }
-            }
-          }
+                in: 'header',
+              },
+            },
+          },
         });
 
         await server.register(require('@fastify/swagger-ui'), {
           routePrefix: '/documentation',
           uiConfig: {
             docExpansion: 'list',
-            deepLinking: false
-          }
+            deepLinking: false,
+          },
         });
       },
       (error) => createError('Failed to initialize Swagger', 'SWAGGER_ERROR', 500, error)

@@ -17,5 +17,5 @@ export function generateJWT(payload: object): string {
 }
 
 export function verifyJWT<T>(token: string): T {
-  return jwt.verify(token, JWT_SECRET) as T; 
+  return jwt.verify(token, JWT_SECRET) as T;
 }

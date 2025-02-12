@@ -19,27 +19,30 @@ const defaultConfig: RedisConfig = {
   port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD,
   db: parseInt(process.env.REDIS_DB || '0'),
-  keyPrefix: process.env.REDIS_PREFIX
+  keyPrefix: process.env.REDIS_PREFIX,
 };
 
 // Create Redis client with provided or default config
-export const createRedisClient = (config: Partial<RedisConfig> = {}): TE.TaskEither<AppError, Redis> =>
+export const createRedisClient = (
+  config: Partial<RedisConfig> = {}
+): TE.TaskEither<AppError, Redis> =>
   pipe(
     TE.tryCatch(
       async () => {
         const finalConfig = { ...defaultConfig, ...config };
         return new Redis(finalConfig);
       },
-      (error) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create Redis client',
-        cause: error,
-        metadata: {
-          service: 'redis',
-          operation: 'connect',
-          timestamp: new Date()
-        }
-      })
+      (error) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create Redis client',
+          cause: error,
+          metadata: {
+            service: 'redis',
+            operation: 'connect',
+            timestamp: new Date(),
+          },
+        })
     )
   );
 
@@ -56,15 +59,16 @@ export const getRedisClient = (): TE.TaskEither<AppError, Redis> =>
         }
         return redisClient;
       },
-      (error) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get Redis client',
-        cause: error,
-        metadata: {
-          service: 'redis',
-          operation: 'connect',
-          timestamp: new Date()
-        }
-      })
+      (error) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to get Redis client',
+          cause: error,
+          metadata: {
+            service: 'redis',
+            operation: 'connect',
+            timestamp: new Date(),
+          },
+        })
     )
-  ); 
+  );

@@ -91,4 +91,3 @@ sequenceDiagram
     School_Service->>Logger_System: Log Successful Response
     School_Service-->>Client: Return 201 Created with School Data
 ```
-	

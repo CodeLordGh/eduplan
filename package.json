@@ -1,4 +1,5 @@
 {
+  "$schema": "http://json.schemastore.org/package",
   "name": "eduflow",
   "version": "1.0.0",
   "description": "A comprehensive educational platform connecting schools, teachers, students, and parents",
@@ -20,28 +21,34 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "devDependencies": {
+    "@prisma/client": "^5.22.0",
     "@types/node": "^18.17.12",
     "@typescript-eslint/eslint-plugin": "^6.5.0",
     "@typescript-eslint/parser": "^6.5.0",
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
+    "eslint-import-resolver-typescript": "^3.5.5",
+    "eslint-plugin-boundaries": "^3.1.0",
+    "eslint-plugin-folders": "^1.0.4",
+    "eslint-plugin-functional": "^6.0.0",
+    "eslint-plugin-import": "^2.27.5",
     "husky": "^8.0.3",
     "lint-staged": "^14.0.1",
     "prettier": "^3.0.3",
+    "prisma": "^5.22.0",
     "turbo": "^1.10.13",
-    "typescript": "^5.2.2"
+    "typescript": "^5.7.3"
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --cache --fix",
     "*.{js,ts,css,md}": "prettier --write"
   },
   "workspaces": [
-    "apps/*",
-    "libs/*",
-    "packages/*"
+    "libs/*"
   ],
   "dependencies": {
     "@types/ioredis": "^5.0.0",

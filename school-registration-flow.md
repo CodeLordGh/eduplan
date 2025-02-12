@@ -183,19 +183,23 @@ classDiagram
 ## System Components Description
 
 ### Core Libraries
+
 1. **Logger**
+
    - Comprehensive logging system
    - Request tracking
    - Error logging
    - Performance monitoring
 
 2. **Common**
+
    - Error handling utilities
    - Validation helpers
    - Async operation handlers
    - Shared utilities
 
 3. **Events**
+
    - Event bus implementation
    - Pub/sub system
    - Async communication
@@ -208,7 +212,9 @@ classDiagram
    - Generic types
 
 ### Middleware Components
+
 1. **Middleware**
+
    - Authentication
    - Request validation
    - Logging middleware
@@ -221,7 +227,9 @@ classDiagram
    - Security controls
 
 ### Support Systems
+
 1. **Constants**
+
    - System-wide enums
    - Error codes
    - Event types
@@ -234,7 +242,9 @@ classDiagram
    - Data persistence
 
 ### Main Application
+
 **SchoolRegistration**
+
 - Implements core registration logic
 - Uses all available systems
 - Handles complete registration flow
@@ -249,7 +259,7 @@ classDiagram
 - **Middleware** handles cross-cutting concerns
 - **ABAC** manages security and access control
 - **Prisma** handles data persistence
-- **Constants** provides system-wide constants and enums 
+- **Constants** provides system-wide constants and enums
 
 ## Registration Process Sequence
 
@@ -269,56 +279,56 @@ sequenceDiagram
     %% API Gateway & Initial Validation
     C->>+AG: POST /register-school
     AG->>+L: Log Incoming Request
-    
+
     %% API Gateway Processing
     AG->>AG: Sanitize Request
     AG->>AG: Validate Request Format
     AG->>AG: Rate Limiting Check
-    
+
     %% API Gateway Security
     AG->>AG: JWT Validation
     AG->>+A: Initial Auth Check
     A-->>-AG: Auth Status
-    
+
     %% Request Routing
     AG->>+M: Route to School Service
-    
+
     %% Middleware Processing
     M->>+L: Log Service Request
     M->>+A: Detailed Permission Check
     A->>-M: Permissions Granted
-    
+
     %% Registration Process
     M->>+R: Process Registration
     R->>+V: Validate School Data
     V-->>-R: Validation Result
-    
+
     %% Database Operations
     R->>+P: Create School Record
     P-->>-R: School Created
     R->>+P: Create Admin User
     P-->>-R: Admin Created
-    
+
     %% Event Publishing
     R->>+E: Publish SchoolCreated
     E->>Q: Queue Event
     E-->>-R: Event Published
-    
+
     %% Setup Process
     Q->>+E: Process SchoolCreated
     E->>+P: Initialize School Settings
     P-->>-E: Settings Created
     E->>+P: Setup Permissions
     P-->>-E: Permissions Set
-    
+
     %% Notification
     E->>Q: Queue WelcomeEmail
     E-->>-Q: Email Queued
-    
+
     %% Logging
     R->>+L: Log Success
     L-->>-R: Logged
-    
+
     %% Response Chain
     R-->>-M: Registration Complete
     M-->>-AG: Service Response
@@ -355,6 +365,7 @@ sequenceDiagram
 ## Sequence Flow Description
 
 ### 1. API Gateway Processing
+
 - Request sanitization and format validation
 - Rate limiting checks
 - JWT validation
@@ -362,44 +373,51 @@ sequenceDiagram
 - Request routing
 
 ### 2. Initial Request Processing
+
 - Middleware processing
 - Detailed permission checks
 - Service-level validation
 - Request logging
 
 ### 3. Core Registration
+
 - School record creation
 - Admin user setup
 - Initial settings configuration
 - Permission setup
 
 ### 4. Event Processing
+
 - School creation event
 - Settings initialization
 - Welcome email queuing
 - Notification dispatching
 
 ### 5. Error Scenarios
+
 - Validation errors
 - Permission issues
 - Database failures
 - System errors
 
 ### 6. Logging & Monitoring
+
 - Request logging
 - Operation tracking
 - Error logging
 - Performance monitoring
 
 ### 7. Response Handling
+
 - Success response
 - Error responses
 - Status updates
-- Client notification 
+- Client notification
 
 ## Registration Scenarios
 
 ### Scenario 1: New User Registration
+
 ```mermaid
 sequenceDiagram
     participant C as Client
@@ -446,6 +464,7 @@ sequenceDiagram
 ```
 
 ### Scenario 2: Existing User Registration
+
 ```mermaid
 sequenceDiagram
     participant C as Client
@@ -475,11 +494,11 @@ sequenceDiagram
     P-->>-R: School Created
     R->>+A: Check Existing Roles
     A-->>-R: Roles Retrieved
-    
+
     alt No School Owner Role
         R->>A: Add School Owner Role
     end
-    
+
     R->>P: Link School to Owner
 
     %% Setup Verification
@@ -495,4 +514,4 @@ sequenceDiagram
     %% Response
     R-->>-AG: Registration Complete
     AG-->>-C: 201 Created
-``` 
+```

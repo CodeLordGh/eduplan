@@ -2,9 +2,9 @@
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockReturnValue({
     sendMail: jest.fn().mockResolvedValue({
-      messageId: 'test-message-id'
-    })
-  })
+      messageId: 'test-message-id',
+    }),
+  }),
 }));
 
 // Set test environment variables

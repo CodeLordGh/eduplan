@@ -3,15 +3,8 @@ import { createLogger, LogLevel } from '@eduflow/logger';
 import { createEventBusState, initialize, subscribe, close } from '@eduflow/events';
 import { getRedisClient } from '@eduflow/middleware';
 import { Event } from '@eduflow/types';
-import { 
-  RegistrationEvent, 
-  VerificationEvent,
-  EventContext 
-} from './registration/types';
-import { 
-  handleRegistrationEvent,
-  handleVerificationEvent 
-} from './registration/handlers';
+import { RegistrationEvent, VerificationEvent, EventContext } from './registration/types';
+import { handleRegistrationEvent, handleVerificationEvent } from './registration/handlers';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 
@@ -22,7 +15,7 @@ config();
 const logger = createLogger({
   service: 'school-service',
   environment: process.env.NODE_ENV || 'development',
-  minLevel: (process.env.LOG_LEVEL || 'info') as LogLevel
+  minLevel: (process.env.LOG_LEVEL || 'info') as LogLevel,
 });
 
 // Initialize event bus
@@ -34,13 +27,13 @@ const initEventBus = async () => {
       exchange: 'eduflow',
       deadLetterExchange: 'eduflow.dlx',
       retryCount: 3,
-      retryDelay: 1000
+      retryDelay: 1000,
     },
     redis: {
       url: process.env.REDIS_URL || 'redis://localhost',
       keyPrefix: 'eduflow:events',
-      eventTTL: 3600
-    }
+      eventTTL: 3600,
+    },
   };
 
   const state = createEventBusState(config, logger);
@@ -54,23 +47,21 @@ const initEventBus = async () => {
 
   // Register event handlers
   await pipe(
-    subscribe(initializedState)('REGISTRATION_INITIATED', 
-      async (wrappedEvent: Event<unknown>) => {
-        const event: RegistrationEvent = {
-          type: 'REGISTRATION_INITIATED',
-          data: wrappedEvent.data as RegistrationEvent['data']
-        };
-        await handleRegistrationEvent(event, {
-          eventId: wrappedEvent.metadata.correlationId,
-          timestamp: new Date(wrappedEvent.metadata.timestamp),
-          source: wrappedEvent.metadata.source,
-          requestId: wrappedEvent.metadata.correlationId,
-          userId: '',  // TODO: Extract from event if available
-          clientInfo: { ip: '', userAgent: '' },  // TODO: Extract from event if available
-          logger
-        })();
-      }
-    ),
+    subscribe(initializedState)('REGISTRATION_INITIATED', async (wrappedEvent: Event<unknown>) => {
+      const event: RegistrationEvent = {
+        type: 'REGISTRATION_INITIATED',
+        data: wrappedEvent.data as RegistrationEvent['data'],
+      };
+      await handleRegistrationEvent(event, {
+        eventId: wrappedEvent.metadata.correlationId,
+        timestamp: new Date(wrappedEvent.metadata.timestamp),
+        source: wrappedEvent.metadata.source,
+        requestId: wrappedEvent.metadata.correlationId,
+        userId: '', // TODO: Extract from event if available
+        clientInfo: { ip: '', userAgent: '' }, // TODO: Extract from event if available
+        logger,
+      })();
+    }),
     TE.getOrElse((error) => {
       logger.error('Failed to subscribe to registration events', { error });
       process.exit(1);
@@ -78,20 +69,21 @@ const initEventBus = async () => {
   )();
 
   await pipe(
-    subscribe(initializedState)('VERIFICATION_STATUS_CHANGED', 
+    subscribe(initializedState)(
+      'VERIFICATION_STATUS_CHANGED',
       async (wrappedEvent: Event<unknown>) => {
         const event: VerificationEvent = {
           type: 'VERIFICATION_STATUS_CHANGED',
-          data: wrappedEvent.data as VerificationEvent['data']
+          data: wrappedEvent.data as VerificationEvent['data'],
         };
         await handleVerificationEvent(event, {
           eventId: wrappedEvent.metadata.correlationId,
           timestamp: new Date(wrappedEvent.metadata.timestamp),
           source: wrappedEvent.metadata.source,
           requestId: wrappedEvent.metadata.correlationId,
-          userId: '',  // TODO: Extract from event if available
-          clientInfo: { ip: '', userAgent: '' },  // TODO: Extract from event if available
-          logger
+          userId: '', // TODO: Extract from event if available
+          clientInfo: { ip: '', userAgent: '' }, // TODO: Extract from event if available
+          logger,
         })();
       }
     ),
@@ -163,4 +155,4 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 // Start the service
-start(); 
+start();

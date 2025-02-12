@@ -24,13 +24,13 @@ export const getCorrelationContext = (): CorrelationContext | undefined => {
 export const createCorrelationContext = (request: FastifyRequest): CorrelationContext => {
   const parentId = request.headers['x-correlation-id'] as string;
   const id = parentId || randomUUID();
-  
+
   return {
     id,
     parentId: parentId !== id ? parentId : undefined,
     requestPath: request.url,
     requestMethod: request.method,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 };
 
@@ -47,6 +47,6 @@ export const getCorrelationHeaders = (): Record<string, string> => {
 
   return {
     'x-correlation-id': context.id,
-    'x-parent-correlation-id': context.parentId || context.id
+    'x-parent-correlation-id': context.parentId || context.id,
   };
-}; 
+};

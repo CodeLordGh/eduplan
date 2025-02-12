@@ -5,11 +5,7 @@ import { createAppError } from '@eduflow/common';
 import { ERROR_CODES } from '@eduflow/constants';
 import { createEventBusState, initialize, publish } from '@eduflow/events';
 import { createLogger, LoggerOptions } from '@eduflow/logger';
-import { 
-  RegistrationEvent, 
-  VerificationEvent,
-  SchoolRegistrationResult
-} from './types';
+import { RegistrationEvent, VerificationEvent, SchoolRegistrationResult } from './types';
 import crypto from 'crypto';
 
 export const processRegistration = (
@@ -32,24 +28,23 @@ export const processRegistration = (
           schoolId,
           ownerId,
           status,
-          createdAt: new Date()
+          createdAt: new Date(),
         };
       },
-      (error: unknown) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to process registration',
-        metadata: {
-          service: 'school-service',
-          operation: 'process-registration',
-          timestamp: new Date()
-        }
-      })
+      (error: unknown) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to process registration',
+          metadata: {
+            service: 'school-service',
+            operation: 'process-registration',
+            timestamp: new Date(),
+          },
+        })
     )
   );
 
-export const processVerification = (
-  event: VerificationEvent
-): TE.TaskEither<AppError, void> =>
+export const processVerification = (event: VerificationEvent): TE.TaskEither<AppError, void> =>
   pipe(
     TE.tryCatch(
       async () => {
@@ -62,15 +57,16 @@ export const processVerification = (
         // Notify relevant parties
         await notifyVerificationUpdate(event.data);
       },
-      (error: unknown) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to process verification',
-        metadata: {
-          service: 'school-service',
-          operation: 'process-verification',
-          timestamp: new Date()
-        }
-      })
+      (error: unknown) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to process verification',
+          metadata: {
+            service: 'school-service',
+            operation: 'process-verification',
+            timestamp: new Date(),
+          },
+        })
     )
   );
 
@@ -81,11 +77,7 @@ export const updateVerificationStatus = (
     TE.tryCatch(
       async () => {
         // Update status in database
-        await updateSchoolVerificationStatus(
-          data.schoolId,
-          data.newStatus,
-          data.verifiedBy
-        );
+        await updateSchoolVerificationStatus(data.schoolId, data.newStatus, data.verifiedBy);
 
         // Record status change history
         await recordStatusChangeHistory(data);
@@ -93,15 +85,16 @@ export const updateVerificationStatus = (
         // Update related records
         await updateRelatedRecords(data);
       },
-      (error: unknown) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to update verification status',
-        metadata: {
-          service: 'school-service',
-          operation: 'update-verification-status',
-          timestamp: new Date()
-        }
-      })
+      (error: unknown) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update verification status',
+          metadata: {
+            service: 'school-service',
+            operation: 'update-verification-status',
+            timestamp: new Date(),
+          },
+        })
     )
   );
 
@@ -118,28 +111,28 @@ export const emitVerificationEvents = (
             exchange: 'eduflow',
             deadLetterExchange: 'eduflow.dlx',
             retryCount: 3,
-            retryDelay: 1000
+            retryDelay: 1000,
           },
           redis: {
             url: process.env.REDIS_URL || 'redis://localhost',
             keyPrefix: 'eduflow:events',
-            eventTTL: 3600
-          }
+            eventTTL: 3600,
+          },
         };
-        
+
         const loggerOptions: LoggerOptions = {
           service: 'school-service',
           environment: process.env.NODE_ENV || 'development',
-          minLevel: 'info'
+          minLevel: 'info',
         };
 
         const logger = createLogger(loggerOptions);
 
         const state = createEventBusState(config, logger);
-        
+
         await pipe(
           initialize(state),
-          TE.chain(initializedState => 
+          TE.chain((initializedState) =>
             publish(initializedState)({
               type: 'VERIFICATION_STATUS_CHANGED',
               data,
@@ -148,21 +141,22 @@ export const emitVerificationEvents = (
                 source: 'school-service',
                 correlationId: crypto.randomUUID(),
                 timestamp: new Date().toISOString(),
-                schemaVersion: '1.0.0'
-              }
+                schemaVersion: '1.0.0',
+              },
             })
           )
         )();
       },
-      (error: unknown) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to emit verification events',
-        metadata: {
-          service: 'school-service',
-          operation: 'emit-events',
-          timestamp: new Date()
-        }
-      })
+      (error: unknown) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to emit verification events',
+          metadata: {
+            service: 'school-service',
+            operation: 'emit-events',
+            timestamp: new Date(),
+          },
+        })
     )
   );
 
@@ -170,11 +164,16 @@ export const emitVerificationEvents = (
 const createSchool = async (schoolInfo: any) => 'school-1'; // TODO: Implement
 const createOwner = async (ownerInfo: any) => 'owner-1'; // TODO: Implement
 const linkOwnerToSchool = async (schoolId: string, ownerId: string) => {}; // TODO: Implement
-const setInitialVerificationStatus = async (schoolId: string): Promise<VerificationStatus> => VerificationStatus.PENDING; // TODO: Implement
+const setInitialVerificationStatus = async (schoolId: string): Promise<VerificationStatus> =>
+  VerificationStatus.PENDING; // TODO: Implement
 const processVerificationDocuments = async (schoolId: string) => {}; // TODO: Implement
 const notifyVerificationUpdate = async (data: any) => {}; // TODO: Implement
-const updateSchoolVerificationStatus = async (schoolId: string, status: string, verifiedBy: string) => {}; // TODO: Implement
+const updateSchoolVerificationStatus = async (
+  schoolId: string,
+  status: string,
+  verifiedBy: string
+) => {}; // TODO: Implement
 const recordStatusChangeHistory = async (data: any) => {}; // TODO: Implement
 const updateRelatedRecords = async (data: any) => {}; // TODO: Implement
 const emitNotificationEvents = async (data: any) => {}; // TODO: Implement
-const emitComplianceEvents = async (data: any) => {}; // TODO: Implement 
+const emitComplianceEvents = async (data: any) => {}; // TODO: Implement

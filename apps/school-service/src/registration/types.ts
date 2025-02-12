@@ -78,7 +78,7 @@ export enum SchoolType {
   PRIMARY = 'PRIMARY',
   SECONDARY = 'SECONDARY',
   TERTIARY = 'TERTIARY',
-  VOCATIONAL = 'VOCATIONAL'
+  VOCATIONAL = 'VOCATIONAL',
 }
 
 export type SchoolRegistrationResult = {
@@ -97,4 +97,4 @@ export interface VerificationHistory {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-} 
+}

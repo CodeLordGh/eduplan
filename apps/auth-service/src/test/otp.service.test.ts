@@ -11,7 +11,7 @@ describe('OTP Service', () => {
   beforeAll(async () => {
     app = await createApp();
     redis = app.redis;
-  }, 30000);  // 30 second timeout
+  }, 30000); // 30 second timeout
 
   beforeEach(async () => {
     await clearRedis(redis);
@@ -24,7 +24,7 @@ describe('OTP Service', () => {
   describe('generateOTP', () => {
     it('should generate and store OTP successfully', async () => {
       const user = await createTestUser('test@example.com', Role.STUDENT);
-      
+
       const result = await otpService.generateOTP(
         redis,
         user.id,
@@ -42,7 +42,7 @@ describe('OTP Service', () => {
   describe('verifyOTP', () => {
     it('should verify valid OTP successfully', async () => {
       const user = await createTestUser('test@example.com', Role.STUDENT);
-      
+
       const generateResult = await otpService.generateOTP(
         redis,
         user.id,
@@ -68,7 +68,7 @@ describe('OTP Service', () => {
 
     it('should reject invalid OTP', async () => {
       const user = await createTestUser('test@example.com', Role.STUDENT);
-      
+
       const verifyResult = await otpService.verifyOTP(
         redis,
         user.id,

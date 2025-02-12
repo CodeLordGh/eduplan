@@ -1,9 +1,5 @@
 // Re-export security functions at root level
-export {
-  validateAccess,
-  createPolicy,
-  createAbacMiddleware
-} from './security/abac';
+export { validateAccess, createPolicy, createAbacMiddleware } from './security/abac';
 
 // Re-export other modules
 export * from './errors';
@@ -29,5 +25,5 @@ export {
   createForbiddenError,
   createOTPError,
   createOTPExpiredError,
-  createInvalidOTPError
+  createInvalidOTPError,
 } from './errors/auth.error';

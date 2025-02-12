@@ -6,4 +6,4 @@ export interface Subscription {
 export interface UserAttributes {
   subscriptions?: Subscription[];
   // ... existing code ...
-} 
+}

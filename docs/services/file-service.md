@@ -1,29 +1,32 @@
 # File Service Development Plan
 
 ## Service Overview
+
 The File Service manages file uploads, downloads, storage, and access control across the platform. It handles various file types including documents, images, assignments, and educational resources.
 
 ## Dependencies
 
 ### Shared Libraries
+
 ```typescript
 // From @eduflow/common
-import { createLogger, ErrorHandler, FileUtils } from '@eduflow/common'
+import { createLogger, ErrorHandler, FileUtils } from '@eduflow/common';
 
 // From @eduflow/types
-import { File, FileType, FileAccess, StorageProvider } from '@eduflow/types'
+import { File, FileType, FileAccess, StorageProvider } from '@eduflow/types';
 
 // From @eduflow/validators
-import { validateFile, validateAccess } from '@eduflow/validators'
+import { validateFile, validateAccess } from '@eduflow/validators';
 
 // From @eduflow/middleware
-import { authGuard, roleGuard, fileGuard } from '@eduflow/middleware'
+import { authGuard, roleGuard, fileGuard } from '@eduflow/middleware';
 
 // From @eduflow/constants
-import { FILE_TYPES, MIME_TYPES, ACCESS_LEVELS } from '@eduflow/constants'
+import { FILE_TYPES, MIME_TYPES, ACCESS_LEVELS } from '@eduflow/constants';
 ```
 
 ### External Dependencies
+
 ```json
 {
   "dependencies": {
@@ -51,6 +54,7 @@ import { FILE_TYPES, MIME_TYPES, ACCESS_LEVELS } from '@eduflow/constants'
 ```
 
 ## Database Schema (Prisma)
+
 ```prisma
 model File {
   id            String       @id @default(uuid())
@@ -126,142 +130,151 @@ model FileQuota {
 ## Event System
 
 ### Events Published
+
 ```typescript
 type FileEvents = {
   FILE_UPLOADED: {
-    fileId: string
-    ownerId: string
-    type: FileType
-    size: number
-    timestamp: Date
-  }
+    fileId: string;
+    ownerId: string;
+    type: FileType;
+    size: number;
+    timestamp: Date;
+  };
   FILE_DELETED: {
-    fileId: string
-    ownerId: string
-    timestamp: Date
-  }
+    fileId: string;
+    ownerId: string;
+    timestamp: Date;
+  };
   FILE_SHARED: {
-    fileId: string
-    shareId: string
-    expiresAt?: Date
-    timestamp: Date
-  }
+    fileId: string;
+    shareId: string;
+    expiresAt?: Date;
+    timestamp: Date;
+  };
   FILE_ACCESS_GRANTED: {
-    fileId: string
-    userId: string
-    level: AccessLevel
-    timestamp: Date
-  }
+    fileId: string;
+    userId: string;
+    level: AccessLevel;
+    timestamp: Date;
+  };
   QUOTA_EXCEEDED: {
-    userId: string
-    currentUsage: number
-    limit: number
-    timestamp: Date
-  }
-}
+    userId: string;
+    currentUsage: number;
+    limit: number;
+    timestamp: Date;
+  };
+};
 ```
 
 ### Events Consumed
+
 ```typescript
 type ConsumedEvents = {
   USER_DELETED: {
-    userId: string
-  }
+    userId: string;
+  };
   ASSIGNMENT_CREATED: {
-    assignmentId: string
-    attachments: object[]
-  }
+    assignmentId: string;
+    attachments: object[];
+  };
   SCHOOL_CREATED: {
-    schoolId: string
-    documents: object[]
-  }
+    schoolId: string;
+    documents: object[];
+  };
   KYC_SUBMITTED: {
-    userId: string
-    documents: object[]
-  }
-}
+    userId: string;
+    documents: object[];
+  };
+};
 ```
 
 ## API Endpoints
 
 ### File Management
+
 ```typescript
 // POST /files/upload
 type UploadFileRequest = {
-  file: File
-  type: FileType
-  accessLevel: FileAccess
-  metadata?: Record<string, unknown>
-}
+  file: File;
+  type: FileType;
+  accessLevel: FileAccess;
+  metadata?: Record<string, unknown>;
+};
 
 // GET /files/:fileId
 type GetFileResponse = {
-  file: File
-  downloadUrl: string
-  thumbnail?: string
-}
+  file: File;
+  downloadUrl: string;
+  thumbnail?: string;
+};
 
 // POST /files/:fileId/share
 type ShareFileRequest = {
-  expiresIn?: number // seconds
-  accessLevel: FileAccess
-  metadata?: Record<string, unknown>
-}
+  expiresIn?: number; // seconds
+  accessLevel: FileAccess;
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ### Access Control
+
 ```typescript
 // POST /files/:fileId/access
 type GrantAccessRequest = {
-  userId: string
-  level: AccessLevel
-  expiresAt?: Date
-  metadata?: Record<string, unknown>
-}
+  userId: string;
+  level: AccessLevel;
+  expiresAt?: Date;
+  metadata?: Record<string, unknown>;
+};
 
 // GET /files/:fileId/access
 type GetAccessResponse = {
-  accesses: FileAccess[]
-}
+  accesses: FileAccess[];
+};
 ```
 
 ### Quota Management
+
 ```typescript
 // GET /quotas/:userId
 type GetQuotaResponse = {
-  used: number
-  limit: number
-  remaining: number
-}
+  used: number;
+  limit: number;
+  remaining: number;
+};
 
 // PUT /quotas/:userId
 type UpdateQuotaRequest = {
-  limit: number
-  metadata?: Record<string, unknown>
-}
+  limit: number;
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ## Implementation Plan
 
 ### Phase 1: Core File Operations
+
 1. Upload/download system
 2. Storage provider integration
 3. File type validation
 4. Virus scanning
 
 ### Phase 2: Access Control
+
 1. Permission system
 2. Sharing mechanism
 3. Access tracking
 4. Quota management
 
 ### Phase 3: Advanced Features
+
 1. File versioning
 2. Thumbnail generation
 3. File compression
 4. Metadata extraction
 
 ### Phase 4: Optimization
+
 1. Caching system
 2. CDN integration
 3. Batch operations
@@ -270,35 +283,38 @@ type UpdateQuotaRequest = {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 // File service tests
 describe('FileService', () => {
-  test('should upload files')
-  test('should validate file types')
-  test('should manage access')
-})
+  test('should upload files');
+  test('should validate file types');
+  test('should manage access');
+});
 
 // Storage service tests
 describe('StorageService', () => {
-  test('should store files')
-  test('should generate urls')
-  test('should handle versioning')
-})
+  test('should store files');
+  test('should generate urls');
+  test('should handle versioning');
+});
 ```
 
 ### Integration Tests
+
 ```typescript
 describe('File API', () => {
-  test('should handle file uploads')
-  test('should manage permissions')
-  test('should track quotas')
-  test('should integrate with storage')
-})
+  test('should handle file uploads');
+  test('should manage permissions');
+  test('should track quotas');
+  test('should integrate with storage');
+});
 ```
 
 ## Monitoring & Logging
 
 ### Metrics
+
 - Upload/download rates
 - Storage usage
 - Access patterns
@@ -306,19 +322,21 @@ describe('File API', () => {
 - Processing times
 
 ### Logging
+
 ```typescript
 const logger = createLogger({
   service: 'file-service',
   level: process.env.LOG_LEVEL || 'info',
   metadata: {
-    version: process.env.APP_VERSION
-  }
-})
+    version: process.env.APP_VERSION,
+  },
+});
 ```
 
 ## Security Measures
+
 1. File type validation
 2. Virus scanning
 3. Access control
 4. Encryption at rest
-5. Secure URL generation 
+5. Secure URL generation

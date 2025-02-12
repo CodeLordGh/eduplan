@@ -1,6 +1,10 @@
 import { throwError } from './base.error';
 
-export const createFileSizeError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createFileSizeError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'FILE_SIZE_ERROR',
     message,
@@ -8,7 +12,11 @@ export const createFileSizeError = (message: string, cause?: unknown, metadata?:
     metadata,
   });
 
-export const createFileTypeError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createFileTypeError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'FILE_TYPE_ERROR',
     message,
@@ -16,7 +24,11 @@ export const createFileTypeError = (message: string, cause?: unknown, metadata?:
     metadata,
   });
 
-export const createFileQuotaError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createFileQuotaError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'FILE_QUOTA_ERROR',
     message,
@@ -24,7 +36,11 @@ export const createFileQuotaError = (message: string, cause?: unknown, metadata?
     metadata,
   });
 
-export const createFileAccessError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createFileAccessError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'FILE_ACCESS_ERROR',
     message,
@@ -32,10 +48,14 @@ export const createFileAccessError = (message: string, cause?: unknown, metadata
     metadata,
   });
 
-export const createFileNotFoundError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createFileNotFoundError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'FILE_NOT_FOUND',
     message,
     cause,
     metadata,
-  }); 
+  });

@@ -1,12 +1,24 @@
 import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
 import { v4 as uuidv4 } from 'uuid';
-import { User, Role as PrismaRole, VerificationStatus, EmploymentEligibilityStatus } from '@eduflow/prisma';
+import {
+  User,
+  Role as PrismaRole,
+  VerificationStatus,
+  EmploymentEligibilityStatus,
+} from '@eduflow/prisma';
 import { FastifyRedis } from '@fastify/redis';
 import { hashPassword, verifyPassword, generateJWT } from '@eduflow/common';
 import { Role, ROLE_PERMISSIONS } from '@eduflow/types';
 import { CreateUserInput, validateCreateUserInput } from '../domain/user';
-import { AuthErrors, createInvalidCredentialsError, createUserNotFoundError, createDatabaseError, createDuplicateEmailError, createValidationError } from '../errors/auth';
+import {
+  AuthErrors,
+  createInvalidCredentialsError,
+  createUserNotFoundError,
+  createDatabaseError,
+  createDuplicateEmailError,
+  createValidationError,
+} from '../errors/auth';
 import * as userRepo from '../repository/user.repository';
 import * as redisService from './redis.service';
 import * as sessionService from './session.service';
@@ -33,8 +45,8 @@ const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
 const STAFF_ROLES = [PrismaRole.TEACHER, PrismaRole.SCHOOL_ADMIN, PrismaRole.SCHOOL_HEAD] as const;
 
-const isStaffRole = (role: PrismaRole): boolean => 
-  STAFF_ROLES.includes(role as typeof STAFF_ROLES[number]);
+const isStaffRole = (role: PrismaRole): boolean =>
+  STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number]);
 
 export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User> =>
   pipe(
@@ -54,7 +66,7 @@ export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User
                   userRepo.createUser({
                     email: validInput.email as string,
                     password: hashedPassword,
-                    role: validInput.role
+                    role: validInput.role,
                   })
                 )
               )
@@ -63,7 +75,10 @@ export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User
     )
   );
 
-export const login = (redis: FastifyRedis, input: LoginInput): TE.TaskEither<AuthErrors, AuthResult> =>
+export const login = (
+  redis: FastifyRedis,
+  input: LoginInput
+): TE.TaskEither<AuthErrors, AuthResult> =>
   pipe(
     userRepo.findUserByEmail(input.email),
     TE.chain((user) =>
@@ -89,14 +104,18 @@ export const login = (redis: FastifyRedis, input: LoginInput): TE.TaskEither<Aut
                       TE.fromPredicate(
                         (u: User) => {
                           const requiresEmploymentCheck = isStaffRole(u.role);
-                          return !requiresEmploymentCheck || u.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE;
+                          return (
+                            !requiresEmploymentCheck ||
+                            u.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE
+                          );
                         },
-                        () => createValidationError('Employment eligibility check required for this role')
+                        () =>
+                          createValidationError(
+                            'Employment eligibility check required for this role'
+                          )
                       )(user)
                     ),
-                    TE.chain(() =>
-                      generateAuthTokens(redis, user)
-                    ),
+                    TE.chain(() => generateAuthTokens(redis, user)),
                     TE.chain((tokens) =>
                       pipe(
                         sessionService.createSession(
@@ -109,7 +128,7 @@ export const login = (redis: FastifyRedis, input: LoginInput): TE.TaskEither<Aut
                         ),
                         TE.map(() => ({
                           user,
-                          ...tokens
+                          ...tokens,
                         }))
                       )
                     )
@@ -149,20 +168,24 @@ export const refresh = (
                       TE.fromPredicate(
                         (u: User) => {
                           const requiresEmploymentCheck = isStaffRole(u.role);
-                          return !requiresEmploymentCheck || u.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE;
+                          return (
+                            !requiresEmploymentCheck ||
+                            u.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE
+                          );
                         },
-                        () => createValidationError('Employment eligibility check required for this role')
+                        () =>
+                          createValidationError(
+                            'Employment eligibility check required for this role'
+                          )
                       )(user)
                     ),
-                    TE.chain(() =>
-                      generateAuthTokens(redis, user)
-                    ),
+                    TE.chain(() => generateAuthTokens(redis, user)),
                     TE.chain((tokens) =>
                       pipe(
                         sessionService.updateSession(redis, user.id, {
                           lastActivity: Date.now(),
                           ipAddress,
-                          userAgent
+                          userAgent,
                         }),
                         TE.map(() => ({ ...tokens, user }))
                       )
@@ -175,7 +198,10 @@ export const refresh = (
     )
   );
 
-export const logout = (redis: FastifyRedis, refreshToken: string): TE.TaskEither<AuthErrors, void> =>
+export const logout = (
+  redis: FastifyRedis,
+  refreshToken: string
+): TE.TaskEither<AuthErrors, void> =>
   pipe(
     redisService.getRefreshTokenUserId(redis, refreshToken),
     TE.chain((optionUserId) =>
@@ -205,7 +231,7 @@ const generateAuthTokens = (
           permissions: ROLE_PERMISSIONS[user.role as unknown as Role] || [],
           kycVerified: user.kycStatus === VerificationStatus.VERIFIED,
           employmentEligible: user.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE,
-          socialAccessEnabled: user.socialAccessEnabled || false
+          socialAccessEnabled: user.socialAccessEnabled || false,
         });
         const refreshToken = uuidv4();
 

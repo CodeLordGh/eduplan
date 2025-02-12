@@ -1,11 +1,13 @@
 # Attribute-Based Access Control (ABAC) Documentation
 
 ## Overview
+
 The ABAC system provides fine-grained access control based on user attributes, environmental conditions, and resource characteristics. It follows functional programming principles using `fp-ts` and integrates with the error handling system for robust error management.
 
 ## Architecture
 
 ### Component Diagram
+
 ```mermaid
 graph TB
     subgraph "@eduflow/types"
@@ -36,6 +38,7 @@ graph TB
 ```
 
 ### Access Control Flow
+
 ```mermaid
 sequenceDiagram
     participant C as Client
@@ -64,11 +67,13 @@ sequenceDiagram
 ### Core Types
 
 #### Resource Actions
+
 ```typescript
 type ResourceAction = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
 ```
 
 #### User Attributes
+
 ```typescript
 interface UserAttributes {
   id: string;
@@ -84,6 +89,7 @@ interface UserAttributes {
 ```
 
 #### Access Policy
+
 ```typescript
 interface AccessPolicy {
   resource: string;
@@ -95,6 +101,7 @@ interface AccessPolicy {
 ### Policy Conditions
 
 #### School Conditions
+
 ```typescript
 interface SchoolConditions {
   mustBeInSchool?: boolean;
@@ -105,6 +112,7 @@ interface SchoolConditions {
 ```
 
 #### Environment Conditions
+
 ```typescript
 interface EnvironmentConditions {
   timeRestrictions?: TimeRestrictions;
@@ -115,6 +123,7 @@ interface EnvironmentConditions {
 ```
 
 #### Verification Conditions
+
 ```typescript
 interface VerificationConditions {
   requireKYC?: boolean;
@@ -129,6 +138,7 @@ interface VerificationConditions {
 ### Core Functions
 
 #### Attribute Collection
+
 ```typescript
 const collectUserAttributes = async (
   userId: string
@@ -136,6 +146,7 @@ const collectUserAttributes = async (
 ```
 
 #### Role Hierarchy
+
 ```typescript
 const checkRoleHierarchy = (
   userRoles: Role[],
@@ -144,6 +155,7 @@ const checkRoleHierarchy = (
 ```
 
 #### Permission Checking
+
 ```typescript
 const checkPermissions = (
   userRoles: Role[],
@@ -154,6 +166,7 @@ const checkPermissions = (
 ### Context Validation
 
 #### Time Restrictions
+
 ```typescript
 const isWithinAllowedTime = (
   allowedDays: string[],
@@ -163,6 +176,7 @@ const isWithinAllowedTime = (
 ```
 
 #### IP Validation
+
 ```typescript
 const isIPAllowed = (
   ip: string | undefined,
@@ -172,6 +186,7 @@ const isIPAllowed = (
 ```
 
 #### Device Trust
+
 ```typescript
 const isTrustedDevice = (
   deviceInfo: UserContext['deviceInfo']
@@ -179,6 +194,7 @@ const isTrustedDevice = (
 ```
 
 ### Main Evaluator
+
 ```typescript
 const evaluateAccess = async (
   userId: string,
@@ -189,6 +205,7 @@ const evaluateAccess = async (
 ## Middleware Integration (`libs/middleware/src/auth.middleware.ts`)
 
 ### Authentication
+
 ```typescript
 const authenticate = async (
   request: FastifyRequest
@@ -196,55 +213,63 @@ const authenticate = async (
 ```
 
 ### Authorization
+
 ```typescript
-const authorize = (roles: UserRole[]) => 
+const authorize = (roles: UserRole[]) =>
   async (request: FastifyRequest): Promise<void>
 ```
 
 ## Error Handling
 
 ### Error Categories
+
 The system uses specialized error creators for different types of access violations:
 
 #### Role-Based Errors
+
 ```typescript
 const roleError = createRoleError('User does not have required roles', {
   code: 'INSUFFICIENT_ROLES',
   requiredRoles: ['ADMIN', 'TEACHER'],
   userGlobalRoles: user.globalRoles,
-  userSchoolRoles: user.schoolRoles
+  userSchoolRoles: user.schoolRoles,
 });
 ```
 
 #### Verification Errors
+
 ```typescript
 const verificationError = createVerificationError('KYC verification required', {
   code: 'VERIFICATION_REQUIRED',
   currentKycStatus: user.kyc.status,
-  requiredStatus: 'VERIFIED'
+  requiredStatus: 'VERIFIED',
 });
 ```
 
 #### School Context Errors
+
 ```typescript
 const schoolError = createSchoolContextError('No current school context', {
   code: 'INVALID_SCHOOL_CONTEXT',
   userId: user.id,
-  context: user.context
+  context: user.context,
 });
 ```
 
 #### Environment Restriction Errors
+
 ```typescript
 const envError = createEnvironmentError('Access not allowed from region', {
   code: 'ENVIRONMENT_RESTRICTION',
   userRegion: userLocation.region,
-  allowedRegions: locationRestrictions.regions
+  allowedRegions: locationRestrictions.regions,
 });
 ```
 
 ### Error Response Format
+
 All ABAC errors follow a consistent format:
+
 ```typescript
 interface AbacError {
   message: string;
@@ -269,18 +294,21 @@ interface ValidationResult {
 ### Core Functions
 
 #### Validation Chain
+
 The system uses a functional approach with Either monad for validation:
+
 ```typescript
 const validationResults = [
   validateRoles(user, conditions),
   validateVerification(user, conditions),
   validateSchoolContext(user, conditions),
   validateEnvironment(user, conditions),
-  validateCustomConditions(user, conditions, context)
+  validateCustomConditions(user, conditions, context),
 ];
 ```
 
 #### Role Validation
+
 ```typescript
 const validateRoles = (
   user: UserAttributes,
@@ -292,6 +320,7 @@ const validateRoles = (
 ```
 
 #### Environment Validation
+
 ```typescript
 const validateEnvironment = (
   user: UserAttributes,
@@ -305,29 +334,30 @@ const validateEnvironment = (
 ## Usage Examples
 
 ### Basic Policy with Error Handling
+
 ```typescript
 const documentAccessPolicy: AccessPolicy = {
   resource: 'document',
   action: 'READ',
   conditions: {
     anyOf: {
-      roles: ['TEACHER', 'ADMIN']
+      roles: ['TEACHER', 'ADMIN'],
     },
     verification: {
       requireKYC: true,
-      kycStatus: ['VERIFIED']
+      kycStatus: ['VERIFIED'],
     },
     school: {
-      mustBeCurrentSchool: true
+      mustBeCurrentSchool: true,
     },
     environment: {
       timeRestrictions: {
         allowedDays: ['1', '2', '3', '4', '5'], // Mon-Fri
         allowedHours: ['09', '17'], // 9 AM - 5 PM
-        timezone: 'UTC'
-      }
-    }
-  }
+        timezone: 'UTC',
+      },
+    },
+  },
 };
 
 // Using the policy
@@ -344,26 +374,30 @@ try {
 ```
 
 ### Custom Validation with Error Context
+
 ```typescript
 const customPolicy: AccessPolicy = {
   resource: 'grade',
   action: 'UPDATE',
   conditions: {
-    custom: [{
-      evaluator: (attributes, context) => {
-        const isTeacher = attributes.schoolRoles[context.schoolId]?.includes('TEACHER');
-        const isAssignedClass = attributes.classes?.includes(context.classId);
-        return isTeacher && isAssignedClass;
+    custom: [
+      {
+        evaluator: (attributes, context) => {
+          const isTeacher = attributes.schoolRoles[context.schoolId]?.includes('TEACHER');
+          const isAssignedClass = attributes.classes?.includes(context.classId);
+          return isTeacher && isAssignedClass;
+        },
+        errorMessage: 'Teacher must be assigned to the class',
       },
-      errorMessage: 'Teacher must be assigned to the class'
-    }]
-  }
+    ],
+  },
 };
 ```
 
 ## Policy Definition Examples
 
 ### Basic Policy
+
 ```typescript
 const createBasicPolicy = (
   resource: string,
@@ -375,13 +409,14 @@ const createBasicPolicy = (
   conditions: {
     roles,
     verification: {
-      requireKYC: true
-    }
-  }
+      requireKYC: true,
+    },
+  },
 });
 ```
 
 ### School-Specific Policy
+
 ```typescript
 const createSchoolPolicy = (
   resource: string,
@@ -396,17 +431,18 @@ const createSchoolPolicy = (
     school: {
       mustBeInSchool: true,
       mustBeCurrentSchool: true,
-      allowedRoles: roles
+      allowedRoles: roles,
     },
     verification: {
       requireKYC: true,
-      employmentStatus: ['VERIFIED']
-    }
-  }
+      employmentStatus: ['VERIFIED'],
+    },
+  },
 });
 ```
 
 ### Time-Restricted Policy
+
 ```typescript
 const createTimeRestrictedPolicy = (
   resource: string,
@@ -417,20 +453,21 @@ const createTimeRestrictedPolicy = (
   action,
   conditions: {
     environment: {
-      timeRestrictions
-    }
-  }
+      timeRestrictions,
+    },
+  },
 });
 ```
 
 ### Custom Evaluator
+
 ```typescript
 const createCustomEvaluator = (
   evaluator: (attributes: UserAttributes) => boolean,
   errorMessage: string
 ) => ({
   evaluator,
-  errorMessage
+  errorMessage,
 });
 
 const createGradePolicy = (classId: string): AccessPolicy => ({
@@ -439,65 +476,67 @@ const createGradePolicy = (classId: string): AccessPolicy => ({
   conditions: {
     custom: [
       createCustomEvaluator(
-        (attributes) => pipe(
-          attributes.classes,
-          O.fromNullable,
-          O.map((classes) => classes.includes(classId)),
-          O.getOrElse(() => false)
-        ),
+        (attributes) =>
+          pipe(
+            attributes.classes,
+            O.fromNullable,
+            O.map((classes) => classes.includes(classId)),
+            O.getOrElse(() => false)
+          ),
         'Teacher must be assigned to the class'
-      )
-    ]
-  }
+      ),
+    ],
+  },
 });
 ```
 
 ## Best Practices
 
 ### Policy Management
+
 ```typescript
 // Create reusable policy factories
-const createResourcePolicy = (
-  resource: string,
-  action: ResourceAction
-) => (
-  roles: Role[],
-  options: PolicyOptions
-): AccessPolicy => ({
-  resource,
-  action,
-  conditions: {
-    roles,
-    ...options
-  }
-});
+const createResourcePolicy =
+  (resource: string, action: ResourceAction) =>
+  (roles: Role[], options: PolicyOptions): AccessPolicy => ({
+    resource,
+    action,
+    conditions: {
+      roles,
+      ...options,
+    },
+  });
 
 // Compose policies
 const createTeacherPolicy = createResourcePolicy('document', 'READ');
 const policy = createTeacherPolicy(['TEACHER'], {
-  school: { mustBeCurrentSchool: true }
+  school: { mustBeCurrentSchool: true },
 });
 ```
 
 ### Policy Composition Guidelines
+
 1. Keep policies granular and focused
 2. Use role hierarchy appropriately
 3. Include meaningful error messages
 4. Group related conditions logically
 
 ### Performance Optimization
+
 1. Cache user attributes when possible
 2. Use hierarchical evaluations
 3. Optimize condition order
 4. Implement efficient role checks
 
 ### Security Best Practices
+
 1. Always verify KYC status when required
 2. Implement proper IP restrictions
 3. Enforce device trust requirements
 4. Log access decisions with context
 
 ### Maintenance Guidelines
+
 1. Document policy changes
 2. Version control policies
 3. Test policy combinations
@@ -507,22 +546,17 @@ const policy = createTeacherPolicy(['TEACHER'], {
 ## Testing
 
 ### Policy Testing with Error Cases
+
 ```typescript
 describe('Document Access Policy', () => {
   it('should return proper error for unverified user', async () => {
-    const result = await validateAccess(
-      unverifiedUser,
-      documentAccessPolicy
-    );
+    const result = await validateAccess(unverifiedUser, documentAccessPolicy);
     expect(result.granted).toBe(false);
     expect(result.reason).toContain('KYC verification required');
   });
 
   it('should return detailed error for time restriction', async () => {
-    const result = await validateAccess(
-      userOutsideHours,
-      documentAccessPolicy
-    );
+    const result = await validateAccess(userOutsideHours, documentAccessPolicy);
     expect(result.granted).toBe(false);
     expect(result.reason).toMatch(/Access not allowed at .* Allowed hours: 09:00-17:00/);
   });
@@ -532,17 +566,19 @@ describe('Document Access Policy', () => {
 ## Related Documentation
 
 ### Core Documentation
+
 - [Error Handling](./error-handling.md) - Error handling system implementation
 - [Logger Integration](../logger/docs/logger.md) - Logging system integration
 - [ABAC Types](../types/docs/types.md#abac-types) - Type definitions for ABAC system
 
 ### Integration & Usage
+
 - [ABAC Integration Guide](../docs/abac-integration.md) - How to integrate ABAC in your service
 - [Error Handling Integration](../docs/error-handling-integration.md) - Error handling integration guide
 - [System Integration](../docs/system-integration.md) - Overall system integration guide
 
 ### Implementation Details
+
 - [ABAC Flow](../types/src/auth/ABAC_FLOW.md) - Detailed flow diagrams and implementation notes
 - [Middleware Documentation](../middleware/docs/middleware.md) - ABAC middleware implementation
 - [Constants Documentation](../constants/docs/constants.md) - Error codes and constants
-

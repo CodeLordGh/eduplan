@@ -3,6 +3,7 @@
 This document provides a comprehensive overview of all functions and utilities exported from the middleware library.
 
 ## Table of Contents
+
 - [Authentication Middleware](#authentication-middleware)
 - [Redis Utilities](#redis-utilities)
   - [Key Generation](#key-generation)
@@ -16,6 +17,7 @@ Located in `src/auth.middleware.ts`, this module provides authentication and aut
 ### Types
 
 - `AuthenticatedUser`
+
   ```typescript
   {
     id: string;
@@ -30,17 +32,21 @@ Located in `src/auth.middleware.ts`, this module provides authentication and aut
 ### Exports
 
 - `extractToken(request: FastifyRequest): string`
+
   - Extracts JWT token from request headers
   - Throws if no token is provided
 
 - `verifyAndAttachUser(request: FastifyRequest): Promise<RequestWithUser>`
+
   - Verifies JWT token and attaches user to request
   - Throws on invalid token
 
 - `authenticate(request: FastifyRequest): Promise<RequestWithUser>`
+
   - Wrapper around verifyAndAttachUser for authentication
 
 - `checkRole(allowedRoles: UserRole[]): (user: AuthenticatedUser) => void`
+
   - Role validation function
   - Throws if user's role is not in allowed roles
 
@@ -56,13 +62,10 @@ Located in `src/redis/`, this module provides Redis-related utilities and middle
 
 - `createSessionKey(sessionId: string): string`
   - Generates Redis key for session storage
-  
 - `createRateLimitKey(ip: string, prefix?: string): string`
   - Generates Redis key for rate limiting
-  
 - `createOTPKey(userId: string): string`
   - Generates Redis key for OTP storage
-  
 - `createCacheKey(key: string, prefix?: string): string`
   - Generates Redis key for general caching
 
@@ -70,7 +73,6 @@ Located in `src/redis/`, this module provides Redis-related utilities and middle
 
 - `parseJSON<T>(data: string): Option<T>`
   - Safely parses JSON string to type T
-  
 - `getHeaderValue(headers: IncomingHttpHeaders, key: string): Option<string>`
   - Safely extracts header value
 
@@ -80,19 +82,14 @@ All operations return TaskEither for functional error handling:
 
 - `getRedisValue(redis: Redis): (key: string) => TaskEither<Error, Option<string>>`
   - Retrieves value from Redis
-  
 - `setRedisValue(redis: Redis): (key: string, value: string, ttl?: number) => TaskEither<Error, boolean>`
   - Sets value in Redis with optional TTL
-  
 - `incrementRedisValue(redis: Redis): (key: string) => TaskEither<Error, number>`
   - Increments numeric value in Redis
-  
 - `setRedisExpiry(redis: Redis): (key: string, ttl: number) => TaskEither<Error, boolean>`
   - Sets expiry on existing key
-  
 - `getRedisTimeToLive(redis: Redis): (key: string) => TaskEither<Error, number>`
   - Gets remaining TTL for key
-  
 - `deleteRedisValue(redis: Redis): (key: string) => TaskEither<Error, boolean>`
   - Deletes value from Redis
 
@@ -108,6 +105,7 @@ Located in `src/academic.ts`, this module provides academic-related middleware f
 ### Exports
 
 - `reportCardAccessGuard(request: DatabaseRequest, reply: FastifyReply): Promise<void>`
+
   - Guards report card access based on user role and permissions
   - Validates:
     - Report card existence
@@ -116,6 +114,7 @@ Located in `src/academic.ts`, this module provides academic-related middleware f
     - Report card availability
 
 - `gradeRecordingGuard(request: DatabaseRequest, reply: FastifyReply): Promise<void>`
+
   - Guards grade recording operations
   - Validates:
     - Teacher assignment to subject

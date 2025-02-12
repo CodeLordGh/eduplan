@@ -11,10 +11,11 @@ export const validateAccess = (policy: AccessPolicy): TE.TaskEither<AppError, Va
         // For now, just grant access
         return { granted: true };
       },
-      (error: unknown) => createAppError({
-        code: 'VALIDATION_ERROR',
-        message: 'Failed to validate access',
-        cause: error
-      })
+      (error: unknown) =>
+        createAppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Failed to validate access',
+          cause: error,
+        })
     )
-  ); 
+  );

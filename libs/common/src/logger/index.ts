@@ -22,11 +22,13 @@ const formatError = (error?: Error): Record<string, unknown> | undefined =>
       }
     : undefined;
 
-const createLogFn = (logger: pino.Logger, level: LogLevel) =>
+const createLogFn =
+  (logger: pino.Logger, level: LogLevel) =>
   (message: string, context: LogContext = {}) =>
     logger[level]({ ...context }, message);
 
-const createErrorLogFn = (logger: pino.Logger) =>
+const createErrorLogFn =
+  (logger: pino.Logger) =>
   (message: string, error?: Error, context: LogContext = {}) =>
     logger.error(
       {
@@ -46,4 +48,4 @@ export const createLogger = (service: string, options?: pino.LoggerOptions) => {
     debug: createLogFn(baseLogger, 'debug'),
     trace: createLogFn(baseLogger, 'trace'),
   };
-}; 
+};

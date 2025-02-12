@@ -1,8 +1,10 @@
 import { z } from 'zod';
+import { stringSchema, validateWithSchema } from '../validation/base';
 
 export const emailSchema = z.string().email('Invalid email format');
 
-export const passwordSchema = z.string()
+export const passwordSchema = z
+  .string()
   .min(8, 'Password must be at least 8 characters')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
@@ -28,22 +30,41 @@ export const validatePassword = (password: string): boolean => {
 };
 
 // Export types inferred from schemas
-export type Email = z.infer<typeof emailSchema>;
+export type Email = z.infer<typeof stringSchema.email>;
 export type Password = z.infer<typeof passwordSchema>;
 
-// Additional auth-related schemas
+// Auth-related schemas
 export const loginCredentialsSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema
+  email: stringSchema.email,
+  password: passwordSchema,
 });
 
-export const registrationSchema = loginCredentialsSchema.extend({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  confirmPassword: passwordSchema
-}).refine((data: { password: string; confirmPassword: string }) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-});
+export const registrationSchema = loginCredentialsSchema
+  .extend({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    confirmPassword: passwordSchema,
+  })
+  .refine(
+    (data: { password: string; confirmPassword: string }) => data.password === data.confirmPassword,
+    {
+      message: "Passwords don't match",
+      path: ['confirmPassword'],
+    }
+  );
 
+// Validation functions using the new utilities
+export const validateEmailWithSchema = (email: string) =>
+  validateWithSchema(stringSchema.email, email);
+
+export const validatePasswordWithSchema = (password: string) =>
+  validateWithSchema(passwordSchema, password);
+
+export const validateLoginCredentials = (credentials: unknown) =>
+  validateWithSchema(loginCredentialsSchema, credentials);
+
+export const validateRegistration = (registration: unknown) =>
+  validateWithSchema(registrationSchema, registration);
+
+// Types for validated data
 export type LoginCredentials = z.infer<typeof loginCredentialsSchema>;
-export type RegistrationData = z.infer<typeof registrationSchema>; 
+export type Registration = z.infer<typeof registrationSchema>;

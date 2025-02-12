@@ -27,26 +27,21 @@ const publishBatch = async <T>(
 ): Promise<void> => {
   // Publish messages in sequence
   for (const item of items) {
-    channel.publish(
-      item.exchange,
-      item.routingKey,
-      Buffer.from(JSON.stringify(item.content)),
-      {
-        persistent: true,
-        headers: {
-          ...item.headers,
-          'x-batch-id': Date.now(),
-          'x-batch-size': items.length
-        }
-      }
-    );
+    channel.publish(item.exchange, item.routingKey, Buffer.from(JSON.stringify(item.content)), {
+      persistent: true,
+      headers: {
+        ...item.headers,
+        'x-batch-id': Date.now(),
+        'x-batch-size': items.length,
+      },
+    });
   }
-  
+
   // Wait for all messages to be confirmed
   await channel.waitForConfirms();
-  
+
   logger.info('Successfully published batch', {
-    batchSize: items.length
+    batchSize: items.length,
   });
 };
 
@@ -61,37 +56,30 @@ const retryBatch = async <T>(
   if (retriesLeft <= 0) {
     logger.error('Max retries exceeded for batch', {
       batchSize: items.length,
-      totalAttempts: attempt
+      totalAttempts: attempt,
     });
     return;
   }
 
   const delay = retryDelay * attempt;
-  await new Promise(resolve => setTimeout(resolve, delay));
+  await new Promise((resolve) => setTimeout(resolve, delay));
 
   try {
     await publishBatch(items, channel, logger);
-    
+
     logger.info('Successfully published batch after retry', {
       batchSize: items.length,
-      attempt
+      attempt,
     });
   } catch (error) {
     logger.warn('Retry attempt failed', {
       error: error instanceof Error ? error.message : String(error),
       batchSize: items.length,
       attempt,
-      retriesLeft: retriesLeft - 1
+      retriesLeft: retriesLeft - 1,
     });
-    
-    await retryBatch(
-      items,
-      channel,
-      logger,
-      retriesLeft - 1,
-      retryDelay,
-      attempt + 1
-    );
+
+    await retryBatch(items, channel, logger, retriesLeft - 1, retryDelay, attempt + 1);
   }
 };
 
@@ -106,27 +94,21 @@ const flush = async <T>(
   }
 
   const items = [...state.items];
-  
+
   try {
     await publishBatch(items, channel, logger);
     return { ...state, items: [] };
   } catch (error) {
     logger.error('Failed to publish batch', {
       error: error instanceof Error ? error.message : String(error),
-      batchSize: items.length
+      batchSize: items.length,
     });
-    
+
     if (options.maxRetries && options.retryDelay) {
-      await retryBatch(
-        items,
-        channel,
-        logger,
-        options.maxRetries,
-        options.retryDelay
-      );
+      await retryBatch(items, channel, logger, options.maxRetries, options.retryDelay);
       return { ...state, items: [] };
     }
-    
+
     // If no retries configured or retries failed, keep items in batch
     return state;
   }
@@ -139,20 +121,17 @@ export const createBatchProcessor = <T>(
 ) => {
   let state: BatchState<T> = {
     items: [],
-    timer: null
+    timer: null,
   };
 
   // Start flush timer
-  state.timer = setInterval(
-    async () => {
-      state = await flush(state, channel, options, logger);
-    },
-    options.flushInterval
-  );
+  state.timer = setInterval(async () => {
+    state = await flush(state, channel, options, logger);
+  }, options.flushInterval);
 
   const add = async (item: BatchItem<T>): Promise<void> => {
     state.items.push(item);
-    
+
     if (state.items.length >= options.batchSize) {
       state = await flush(state, channel, options, logger);
     }
@@ -171,6 +150,6 @@ export const createBatchProcessor = <T>(
 
   return {
     add,
-    close
+    close,
   };
-}; 
+};

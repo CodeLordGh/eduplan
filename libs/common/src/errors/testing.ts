@@ -32,10 +32,7 @@ export const expectError = (fn: () => unknown) => {
       return true;
     },
 
-    toHaveMetadata: <C extends ErrorCode>(
-      code: C,
-      metadata: Partial<ErrorMetadata[C]>
-    ) => {
+    toHaveMetadata: <C extends ErrorCode>(code: C, metadata: Partial<ErrorMetadata[C]>) => {
       const actualMetadata = getErrorMetadata(thrownError, code);
       expect(O.isSome(actualMetadata)).toBe(true);
       if (O.isSome(actualMetadata)) {
@@ -47,18 +44,16 @@ export const expectError = (fn: () => unknown) => {
     toHaveCause: (cause: unknown) => {
       expect(thrownError.cause).toBe(cause);
       return true;
-    }
+    },
   };
 };
 
 /**
  * Tests async error handling
  */
-export const expectAsyncError = async <T>(
-  te: TE.TaskEither<AppError, T>
-) => {
+export const expectAsyncError = async <T>(te: TE.TaskEither<AppError, T>) => {
   const result = await te();
-  
+
   if (E.isRight(result)) {
     throw new Error('Expected TaskEither to fail');
   }
@@ -76,10 +71,7 @@ export const expectAsyncError = async <T>(
       return true;
     },
 
-    toHaveMetadata: <C extends ErrorCode>(
-      code: C,
-      metadata: Partial<ErrorMetadata[C]>
-    ) => {
+    toHaveMetadata: <C extends ErrorCode>(code: C, metadata: Partial<ErrorMetadata[C]>) => {
       const actualMetadata = getErrorMetadata(error, code);
       expect(O.isSome(actualMetadata)).toBe(true);
       if (O.isSome(actualMetadata)) {
@@ -91,7 +83,7 @@ export const expectAsyncError = async <T>(
     toHaveCause: (cause: unknown) => {
       expect(error.cause).toBe(cause);
       return true;
-    }
+    },
   };
 };
 
@@ -106,5 +98,5 @@ export const createMockError = <C extends ErrorCode>(
   name: code,
   message: `Mock ${code} error`,
   statusCode: 500, // Default status code for mocks
-  metadata
-}); 
+  metadata,
+});

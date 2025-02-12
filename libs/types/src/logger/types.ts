@@ -9,10 +9,10 @@ export const LOG_LEVELS = {
   INFO: 'info',
   WARN: 'warn',
   ERROR: 'error',
-  FATAL: 'fatal'
+  FATAL: 'fatal',
 } as const;
 
-export type LogLevel = typeof LOG_LEVELS[keyof typeof LOG_LEVELS];
+export type LogLevel = (typeof LOG_LEVELS)[keyof typeof LOG_LEVELS];
 
 /**
  * Base context that should be included with every log
@@ -118,8 +118,18 @@ export interface RequestLogger extends Logger {
 }
 
 export interface ErrorLogger extends Logger {
-  logError: (error: Error & { code?: string; statusCode?: number }, context?: Partial<ErrorContext>) => void;
+  logError: (
+    error: Error & { code?: string; statusCode?: number },
+    context?: Partial<ErrorContext>
+  ) => void;
   logErrorAndReturn: <E extends Error>(error: E, context?: Partial<ErrorContext>) => E;
 }
 
-export type ServiceContext = 'api' | 'database' | 'cache' | 'queue' | 'auth' | 'file' | 'integration'; 
+export type ServiceContext =
+  | 'api'
+  | 'database'
+  | 'cache'
+  | 'queue'
+  | 'auth'
+  | 'file'
+  | 'integration';

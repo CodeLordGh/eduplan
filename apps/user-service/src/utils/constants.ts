@@ -2,7 +2,7 @@ export const SYSTEM_OCCUPATIONS = {
   HEADMASTER: 'Headmaster',
   SCHOOL_ADMIN: 'School Administrator',
   TEACHER: 'Teacher',
-  STUDENT: 'Student'
+  STUDENT: 'Student',
 } as const;
 
 export const USER_ROLES = {
@@ -11,18 +11,18 @@ export const USER_ROLES = {
   TEACHER: 'TEACHER',
   STUDENT: 'STUDENT',
   PARENT: 'PARENT',
-  SCHOOL_OWNER: 'SCHOOL_OWNER'
+  SCHOOL_OWNER: 'SCHOOL_OWNER',
 } as const;
 
 export const EVENTS = {
   PROFILE_CREATED: 'PROFILE_CREATED',
   PROFILE_UPDATED: 'PROFILE_UPDATED',
-  PROFILE_DELETED: 'PROFILE_DELETED'
+  PROFILE_DELETED: 'PROFILE_DELETED',
 } as const;
 
 export const ERROR_CODES = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   NOT_FOUND: 'NOT_FOUND',
   UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN'
-} as const; 
+  FORBIDDEN: 'FORBIDDEN',
+} as const;

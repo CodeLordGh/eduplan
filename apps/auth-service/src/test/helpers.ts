@@ -14,7 +14,7 @@ export const createTestUser = async (
   const input: CreateUserInput = {
     email,
     password: 'Password123!',
-    role
+    role,
   };
 
   const result = await userRepo.createUser(input)();
@@ -28,13 +28,10 @@ export const clearRedis = async (redis: Redis): Promise<void> => {
   await redis.flushall();
 };
 
-export const generateTestToken = (
-  app: FastifyInstance,
-  user: User
-): string => {
+export const generateTestToken = (app: FastifyInstance, user: User): string => {
   return app.jwt.sign({
     userId: user.id,
     email: user.email,
-    role: user.role
+    role: user.role,
   });
 };

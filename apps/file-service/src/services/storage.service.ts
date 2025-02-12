@@ -14,7 +14,7 @@ const quotaLimits: Record<FileCategory, number> = {
   [FileCategory.SCHOOL_DOCUMENT]: 50 * 1024 * 1024, // 50MB
   [FileCategory.STUDENT_WORK]: 20 * 1024 * 1024, // 20MB
   [FileCategory.COURSE_MATERIAL]: 100 * 1024 * 1024, // 100MB
-  [FileCategory.OTHER]: 10 * 1024 * 1024 // 10MB
+  [FileCategory.OTHER]: 10 * 1024 * 1024, // 10MB
 };
 
 export const uploadFile = (
@@ -42,15 +42,15 @@ export const uploadFile = (
     accessLevel,
     ownerId,
     ownerType,
-    accessibleTo
+    accessibleTo,
   } = params;
 
   const createFileData: Prisma.FileCreateInput = {
-    name: '',  // Will be set after upload
+    name: '', // Will be set after upload
     originalName,
     mimeType,
     size,
-    url: '',  // Will be set after upload
+    url: '', // Will be set after upload
     type,
     category,
     accessLevel,
@@ -58,19 +58,19 @@ export const uploadFile = (
     ownerId,
     ownerType: ownerType as EntityType,
     accessibleTo,
-    metadata: {}  // Will be set after upload
+    metadata: {}, // Will be set after upload
   };
 
   return pipe(
     uploadToCloudinary(file, {
-      folder: `${ownerType}/${ownerId}/${category}`.toLowerCase()
+      folder: `${ownerType}/${ownerId}/${category}`.toLowerCase(),
     }),
     TE.chain(({ url, public_id }) =>
       createFile({
         ...createFileData,
         name: public_id,
         url,
-        metadata: { public_id }
+        metadata: { public_id },
       })
     ),
     TE.chain((file) =>
@@ -79,9 +79,9 @@ export const uploadFile = (
           fileId: file.id,
           totalSize: size,
           usedSize: size,
-          maxSize: quotaLimits[category]
+          maxSize: quotaLimits[category],
         }),
-        TE.mapLeft(error => createFileQuotaError('Failed to create quota', error)),
+        TE.mapLeft((error) => createFileQuotaError('Failed to create quota', error)),
         TE.map(() => file)
       )
     )
@@ -90,16 +90,19 @@ export const uploadFile = (
 
 export const getFile = (id: string): TE.TaskEither<BaseError, File | null> => getFileById(id);
 
-export const listFilesByOwner = (ownerId: string): TE.TaskEither<BaseError, File[]> => 
+export const listFilesByOwner = (ownerId: string): TE.TaskEither<BaseError, File[]> =>
   listFiles({ ownerId });
 
-export const deleteFileById = (quotaRepository: QuotaRepository, id: string): TE.TaskEither<BaseError, File> =>
+export const deleteFileById = (
+  quotaRepository: QuotaRepository,
+  id: string
+): TE.TaskEither<BaseError, File> =>
   pipe(
     deleteFile(id),
-    TE.chain((file) => 
+    TE.chain((file) =>
       pipe(
         quotaRepository.delete(id),
-        TE.mapLeft(error => createFileQuotaError('Failed to delete quota', error)),
+        TE.mapLeft((error) => createFileQuotaError('Failed to delete quota', error)),
         TE.map(() => file)
       )
     )

@@ -1,11 +1,13 @@
 # Events Library Documentation
 
 ## Overview
+
 The events library provides a robust, functional event system for building event-driven architectures. This documentation covers the complete implementation details and core functionality. For integration patterns and examples, see the [Events Integration Guide](../../docs/events-integration.md).
 
 ## Architecture
 
 ### System Architecture
+
 ```mermaid
 graph TB
     subgraph "Event System"
@@ -37,6 +39,7 @@ graph TB
 ```
 
 ### Event Flow
+
 ```mermaid
 sequenceDiagram
     participant P as Publisher
@@ -61,6 +64,7 @@ sequenceDiagram
 This document provides a comprehensive overview of all functions and utilities exported from the events library. For type definitions and interfaces, please refer to the [Types Documentation](../../types/docs/types.md#event-system-types).
 
 ## Table of Contents
+
 - [Event Bus Core](#event-bus-core)
   - [Initialization Functions](#initialization-functions)
   - [Event Operations](#event-operations)
@@ -88,12 +92,14 @@ Located in `src/event-bus.ts`, this module provides the core event bus functiona
 ### Initialization Functions
 
 - `initializeRabbitMQ(config: EventBusConfig, logger: Logger): TaskEither<Error, { connection: Connection; channel: Channel }>`
+
   - Initializes RabbitMQ connection and sets up exchanges
   - Creates topic exchanges for main events and dead letters
   - For config type definition, see [EventBusConfig](../../types/docs/types.md#event-bus-configuration)
   - For logger interface, see [Logger Interface](../../logger/docs/logger.md#logger-interface)
 
 - `initializeRedis(config: EventBusConfig): TaskEither<Error, Redis>`
+
   - Initializes Redis connection for caching
   - Uses IoRedis client for better performance
   - For config type definition, see [EventBusConfig](../../types/docs/types.md#event-bus-configuration)
@@ -106,6 +112,7 @@ Located in `src/event-bus.ts`, this module provides the core event bus functiona
 ### Event Operations
 
 - `publish(state: EventBusInternalState) => <T>(event: Event<T>, options?: PublishOptions): TaskEither<Error, void>`
+
   - Publishes events to RabbitMQ with optional caching
   - Supports message persistence and priority
   - Automatically adds metadata (source, timestamp)
@@ -113,6 +120,7 @@ Located in `src/event-bus.ts`, this module provides the core event bus functiona
   - For options, see [PublishOptions](../../types/docs/types.md#event-bus-configuration)
 
 - `subscribe(state: EventBusInternalState) => <T>(eventType: string, handler: EventHandler<T>, options?: SubscribeOptions): TaskEither<Error, void>`
+
   - Subscribes to events with configurable options
   - Supports dead letter queues
   - Can use cached events for initial state
@@ -126,6 +134,7 @@ Located in `src/event-bus.ts`, this module provides the core event bus functiona
 ### Cache Operations
 
 - `cacheLastKnownEvent(redis: Redis, keyPrefix: string, eventTTL: number) => <T>(event: Event<T>): TaskEither<Error, void>`
+
   - Caches the most recent event of each type
   - Uses Redis with configurable TTL
   - For event type definition, see [Event Interface](../../types/docs/types.md#core-event-types)
@@ -145,6 +154,7 @@ Located in `src/event-bus.ts`, this module provides the core event bus functiona
 Located in `src/factory.ts`, provides a convenient way to create an event bus instance.
 
 ### Types
+
 - `EventBusOperations`
   ```typescript
   type EventBusOperations = {
@@ -152,10 +162,11 @@ Located in `src/factory.ts`, provides a convenient way to create an event bus in
     subscribe: ReturnType<typeof subscribe>;
     unsubscribe: ReturnType<typeof unsubscribe>;
     close: typeof close;
-  }
+  };
   ```
 
 ### Functions
+
 - `createEventBus(config: EventBusConfig): TaskEither<Error, EventBusOperations>`
   - Creates a fully configured event bus instance
   - Sets up logging with service name
@@ -167,6 +178,7 @@ Located in `src/factory.ts`, provides a convenient way to create an event bus in
 Located in `src/validation.ts`, provides event validation using Zod schemas.
 
 ### Schemas
+
 - Base metadata schema
 - Base event schema
 - Event-specific schemas for:
@@ -176,7 +188,9 @@ Located in `src/validation.ts`, provides event validation using Zod schemas.
   - Employment events
 
 ### Functions
+
 - `validateEvent<T>(event: Event<T>): TaskEither<ValidationError, Event<T>>`
+
   - Validates events against their respective schemas
   - Checks both base structure and event-specific data
   - For event types, see [Event Types](../../types/docs/types.md#core-event-types)
@@ -191,6 +205,7 @@ Located in `src/validation.ts`, provides event validation using Zod schemas.
 Located in `src/metrics.ts`, provides comprehensive metrics collection.
 
 ### Types
+
 ```typescript
 interface MetricsState {
   eventProcessingTimes: Map<string, number[]>;
@@ -204,6 +219,7 @@ interface MetricsState {
 ### Core Metrics
 
 - `recordProcessingTime(logger: Logger, eventType: string, service: string, startTime: number): void`
+
   - Records event processing duration
   - Calculates duration in seconds
   - For logger interface, see [Logger Interface](../../logger/docs/logger.md#logger-interface)
@@ -215,6 +231,7 @@ interface MetricsState {
 ### Queue Metrics
 
 - `updateQueueSize(logger: Logger, queueName: string, size: number): void`
+
   - Updates queue size metrics
   - Tracks message backlog
 
@@ -231,11 +248,13 @@ interface MetricsState {
 ### Metric Utilities
 
 - `getMetricsSummary(logger: Logger): Record<string, any>`
+
   - Retrieves current metrics summary
   - Includes processing times, counts, queue sizes
   - Returns formatted metrics object
 
 - `resetMetrics(): void`
+
   - Resets all metrics to initial state
   - Clears all counters and timers
 
@@ -248,6 +267,7 @@ interface MetricsState {
 Located in `src/health.ts`, provides health checking capabilities.
 
 ### Types
+
 ```typescript
 interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -278,6 +298,7 @@ interface HealthStatus {
 ### Component Checks
 
 - `checkRabbitMQ(channel: Channel, connection: Connection, exchangeName: string): TaskEither<Error, ComponentHealth>`
+
   - Checks RabbitMQ connection and exchange health
   - Verifies queue availability
   - For health types, see [Health Types](../../types/docs/types.md#health-types)
@@ -306,9 +327,9 @@ Located in `circuit-breaker.ts`, provides fault tolerance for external service c
 
 ```typescript
 interface CircuitBreakerOptions {
-  timeout: number;        // Operation timeout in ms
+  timeout: number; // Operation timeout in ms
   errorThreshold: number; // Number of failures before opening
-  resetTimeout: number;   // Time before attempting reset
+  resetTimeout: number; // Time before attempting reset
   monitorInterval?: number; // Health check interval
 }
 ```
@@ -316,11 +337,14 @@ interface CircuitBreakerOptions {
 #### Usage Example
 
 ```typescript
-const circuitBreaker = createCircuitBreaker({
-  timeout: 5000,
-  errorThreshold: 5,
-  resetTimeout: 30000
-}, logger);
+const circuitBreaker = createCircuitBreaker(
+  {
+    timeout: 5000,
+    errorThreshold: 5,
+    resetTimeout: 30000,
+  },
+  logger
+);
 
 // Wrap operations
 const result = await circuitBreaker.wrap(async () => {
@@ -347,19 +371,22 @@ interface RedisPoolOptions {
 #### Usage Example
 
 ```typescript
-const pool = createRedisPool({
-  nodes: [
-    { host: 'redis-1', port: 6379 },
-    { host: 'redis-2', port: 6379 }
-  ],
-  maxConnections: 10,
-  minConnections: 2
-}, logger);
+const pool = createRedisPool(
+  {
+    nodes: [
+      { host: 'redis-1', port: 6379 },
+      { host: 'redis-2', port: 6379 },
+    ],
+    maxConnections: 10,
+    minConnections: 2,
+  },
+  logger
+);
 
 await pool.init();
 
 // Use with automatic release
-await pool.withClient(async client => {
+await pool.withClient(async (client) => {
   return await client.get('key');
 });
 ```
@@ -372,27 +399,31 @@ Located in `batch-processor.ts`, provides functional message batching for Rabbit
 
 ```typescript
 interface BatchProcessorOptions {
-  batchSize: number;     // Messages per batch
+  batchSize: number; // Messages per batch
   flushInterval: number; // Flush interval in ms
-  maxRetries?: number;   // Max retry attempts
-  retryDelay?: number;   // Base retry delay in ms
+  maxRetries?: number; // Max retry attempts
+  retryDelay?: number; // Base retry delay in ms
 }
 ```
 
 #### Usage Example
 
 ```typescript
-const batchProcessor = createBatchProcessor({
-  batchSize: 100,
-  flushInterval: 1000,
-  maxRetries: 3
-}, channel, logger);
+const batchProcessor = createBatchProcessor(
+  {
+    batchSize: 100,
+    flushInterval: 1000,
+    maxRetries: 3,
+  },
+  channel,
+  logger
+);
 
 // Add messages to batch
 await batchProcessor.add({
   exchange: 'my-exchange',
   routingKey: 'my-key',
-  content: myMessage
+  content: myMessage,
 });
 ```
 
@@ -401,11 +432,13 @@ await batchProcessor.add({
 The resilience features use several functional programming patterns:
 
 1. **Pure Functions**:
+
    - All core operations are implemented as pure functions
    - State is explicitly passed and returned
    - Side effects are isolated and managed
 
 2. **TaskEither for Error Handling**:
+
    - Operations that can fail return `TaskEither`
    - Errors are handled in a type-safe way
    - Composition using `pipe` and `chain`
@@ -420,20 +453,17 @@ Example of functional composition:
 ```typescript
 const performOperation = <T>(operation: () => Promise<T>) =>
   pipe(
-    TE.tryCatch(
-      () => operation(),
-      E.toError
-    ),
-    TE.chain(result =>
+    TE.tryCatch(() => operation(), E.toError),
+    TE.chain((result) =>
       pipe(
         circuitBreaker.wrap(() => Promise.resolve(result)),
-        TE.chain(value =>
+        TE.chain((value) =>
           pipe(
-            pool.withClient(client =>
+            pool.withClient((client) =>
               batchProcessor.add({
                 exchange: 'results',
                 routingKey: 'processed',
-                content: value
+                content: value,
               })
             ),
             TE.map(() => result)
@@ -449,27 +479,27 @@ const performOperation = <T>(operation: () => Promise<T>) =>
 The resilience features are integrated into the event bus system using functional patterns:
 
 1. **Circuit Breaker**:
+
    ```typescript
    const protectedPublish = pipe(
      createCircuitBreaker(options, logger),
-     breaker => (event: Event<T>) =>
-       breaker.wrap(() => publish(event))
+     (breaker) => (event: Event<T>) => breaker.wrap(() => publish(event))
    );
    ```
 
 2. **Redis Pool**:
+
    ```typescript
    const cachedOperation = pipe(
      createRedisPool(options, logger),
-     pool => <T>(key: string, operation: () => Promise<T>) =>
-       pool.withClient(client =>
-         pipe(
-           TE.tryCatch(() => client.get(key), E.toError),
-           TE.chain(cached =>
-             cached ? TE.right(JSON.parse(cached)) : operation()
+     (pool) =>
+       <T>(key: string, operation: () => Promise<T>) =>
+         pool.withClient((client) =>
+           pipe(
+             TE.tryCatch(() => client.get(key), E.toError),
+             TE.chain((cached) => (cached ? TE.right(JSON.parse(cached)) : operation()))
            )
          )
-       )
    );
    ```
 
@@ -477,28 +507,31 @@ The resilience features are integrated into the event bus system using functiona
    ```typescript
    const batchedPublish = pipe(
      createBatchProcessor(options, channel, logger),
-     processor => <T>(events: Event<T>[]) =>
-       pipe(
-         events,
-         A.traverse(TE.ApplicativePar)(event =>
-           processor.add({
-             exchange: config.exchange,
-             routingKey: event.type,
-             content: event
-           })
+     (processor) =>
+       <T>(events: Event<T>[]) =>
+         pipe(
+           events,
+           A.traverse(TE.ApplicativePar)((event) =>
+             processor.add({
+               exchange: config.exchange,
+               routingKey: event.type,
+               content: event,
+             })
+           )
          )
-       )
    );
    ```
 
 ### Best Practices
 
 1. **Pure Functions**:
+
    - Keep functions pure and predictable
    - Pass state explicitly
    - Return new state instead of mutating
 
 2. **Error Handling**:
+
    - Use `TaskEither` for operations that can fail
    - Compose error handlers with `pipe`
    - Provide meaningful error context
@@ -513,6 +546,7 @@ The resilience features are integrated into the event bus system using functiona
 All resilience features include functional monitoring:
 
 1. **Metrics Collection**:
+
    ```typescript
    const collectMetrics = <T>(operation: () => Promise<T>) =>
      pipe(
@@ -523,7 +557,7 @@ All resilience features include functional monitoring:
          pipe(
            recordMetric({
              duration: Date.now() - startTime,
-             success: true
+             success: true,
            }),
            TE.map(() => result)
          )
@@ -536,7 +570,7 @@ All resilience features include functional monitoring:
    const trackErrors = <T>(operation: () => Promise<T>) =>
      pipe(
        operation,
-       TE.mapLeft(error =>
+       TE.mapLeft((error) =>
          pipe(
            recordError(error),
            TE.map(() => error)
@@ -550,6 +584,7 @@ For more information about monitoring, see the [Metrics and Monitoring](#metrics
 ## Event Schema Management
 
 ### Core Schemas
+
 ```typescript
 import { z } from 'zod';
 
@@ -557,14 +592,14 @@ const eventSchemas = {
   USER_CREATED: z.object({
     id: z.string(),
     email: z.string().email(),
-    role: z.enum(['STUDENT', 'TEACHER', 'ADMIN'])
+    role: z.enum(['STUDENT', 'TEACHER', 'ADMIN']),
   }),
-  
+
   GRADE_UPDATED: z.object({
     studentId: z.string(),
     courseId: z.string(),
-    grade: z.number().min(0).max(100)
-  })
+    grade: z.number().min(0).max(100),
+  }),
 } as const;
 
 type EventSchemas = typeof eventSchemas;
@@ -573,36 +608,35 @@ type EventData<T extends EventTypes> = z.infer<EventSchemas[T]>;
 ```
 
 ### Error Categories
+
 ```typescript
 const EventErrorTypes = {
   VALIDATION_ERROR: 'EVENT_VALIDATION_ERROR',
   PROCESSING_ERROR: 'EVENT_PROCESSING_ERROR',
   PUBLISH_ERROR: 'EVENT_PUBLISH_ERROR',
-  SUBSCRIPTION_ERROR: 'EVENT_SUBSCRIPTION_ERROR'
+  SUBSCRIPTION_ERROR: 'EVENT_SUBSCRIPTION_ERROR',
 } as const;
 
-type EventErrorType = typeof EventErrorTypes[keyof typeof EventErrorTypes];
+type EventErrorType = (typeof EventErrorTypes)[keyof typeof EventErrorTypes];
 ```
 
 ## Advanced Features
 
 ### Dead Letter Queue Management
+
 ```typescript
-const moveToDeadLetterQueue = async (
-  event: Event<unknown>,
-  error: Error
-): Promise<void> => {
+const moveToDeadLetterQueue = async (event: Event<unknown>, error: Error): Promise<void> => {
   const deadLetterEvent = {
     ...event,
     metadata: {
       ...event.metadata,
       error: {
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       },
       retryCount: (event.metadata?.retryCount || 0) + 1,
-      lastAttempt: new Date().toISOString()
-    }
+      lastAttempt: new Date().toISOString(),
+    },
   };
 
   await channel.publish(
@@ -614,37 +648,34 @@ const moveToDeadLetterQueue = async (
 ```
 
 ### Retry Mechanism
+
 ```typescript
 const withRetry = <T>(
   operation: () => TE.TaskEither<Error, T>,
   retryCount: number = 3,
   delay: number = 1000
 ): TE.TaskEither<Error, T> => {
-  const retry = (
-    remainingAttempts: number,
-    lastError: Error
-  ): TE.TaskEither<Error, T> =>
+  const retry = (remainingAttempts: number, lastError: Error): TE.TaskEither<Error, T> =>
     remainingAttempts <= 0
       ? TE.left(lastError)
       : pipe(
           TE.tryCatch(
-            () => new Promise(resolve => setTimeout(resolve, delay)),
-            error => error as Error
+            () => new Promise((resolve) => setTimeout(resolve, delay)),
+            (error) => error as Error
           ),
           TE.chain(() => operation()),
-          TE.orElse(error =>
-            retry(remainingAttempts - 1, error as Error)
-          )
+          TE.orElse((error) => retry(remainingAttempts - 1, error as Error))
         );
 
   return pipe(
     operation(),
-    TE.orElse(error => retry(retryCount - 1, error as Error))
+    TE.orElse((error) => retry(retryCount - 1, error as Error))
   );
 };
 ```
 
 ## Related Documentation
+
 - [Event Types](../../types/docs/types.md#event-system-types)
 - [Logger Documentation](../../logger/docs/logger.md)
 - [Error Handling](../../common/docs/error-handling.md)

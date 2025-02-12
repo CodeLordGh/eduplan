@@ -11,12 +11,12 @@ const ALLOWED_MIME_TYPES = {
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ],
   [FileType.IMAGE]: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   [FileType.VIDEO]: ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'],
   [FileType.AUDIO]: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm'],
-  [FileType.OTHER]: ['application/octet-stream']
+  [FileType.OTHER]: ['application/octet-stream'],
 };
 
 const MAX_FILE_SIZES = {
@@ -24,7 +24,7 @@ const MAX_FILE_SIZES = {
   [FileType.IMAGE]: 5 * 1024 * 1024, // 5MB
   [FileType.VIDEO]: 100 * 1024 * 1024, // 100MB
   [FileType.AUDIO]: 50 * 1024 * 1024, // 50MB
-  [FileType.OTHER]: 10 * 1024 * 1024 // 10MB
+  [FileType.OTHER]: 10 * 1024 * 1024, // 10MB
 };
 
 export const validateFileType = (
@@ -36,10 +36,10 @@ export const validateFileType = (
       () => {
         const isValid = ALLOWED_MIME_TYPES[type].includes(mimeType);
         if (!isValid) {
-          throw createFileTypeError(
-            `Invalid mime type ${mimeType} for file type ${type}`,
-            { mimeType, type }
-          );
+          throw createFileTypeError(`Invalid mime type ${mimeType} for file type ${type}`, {
+            mimeType,
+            type,
+          });
         }
         return Promise.resolve(true);
       },
@@ -48,10 +48,7 @@ export const validateFileType = (
   );
 };
 
-export const validateFileSize = (
-  size: number,
-  type: FileType
-): TE.TaskEither<Error, boolean> => {
+export const validateFileSize = (size: number, type: FileType): TE.TaskEither<Error, boolean> => {
   return pipe(
     TE.tryCatch(
       () => {
@@ -75,22 +72,21 @@ export const validateFileName = (fileName: string): TE.TaskEither<Error, boolean
       () => {
         // Remove any path components for security
         const sanitizedName = fileName.replace(/^.*[\\\/]/, '');
-        
+
         // Check for valid characters
         const validNameRegex = /^[a-zA-Z0-9-_. ]+$/;
         if (!validNameRegex.test(sanitizedName)) {
-          throw createFileTypeError(
-            'File name contains invalid characters',
-            { fileName: sanitizedName }
-          );
+          throw createFileTypeError('File name contains invalid characters', {
+            fileName: sanitizedName,
+          });
         }
 
         // Check length
         if (sanitizedName.length > 255) {
-          throw createFileTypeError(
-            'File name is too long',
-            { fileName: sanitizedName, length: sanitizedName.length }
-          );
+          throw createFileTypeError('File name is too long', {
+            fileName: sanitizedName,
+            length: sanitizedName.length,
+          });
         }
 
         return Promise.resolve(true);

@@ -14,7 +14,7 @@ export {
   createRateLimitKey,
   createOTPKey,
   createCacheKey,
-  parseJSON
+  parseJSON,
 } from './redis';
 
 // Export Redis middleware utilities

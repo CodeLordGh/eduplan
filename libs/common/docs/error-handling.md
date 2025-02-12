@@ -1,11 +1,13 @@
 # Common Library Error Handling Documentation
 
 ## Overview
+
 The common library provides error handling utilities and implementations used throughout the EduPlan application. This documentation covers the implementation details and usage examples. For the complete error type definitions, please refer to the [Error Types Documentation](../../types/docs/types.md#error-types) as the single source of truth.
 
 ## Architecture
 
 ### Error Flow
+
 ```mermaid
 sequenceDiagram
     participant A as Application Code
@@ -29,6 +31,7 @@ sequenceDiagram
 ## Core Components
 
 ### Base Error Utilities (`base.error.ts`)
+
 ```typescript
 // Creates standardized AppError objects
 export const createAppError = (details: ErrorDetails): AppError => ({
@@ -37,7 +40,7 @@ export const createAppError = (details: ErrorDetails): AppError => ({
   code: details.code,
   statusCode: getStatusCode(details.code),
   metadata: details.metadata,
-  cause: details.cause
+  cause: details.cause,
 });
 
 // Utility for throwing AppErrors
@@ -50,15 +53,17 @@ export const createErrorResponse = (error: AppError): ErrorResponse => ({
   error: {
     message: error.message,
     code: error.code,
-    metadata: error.metadata
-  }
+    metadata: error.metadata,
+  },
 });
 ```
 
 For the complete error structure and type definitions, see the [Error Types Documentation](../../types/docs/types.md#error-types).
 
 ### Error Handler (`index.ts`)
+
 The common library exports a global error handler that:
+
 1. Detects if the error is a known AppError
 2. For known errors: Returns them with appropriate status codes
 3. For unknown errors: Wraps them as INTERNAL_SERVER_ERROR
@@ -75,7 +80,7 @@ export const globalErrorHandler = (
     : createAppError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'An unexpected error occurred',
-        cause: error
+        cause: error,
       });
 
   logger.error('Request failed', {
@@ -84,8 +89,8 @@ export const globalErrorHandler = (
       method: req.method,
       path: req.path,
       params: req.params,
-      query: req.query
-    }
+      query: req.query,
+    },
   });
 
   res.status(appError.statusCode).json(createErrorResponse(appError));
@@ -97,6 +102,7 @@ For status code mappings, see [HTTP Status Codes](../../constants/docs/constants
 ### Specialized Error Creators
 
 #### Authentication Errors (`auth.error.ts`)
+
 ```typescript
 export const createAuthenticationError = (
   message: string,
@@ -104,7 +110,7 @@ export const createAuthenticationError = (
 ): ErrorDetails => ({
   code: 'AUTH_ERROR',
   message,
-  metadata
+  metadata,
 });
 
 export const createForbiddenError = (
@@ -113,41 +119,32 @@ export const createForbiddenError = (
 ): ErrorDetails => ({
   code: 'FORBIDDEN',
   message,
-  metadata
+  metadata,
 });
 ```
 
 #### File Operation Errors (`file.error.ts`)
+
 ```typescript
-export const createFileAccessError = (
-  path: string,
-  operation: string
-): ErrorDetails => ({
+export const createFileAccessError = (path: string, operation: string): ErrorDetails => ({
   code: 'FILE_ACCESS_ERROR',
   message: `Cannot ${operation} file: ${path}`,
-  metadata: { path, operation }
+  metadata: { path, operation },
 });
 
-export const createFileSizeError = (
-  actualSize: string,
-  maxSize: string
-): ErrorDetails => ({
+export const createFileSizeError = (actualSize: string, maxSize: string): ErrorDetails => ({
   code: 'FILE_SIZE_ERROR',
   message: `File size ${actualSize} exceeds limit of ${maxSize}`,
-  metadata: { actualSize, maxSize }
+  metadata: { actualSize, maxSize },
 });
 ```
 
 ### Error Utilities (`utils.ts`)
+
 ```typescript
 // Type guard for AppError
 export const isAppError = (error: unknown): error is AppError => {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'message' in error
-  );
+  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error;
 };
 
 // Get HTTP status code for error code
@@ -169,6 +166,7 @@ export const getStatusCode = (code: ErrorCode): number => {
 ## Functional Error Handling
 
 ### Using TaskEither
+
 ```typescript
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
@@ -177,39 +175,33 @@ const processWithError = <T>(
   operation: () => Promise<T>,
   errorCreator: (error: unknown) => ErrorDetails
 ): TE.TaskEither<AppError, T> =>
-  pipe(
-    TE.tryCatch(
-      operation,
-      (error) => createAppError(errorCreator(error))
-    )
-  );
+  pipe(TE.tryCatch(operation, (error) => createAppError(errorCreator(error))));
 ```
 
 ### Error Transformation
+
 ```typescript
-const transformError = (
-  error: AppError,
-  context: Record<string, unknown>
-): AppError => ({
+const transformError = (error: AppError, context: Record<string, unknown>): AppError => ({
   ...error,
   metadata: {
     ...error.metadata,
-    ...context
-  }
+    ...context,
+  },
 });
 ```
 
 ## Usage Examples
 
 ### Creating and Throwing Errors
+
 ```typescript
 // Authentication error
 throwError({
   code: 'AUTH_ERROR',
   message: 'Invalid credentials',
   metadata: {
-    userId: '123'
-  }
+    userId: '123',
+  },
 });
 
 // File error
@@ -218,12 +210,13 @@ throwError({
   message: 'File exceeds size limit',
   metadata: {
     maxSize: '10MB',
-    actualSize: '15MB'
-  }
+    actualSize: '15MB',
+  },
 });
 ```
 
 ### Using Error Creators
+
 ```typescript
 // Authentication
 const authError = createAuthenticationError('Invalid token');
@@ -233,6 +226,7 @@ const sizeError = createFileSizeError('15MB', '10MB');
 ```
 
 ### Error Response Format
+
 ```typescript
 interface ErrorResponse {
   error: {
@@ -246,24 +240,28 @@ interface ErrorResponse {
 ## Best Practices
 
 ### Error Creation
+
 1. Always use error creators for consistency
 2. Include relevant context in metadata
 3. Use specific error codes
 4. Preserve error chains with `cause`
 
 ### Error Handling
+
 1. Use functional error handling where possible
 2. Log errors with appropriate context
 3. Transform errors at boundaries
 4. Handle all error cases explicitly
 
 ### Performance
+
 1. Avoid throwing errors in hot paths
 2. Use error codes for quick matching
 3. Keep error metadata minimal
 4. Cache error creators when possible
 
 ### Security
+
 1. Sanitize error messages for external users
 2. Remove sensitive data from error metadata
 3. Use appropriate status codes
@@ -272,6 +270,7 @@ interface ErrorResponse {
 ## Testing
 
 ### Error Testing Utilities
+
 ```typescript
 export const expectError = (
   result: E.Either<AppError, unknown>,
@@ -286,12 +285,13 @@ export const expectError = (
 ```
 
 ### Example Tests
+
 ```typescript
 describe('Error Handling', () => {
   it('should create proper error response', () => {
     const error = createAppError({
       code: 'NOT_FOUND',
-      message: 'Resource not found'
+      message: 'Resource not found',
     });
 
     const response = createErrorResponse(error);
@@ -301,6 +301,7 @@ describe('Error Handling', () => {
 ```
 
 ## Related Documentation
+
 - [Error Types](../types/docs/types.md#error-types)
 - [HTTP Status Codes](../constants/docs/constants.md#http-status-codes)
 - [Authentication](../types/docs/types.md#authentication-types)

@@ -1,4 +1,9 @@
-import type { FileType as PrismaFileType, FileCategory, FileAccessLevel, StorageProvider } from '@eduflow/prisma';
+import type {
+  FileType as PrismaFileType,
+  FileCategory,
+  FileAccessLevel,
+  StorageProvider,
+} from '@eduflow/prisma';
 
 // Re-export the types from Prisma
 export { FileType, FileCategory, FileAccessLevel, StorageProvider } from '@eduflow/prisma';
@@ -19,4 +24,4 @@ export interface FileUploadResult {
   category: FileCategory;
   metadata: FileMetadata;
   createdAt: Date;
-} 
+}

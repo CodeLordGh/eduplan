@@ -1,33 +1,25 @@
 {
-  "name": "@eduflow/logger",
+  "name": "@eduflow-v2/logger",
   "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
-    "lint": "eslint src --ext .ts",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext .ts"
   },
   "dependencies": {
-    "@eduflow/types": "workspace:*",
-    "fp-ts": "^2.16.1",
-    "pino": "^8.16.2",
-    "fastify": "^4.29.0"
+    "@eduflow-v2/types": "workspace:*",
+    "@eduflow-v2/constants": "workspace:*",
+    "@eduflow-v2/shared-packages": "workspace:*",
+    "pino": "8.16.0",
+    "@types/pino": "8.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.5.7",
-    "@types/pino": "^7.0.5",
+    "@eduflow-v2/tsconfig": "workspace:*",
+    "@eduflow-v2/eslint-config": "workspace:*",
     "typescript": "^5.2.2",
-    "rimraf": "^5.0.1",
-    "jest": "^29.6.4",
-    "@types/jest": "^29.5.4",
-    "eslint": "^8.56.0",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0"
-  },
-  "peerDependencies": {
-    "fastify": "^4.29.0"
+    "rimraf": "^5.0.1"
   }
 } 

@@ -1,7 +1,11 @@
 import { ErrorDetails } from '@eduflow/types';
 import { throwError } from './base.error';
 
-export const createAuthenticationError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createAuthenticationError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'AUTH_ERROR',
     message,
@@ -9,16 +13,26 @@ export const createAuthenticationError = (message: string, cause?: unknown, meta
     metadata,
   });
 
-export const createInvalidCredentialsError = (cause?: unknown, metadata?: Record<string, unknown>): never =>
-  createAuthenticationError('Invalid email or password', cause, metadata);
+export const createInvalidCredentialsError = (
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never => createAuthenticationError('Invalid email or password', cause, metadata);
 
-export const createTokenExpiredError = (cause?: unknown, metadata?: Record<string, unknown>): never =>
-  createAuthenticationError('Token has expired', cause, metadata);
+export const createTokenExpiredError = (
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never => createAuthenticationError('Token has expired', cause, metadata);
 
-export const createInvalidTokenError = (cause?: unknown, metadata?: Record<string, unknown>): never =>
-  createAuthenticationError('Invalid token provided', cause, metadata);
+export const createInvalidTokenError = (
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never => createAuthenticationError('Invalid token provided', cause, metadata);
 
-export const createUnauthorizedError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createUnauthorizedError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'UNAUTHORIZED',
     message,
@@ -26,7 +40,11 @@ export const createUnauthorizedError = (message: string, cause?: unknown, metada
     metadata,
   });
 
-export const createForbiddenError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createForbiddenError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'FORBIDDEN',
     message,
@@ -34,7 +52,11 @@ export const createForbiddenError = (message: string, cause?: unknown, metadata?
     metadata,
   });
 
-export const createOTPError = (message: string, cause?: unknown, metadata?: Record<string, unknown>): never =>
+export const createOTPError = (
+  message: string,
+  cause?: unknown,
+  metadata?: Record<string, unknown>
+): never =>
   throwError({
     code: 'AUTH_ERROR',
     message,
@@ -46,4 +68,4 @@ export const createOTPExpiredError = (cause?: unknown, metadata?: Record<string,
   createOTPError('OTP has expired', cause, metadata);
 
 export const createInvalidOTPError = (cause?: unknown, metadata?: Record<string, unknown>): never =>
-  createOTPError('Invalid OTP provided', cause, metadata); 
+  createOTPError('Invalid OTP provided', cause, metadata);

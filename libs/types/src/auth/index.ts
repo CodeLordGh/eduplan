@@ -15,16 +15,11 @@ export type {
   UserEmployment,
   TimeRestrictions,
   UserAccess,
-  UserContext
+  UserContext,
 } from './abac';
 
 export * from './constants';
 export * from './validation';
 
 // Re-export types from validation for backward compatibility
-export type {
-  Email,
-  Password,
-  LoginCredentials,
-  RegistrationData
-} from './validation';
+export type { Email, Password, LoginCredentials, RegistrationData } from './validation';

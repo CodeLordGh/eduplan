@@ -73,11 +73,7 @@ const loggerConfig: LoggerOptions = {
   service: 'api-gateway',
   environment: process.env.NODE_ENV || 'development',
   minLevel: getLogLevel(process.env.LOG_LEVEL),
-  redactPaths: [
-    'body.password',
-    'headers.authorization',
-    'headers.cookie'
-  ]
+  redactPaths: ['body.password', 'headers.authorization', 'headers.cookie'],
 };
 
 // Create base logger instance with configuration
@@ -94,24 +90,31 @@ export const createRequestContext = (request: FastifyRequest): LogContext => ({
   service: 'api-gateway',
   environment: process.env.NODE_ENV || 'development',
   timestamp: new Date().toISOString(),
-  correlationId: request.headers['x-correlation-id'] as string || request.id,
+  correlationId: (request.headers['x-correlation-id'] as string) || request.id,
   version: request.apiVersion,
   method: request.method,
   path: request.url,
   url: request.url,
   ip: request.ip,
-  userAgent: request.headers['user-agent'] as string
+  userAgent: request.headers['user-agent'] as string,
 });
 
 // Create response context utility
-export const createResponseContext = (request: FastifyRequest, statusCode: number, responseTime: number): LogContext => ({
+export const createResponseContext = (
+  request: FastifyRequest,
+  statusCode: number,
+  responseTime: number
+): LogContext => ({
   ...createRequestContext(request),
   statusCode,
-  responseTime
+  responseTime,
 });
 
 // Create error context utility
-export const createErrorContext = (request: FastifyRequest, error: Error): LogContext & {
+export const createErrorContext = (
+  request: FastifyRequest,
+  error: Error
+): LogContext & {
   error: {
     message: string;
     stack?: string;
@@ -122,8 +125,8 @@ export const createErrorContext = (request: FastifyRequest, error: Error): LogCo
   error: {
     message: error.message,
     stack: error.stack,
-    code: (error as any).code
-  }
+    code: (error as any).code,
+  },
 });
 
 // Create security context utility
@@ -138,7 +141,7 @@ export const createSecurityContext = (
   eventType,
   severity,
   outcome,
-  details
+  details,
 });
 
 // Create performance context utility
@@ -155,7 +158,7 @@ export const createPerformanceContext = (
   value,
   unit,
   threshold,
-  tags
+  tags,
 });
 
 // Create event context utility
@@ -175,7 +178,7 @@ export const createEventContext = (
   exchange,
   routingKey,
   messageId,
-  payload
+  payload,
 });
 
 // Create circuit breaker context utility
@@ -193,7 +196,7 @@ export const createCircuitBreakerContext = (
   state,
   failureCount,
   lastFailureReason,
-  nextAttempt
+  nextAttempt,
 });
 
 // Create metrics context utility
@@ -205,7 +208,7 @@ export const createMetricsContext = (
   environment: process.env.NODE_ENV || 'development',
   timestamp: new Date().toISOString(),
   metrics,
-  thresholds
+  thresholds,
 });
 
 // Security logging utility
@@ -214,9 +217,9 @@ export function logSecurityEvent(context: SecurityContext) {
     low: 'info' as const,
     medium: 'warn' as const,
     high: 'error' as const,
-    critical: 'fatal' as const
+    critical: 'fatal' as const,
   };
-  
+
   const level = levelMap[context.severity];
   logger[level]('Security event detected', context);
 }
@@ -245,4 +248,4 @@ export const logMetrics = (context: MetricsContext) => {
   );
   const level = hasThresholdViolation ? 'warn' : 'info';
   logger[level]('System metrics recorded', context);
-}; 
+};

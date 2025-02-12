@@ -3,6 +3,7 @@
 This document provides a comprehensive overview of all types and interfaces exported from the types library.
 
 ## Table of Contents
+
 - [Event System Types](#event-system-types)
   - [Core Event Types](#core-event-types)
   - [Event Bus Configuration](#event-bus-configuration)
@@ -36,6 +37,7 @@ Located in `src/events/`, these types define the event system's core functionali
 Located in `src/events/handlers.ts`:
 
 - `Event<T>`
+
   ```typescript
   {
     type: string;
@@ -46,7 +48,7 @@ Located in `src/events/handlers.ts`:
       correlationId: string;
       timestamp: string;
       schemaVersion: string;
-    };
+    }
   }
   ```
 
@@ -60,6 +62,7 @@ Located in `src/events/handlers.ts`:
 Located in `src/events/config.ts`:
 
 - `EventBusConfig`
+
   ```typescript
   {
     serviceName: string;
@@ -69,16 +72,17 @@ Located in `src/events/config.ts`:
       deadLetterExchange: string;
       retryCount: number;
       retryDelay: number;
-    };
+    }
     redis: {
       url: string;
       keyPrefix: string;
       eventTTL: number;
-    };
+    }
   }
   ```
 
 - `PublishOptions`
+
   ```typescript
   {
     persistent?: boolean;
@@ -101,6 +105,7 @@ Located in `src/events/config.ts`:
 Located in `src/events/state.ts`:
 
 - `EventBusState`
+
   ```typescript
   {
     config: EventBusConfig;
@@ -112,7 +117,8 @@ Located in `src/events/state.ts`:
   ```typescript
   {
     publish: <T>(event: Event<T>, options?: PublishOptions) => Promise<void>;
-    subscribe: <T>(eventType: string, handler: EventHandler<T>, options?: SubscribeOptions) => Promise<void>;
+    subscribe: <T>(eventType: string, handler: EventHandler<T>, options?: SubscribeOptions) =>
+      Promise<void>;
     close: () => Promise<void>;
   }
   ```
@@ -124,6 +130,7 @@ Located in `src/events/index.ts`:
 #### Auth Events
 
 - `UserCreatedEvent`
+
   ```typescript
   {
     type: 'USER_CREATED';
@@ -133,11 +140,12 @@ Located in `src/events/index.ts`:
       role: Role;
       status: UserStatus;
       createdAt: Date;
-    };
+    }
   }
   ```
 
 - `UserUpdatedEvent`
+
   ```typescript
   {
     type: 'USER_UPDATED';
@@ -145,22 +153,24 @@ Located in `src/events/index.ts`:
       userId: string;
       updates: Partial<User>;
       updatedAt: Date;
-    };
+    }
   }
   ```
 
 - `UserDeletedEvent`
+
   ```typescript
   {
     type: 'USER_DELETED';
     data: {
       userId: string;
       deletedAt: Date;
-    };
+    }
   }
   ```
 
 - `LoginAttemptedEvent`
+
   ```typescript
   {
     type: 'LOGIN_ATTEMPTED';
@@ -170,7 +180,7 @@ Located in `src/events/index.ts`:
       ip: string;
       userAgent: string;
       timestamp: Date;
-    };
+    }
   }
   ```
 
@@ -184,13 +194,14 @@ Located in `src/events/index.ts`:
       purpose: string;
       expiresAt: Date;
       generatedAt: Date;
-    };
+    }
   }
   ```
 
 #### KYC Events
 
 - `KYCVerifiedEvent`
+
   ```typescript
   {
     type: 'KYC_VERIFIED';
@@ -199,11 +210,12 @@ Located in `src/events/index.ts`:
       documentType: string;
       verificationId: string;
       verifiedAt: Date;
-    };
+    }
   }
   ```
 
 - `KYCRejectedEvent`
+
   ```typescript
   {
     type: 'KYC_REJECTED';
@@ -211,7 +223,7 @@ Located in `src/events/index.ts`:
       userId: string;
       reason: string;
       rejectedAt: Date;
-    };
+    }
   }
   ```
 
@@ -231,8 +243,9 @@ Located in `src/events/index.ts`:
 #### Event Type Unions
 
 - `AuthEvent`: Union of all authentication-related events
+
   ```typescript
-  type AuthEvent = 
+  type AuthEvent =
     | UserCreatedEvent
     | UserUpdatedEvent
     | UserDeletedEvent
@@ -242,10 +255,7 @@ Located in `src/events/index.ts`:
 
 - `ConsumedAuthEvent`: Union of events consumed from other services
   ```typescript
-  type ConsumedAuthEvent =
-    | KYCVerifiedEvent
-    | KYCRejectedEvent
-    | EmploymentEligibilityUpdatedEvent;
+  type ConsumedAuthEvent = KYCVerifiedEvent | KYCRejectedEvent | EmploymentEligibilityUpdatedEvent;
   ```
 
 ### Academic Events
@@ -255,6 +265,7 @@ Located in `src/events/academic.ts`:
 #### Academic Year Events
 
 - `ACADEMIC_YEAR_CREATED`
+
   ```typescript
   {
     schoolId: string;
@@ -277,6 +288,7 @@ Located in `src/events/academic.ts`:
 #### Grade Events
 
 - `GRADE_RECORDED`
+
   ```typescript
   {
     schoolId: string;
@@ -309,6 +321,7 @@ Located in `src/events/academic.ts`:
 #### Report Card Events
 
 - `REPORT_CARD_STATUS_UPDATED`
+
   ```typescript
   {
     schoolId: string;
@@ -323,19 +336,21 @@ Located in `src/events/academic.ts`:
   ```
 
 - `REPORT_CARD_PUBLISHED`
+
   ```typescript
   {
     schoolId: string;
     reportCardId: string;
     studentId: string;
     termId: string;
-    publishedBy: string;  // Headmaster ID
-    availableAt: Date;    // 72 hours after publishing
+    publishedBy: string; // Headmaster ID
+    availableAt: Date; // 72 hours after publishing
     timestamp: Date;
   }
   ```
 
 - `REPORT_CARD_AVAILABLE`
+
   ```typescript
   {
     schoolId: string;
@@ -353,7 +368,7 @@ Located in `src/events/academic.ts`:
     schoolId: string;
     reportCardId: string;
     studentId: string;
-    accessedBy: string;   // Parent ID
+    accessedBy: string; // Parent ID
     accessType: 'VIEW' | 'DOWNLOAD';
     timestamp: Date;
   }
@@ -364,6 +379,7 @@ Located in `src/events/academic.ts`:
 Located in `src/events/constants.ts`:
 
 - `EVENT_TYPES`: Constant object containing all possible event type strings
+
   ```typescript
   {
     // Auth Events
@@ -440,6 +456,7 @@ Located in `src/auth/abac.ts`, these types define the attribute-based access con
 - `ResourceAction`: `'CREATE' | 'READ' | 'UPDATE' | 'DELETE'`
 
 - `SchoolRole`
+
   ```typescript
   {
     roles: Role[];
@@ -469,6 +486,7 @@ Located in `src/auth/abac.ts`, these types define the attribute-based access con
 #### User Types
 
 - `UserKYC`
+
   ```typescript
   {
     status: KYCStatus;
@@ -479,6 +497,7 @@ Located in `src/auth/abac.ts`, these types define the attribute-based access con
   ```
 
 - `UserEmployment`
+
   ```typescript
   {
     status: EmploymentEligibilityStatus;
@@ -514,6 +533,7 @@ Located in `src/auth/abac.ts`, these types define the attribute-based access con
 #### Policy Types
 
 - `PolicyConditions`
+
   ```typescript
   {
     anyOf?: {
@@ -532,6 +552,7 @@ Located in `src/auth/abac.ts`, these types define the attribute-based access con
   ```
 
 - `AccessPolicy`
+
   ```typescript
   {
     resource: string;
@@ -565,6 +586,7 @@ Located in `src/academic/`, these types define academic-related structures.
 ### Report Cards
 
 - `ReportCardStatus`
+
   ```typescript
   enum {
     DRAFT
@@ -598,6 +620,7 @@ Located in `src/academic/`, these types define academic-related structures.
 ### Grades
 
 - `GradeStatus`
+
   ```typescript
   enum {
     DRAFT
@@ -644,6 +667,7 @@ Located in `src/errors/`, these types define the error handling system.
 ### Error Metadata Types
 
 - `ValidationErrorMetadata`
+
   ```typescript
   {
     field: string;
@@ -654,6 +678,7 @@ Located in `src/errors/`, these types define the error handling system.
   ```
 
 - `FileErrorMetadata`
+
   ```typescript
   {
     filename: string;
@@ -691,6 +716,7 @@ Located in `src/logger/types.ts`:
 ### Core Types
 
 - `Logger`: Core logging interface
+
   ```typescript
   interface Logger {
     trace: LogFn;
@@ -711,6 +737,7 @@ Located in `src/logger/types.ts`:
 ### Context Types
 
 - `BaseContext`: Base logging context
+
   ```typescript
   interface BaseContext {
     service: string;
@@ -721,6 +748,7 @@ Located in `src/logger/types.ts`:
   ```
 
 - `LogContext`: Extended logging context
+
   ```typescript
   type LogContext = BaseContext & {
     [key: string]: unknown;
@@ -740,6 +768,7 @@ Located in `src/logger/types.ts`:
 ### Log Levels
 
 - `LOG_LEVELS`: Available log levels
+
   ```typescript
   const LOG_LEVELS = {
     TRACE: 'trace',
@@ -747,13 +776,13 @@ Located in `src/logger/types.ts`:
     INFO: 'info',
     WARN: 'warn',
     ERROR: 'error',
-    FATAL: 'fatal'
+    FATAL: 'fatal',
   } as const;
   ```
 
 - `LogLevel`: Log level type
   ```typescript
-  type LogLevel = typeof LOG_LEVELS[keyof typeof LOG_LEVELS];
+  type LogLevel = (typeof LOG_LEVELS)[keyof typeof LOG_LEVELS];
   ```
 
 ## File Types
@@ -764,12 +793,7 @@ Located in `src/file/types.ts`:
 
 - Re-exported from `@eduflow/prisma`:
   ```typescript
-  export { 
-    FileType,
-    FileCategory, 
-    FileAccessLevel, 
-    StorageProvider 
-  } from '@eduflow/prisma';
+  export { FileType, FileCategory, FileAccessLevel, StorageProvider } from '@eduflow/prisma';
   ```
 
 ### File Metadata Types
@@ -794,23 +818,14 @@ Located in `src/kyc/types.ts`:
 ### Core Types
 
 - `KYCDocumentType`
+
   ```typescript
-  type KYCDocumentType = 
-    | 'IDENTITY'
-    | 'ADDRESS'
-    | 'EDUCATION'
-    | 'EMPLOYMENT'
-    | 'BACKGROUND_CHECK';
+  type KYCDocumentType = 'IDENTITY' | 'ADDRESS' | 'EDUCATION' | 'EMPLOYMENT' | 'BACKGROUND_CHECK';
   ```
 
 - `KYCVerificationStatus`
   ```typescript
-  type KYCVerificationStatus = 
-    | 'PENDING'
-    | 'IN_REVIEW'
-    | 'APPROVED'
-    | 'REJECTED'
-    | 'EXPIRED';
+  type KYCVerificationStatus = 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
   ```
 
 ### Document Types
@@ -837,10 +852,7 @@ Located in `src/database/types.ts`:
 
 - Re-exported from `@eduflow/prisma`:
   ```typescript
-  export type {
-    Prisma,
-    PrismaClient
-  } from '@eduflow/prisma';
+  export type { Prisma, PrismaClient } from '@eduflow/prisma';
   ```
 
 ### Query Types
@@ -867,6 +879,7 @@ Located in `src/auth/validation.ts`:
 - `Password`: Branded type for validated password
 
 - `LoginCredentials`
+
   ```typescript
   {
     email: Email;
@@ -895,6 +908,7 @@ Located in `src/resilience/`, these types define the resilience patterns used ac
 Located in `src/resilience/circuit-breaker.ts`:
 
 - `CircuitBreakerOptions`
+
   ```typescript
   {
     timeout: number;        // Operation timeout in ms
@@ -918,6 +932,7 @@ Located in `src/resilience/circuit-breaker.ts`:
 Located in `src/resilience/redis-pool.ts`:
 
 - `RedisPoolOptions`
+
   ```typescript
   {
     nodes: Array<{
@@ -943,7 +958,7 @@ Located in `src/resilience/redis-pool.ts`:
       connection: number;
       timeout: number;
       other: number;
-    };
+    }
   }
   ```
 
@@ -952,6 +967,7 @@ Located in `src/resilience/redis-pool.ts`:
 Located in `src/resilience/batch-processor.ts`:
 
 - `BatchProcessorOptions`
+
   ```typescript
   {
     batchSize: number;     // Messages per batch
@@ -962,6 +978,7 @@ Located in `src/resilience/batch-processor.ts`:
   ```
 
 - `BatchItem<T>`
+
   ```typescript
   {
     exchange: string;
@@ -981,18 +998,19 @@ Located in `src/resilience/batch-processor.ts`:
       total: number;
       successful: number;
       failed: number;
-    };
+    }
     latency: {
       min: number;
       max: number;
       average: number;
-    };
+    }
   }
   ```
 
 ### Integration Types
 
 - `ResilienceConfig`
+
   ```typescript
   {
     circuitBreaker?: CircuitBreakerOptions;
@@ -1013,11 +1031,13 @@ Located in `src/resilience/batch-processor.ts`:
 ### Usage Notes
 
 1. Circuit Breaker Types:
+
    - Used to prevent cascading failures
    - Configurable thresholds and timeouts
    - State monitoring and metrics
 
 2. Redis Pool Types:
+
    - Connection pooling configuration
    - Load balancing across nodes
    - Performance monitoring
@@ -1028,6 +1048,7 @@ Located in `src/resilience/batch-processor.ts`:
    - Performance metrics
 
 For implementation details, see:
+
 - [Circuit Breaker Implementation](../../common/docs/resilience.md#circuit-breaker)
 - [Redis Pool Implementation](../../common/docs/resilience.md#redis-pool)
 - [Batch Processing Implementation](../../common/docs/resilience.md#batch-processing)

@@ -6,4 +6,4 @@ declare module 'fastify' {
     prisma: PrismaClient;
     redis: FastifyRedis;
   }
-} 
+}

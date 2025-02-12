@@ -24,12 +24,7 @@ export const getLocationFromIP = async (ip: string): Promise<UserContext['locati
     const location = await fetchLocationFromIP(ip);
 
     // Cache the location
-    await redis.set(
-      `${CACHE_PREFIX}${ip}`,
-      JSON.stringify(location),
-      'EX',
-      CACHE_TTL
-    );
+    await redis.set(`${CACHE_PREFIX}${ip}`, JSON.stringify(location), 'EX', CACHE_TTL);
 
     return location;
   } catch (error) {
@@ -38,7 +33,7 @@ export const getLocationFromIP = async (ip: string): Promise<UserContext['locati
     return {
       ip,
       country: 'UNKNOWN',
-      region: 'UNKNOWN'
+      region: 'UNKNOWN',
     };
   }
 };
@@ -51,14 +46,9 @@ const fetchLocationFromIP = async (ip: string): Promise<IPLocation> => {
     return {
       ip,
       country: 'GH', // Ghana
-      region: 'Greater Accra'
+      region: 'Greater Accra',
     };
   } catch (error) {
-    throw createError(
-      'Failed to fetch location from IP',
-      'INTERNAL_SERVER_ERROR',
-      500,
-      error
-    );
+    throw createError('Failed to fetch location from IP', 'INTERNAL_SERVER_ERROR', 500, error);
   }
-}; 
+};

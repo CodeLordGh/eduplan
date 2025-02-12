@@ -7,19 +7,19 @@ flowchart TB
     A[Access Request] --> B{Has Required Attributes?}
     B -->|No| C[Deny Access]
     B -->|Yes| D{Check Role Hierarchy}
-    
+
     D -->|Invalid Role| C
     D -->|Valid Role| E{Check Permissions}
-    
+
     E -->|Missing Permissions| C
     E -->|Has Permissions| F{Check Context}
-    
+
     F -->|Invalid Context| C
     F -->|Valid Context| G{Check Environment}
-    
+
     G -->|Invalid Environment| C
     G -->|Valid Environment| H{Check Verification}
-    
+
     H -->|Not Verified| C
     H -->|Verified| I[Grant Access]
 
@@ -40,13 +40,14 @@ flowchart TB
 ## Implementation Steps
 
 1. **Attribute Collection**
+
 ```typescript
 const collectUserAttributes = async (userId: string): Promise<UserAttributes> => {
   const user = await getUser(userId);
   const kyc = await getKYCStatus(userId);
   const employment = await getEmploymentStatus(userId);
   const context = await getUserContext(userId);
-  
+
   return {
     id: user.id,
     email: user.email,
@@ -56,47 +57,41 @@ const collectUserAttributes = async (userId: string): Promise<UserAttributes> =>
     kyc,
     employment,
     access: user.access,
-    context
+    context,
   };
 };
 ```
 
 2. **Role Hierarchy Check**
+
 ```typescript
-const checkRoleHierarchy = (
-  userRoles: Role[],
-  requiredRoles: Role[]
-): boolean => {
-  return requiredRoles.some(required => 
-    userRoles.some(userRole => 
-      ROLE_HIERARCHY[userRole].includes(required) || userRole === required
+const checkRoleHierarchy = (userRoles: Role[], requiredRoles: Role[]): boolean => {
+  return requiredRoles.some((required) =>
+    userRoles.some(
+      (userRole) => ROLE_HIERARCHY[userRole].includes(required) || userRole === required
     )
   );
 };
 ```
 
 3. **Permission Check**
+
 ```typescript
-const checkPermissions = (
-  userRoles: Role[],
-  requiredPermissions: Permission[]
-): boolean => {
-  const userPermissions = userRoles.flatMap(role => ROLE_PERMISSIONS[role]);
-  return requiredPermissions.every(permission => 
-    userPermissions.includes(permission)
-  );
+const checkPermissions = (userRoles: Role[], requiredPermissions: Permission[]): boolean => {
+  const userPermissions = userRoles.flatMap((role) => ROLE_PERMISSIONS[role]);
+  return requiredPermissions.every((permission) => userPermissions.includes(permission));
 };
 ```
 
 4. **Context Validation**
+
 ```typescript
-const validateContext = (
-  context: UserContext,
-  conditions: PolicyConditions
-): ValidationResult => {
+const validateContext = (context: UserContext, conditions: PolicyConditions): ValidationResult => {
   // School context
-  if (conditions.school?.mustBeCurrentSchool && 
-      context.currentSchoolId !== conditions.school.requiredSchoolId) {
+  if (
+    conditions.school?.mustBeCurrentSchool &&
+    context.currentSchoolId !== conditions.school.requiredSchoolId
+  ) {
     return { granted: false, reason: 'Invalid school context' };
   }
 
@@ -113,13 +108,11 @@ const validateContext = (
 ```
 
 5. **Environment Check**
+
 ```typescript
-const checkEnvironment = (
-  context: UserContext,
-  conditions: PolicyConditions
-): ValidationResult => {
+const checkEnvironment = (context: UserContext, conditions: PolicyConditions): ValidationResult => {
   const { environment } = conditions;
-  
+
   // IP check
   if (environment?.ipRestrictions) {
     const { allowlist, denylist } = environment.ipRestrictions;
@@ -129,8 +122,7 @@ const checkEnvironment = (
   }
 
   // Device check
-  if (environment?.deviceRestrictions?.requireTrusted && 
-      !isTrustedDevice(context.deviceInfo)) {
+  if (environment?.deviceRestrictions?.requireTrusted && !isTrustedDevice(context.deviceInfo)) {
     return { granted: false, reason: 'Untrusted device' };
   }
 
@@ -139,6 +131,7 @@ const checkEnvironment = (
 ```
 
 6. **Verification Check**
+
 ```typescript
 const checkVerification = (
   attributes: UserAttributes,
@@ -146,13 +139,14 @@ const checkVerification = (
 ): ValidationResult => {
   const { verification } = conditions;
 
-  if (verification?.requireKYC && 
-      !verification.kycStatus?.includes(attributes.kyc.status)) {
+  if (verification?.requireKYC && !verification.kycStatus?.includes(attributes.kyc.status)) {
     return { granted: false, reason: 'KYC verification required' };
   }
 
-  if (verification?.employmentStatus && 
-      !verification.employmentStatus.includes(attributes.employment.status)) {
+  if (
+    verification?.employmentStatus &&
+    !verification.employmentStatus.includes(attributes.employment.status)
+  ) {
     return { granted: false, reason: 'Employment verification required' };
   }
 
@@ -161,23 +155,25 @@ const checkVerification = (
 ```
 
 7. **Main ABAC Evaluation**
+
 ```typescript
-const evaluateAccess = async (
-  userId: string,
-  policy: AccessPolicy
-): Promise<ValidationResult> => {
+const evaluateAccess = async (userId: string, policy: AccessPolicy): Promise<ValidationResult> => {
   // Collect attributes
   const attributes = await collectUserAttributes(userId);
 
   // Check role hierarchy
-  if (policy.conditions.anyOf?.roles && 
-      !checkRoleHierarchy(attributes.globalRoles, policy.conditions.anyOf.roles)) {
+  if (
+    policy.conditions.anyOf?.roles &&
+    !checkRoleHierarchy(attributes.globalRoles, policy.conditions.anyOf.roles)
+  ) {
     return { granted: false, reason: 'Insufficient role' };
   }
 
   // Check permissions
-  if (policy.conditions.allOf?.permissions && 
-      !checkPermissions(attributes.globalRoles, policy.conditions.allOf.permissions)) {
+  if (
+    policy.conditions.allOf?.permissions &&
+    !checkPermissions(attributes.globalRoles, policy.conditions.allOf.permissions)
+  ) {
     return { granted: false, reason: 'Missing required permissions' };
   }
 
@@ -214,26 +210,26 @@ const policy: AccessPolicy = {
   action: 'READ',
   conditions: {
     anyOf: {
-      roles: ['SCHOOL_OWNER', 'ACCOUNTANT']
+      roles: ['SCHOOL_OWNER', 'ACCOUNTANT'],
     },
     allOf: {
-      permissions: [Permission.VIEW_PAYMENTS]
+      permissions: [Permission.VIEW_PAYMENTS],
     },
     verification: {
       requireKYC: true,
-      kycStatus: ['VERIFIED']
+      kycStatus: ['VERIFIED'],
     },
     school: {
-      mustBeCurrentSchool: true
+      mustBeCurrentSchool: true,
     },
     environment: {
       timeRestrictions: {
         allowedDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
         allowedHours: ['09:00-17:00'],
-        timezone: 'UTC'
-      }
-    }
-  }
+        timezone: 'UTC',
+      },
+    },
+  },
 };
 
 const result = await evaluateAccess('user123', policy);
@@ -243,4 +239,4 @@ if (result.granted) {
   // Handle denial with reason
   console.log(`Access denied: ${result.reason}`);
 }
-``` 
+```

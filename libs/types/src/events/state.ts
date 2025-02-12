@@ -13,6 +13,10 @@ export interface EventBusState {
 
 export type EventBus = {
   publish: <T>(event: Event<T>, options?: PublishOptions) => Promise<void>;
-  subscribe: <T>(eventType: string, handler: EventHandler<T>, options?: SubscribeOptions) => Promise<void>;
+  subscribe: <T>(
+    eventType: string,
+    handler: EventHandler<T>,
+    options?: SubscribeOptions
+  ) => Promise<void>;
   close: () => Promise<void>;
-}; 
+};

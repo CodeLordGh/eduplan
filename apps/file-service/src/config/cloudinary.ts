@@ -11,7 +11,7 @@ export const initCloudinary = (): TE.TaskEither<BaseError, void> => {
           cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
           api_key: process.env.CLOUDINARY_API_KEY,
           api_secret: process.env.CLOUDINARY_API_SECRET,
-          secure: true
+          secure: true,
         });
         return Promise.resolve();
       },
@@ -32,14 +32,14 @@ export const uploadToCloudinary = (
             {
               folder: options.folder,
               public_id: options.public_id,
-              resource_type: 'auto'
+              resource_type: 'auto',
             },
             (error, result) => {
               if (error) return reject(error);
               if (!result) return reject(new Error('Upload failed'));
               resolve({
                 url: result.secure_url,
-                public_id: result.public_id
+                public_id: result.public_id,
               });
             }
           );

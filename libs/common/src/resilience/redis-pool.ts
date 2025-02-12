@@ -1,7 +1,6 @@
 import Redis from 'ioredis';
 import { Logger } from '@eduflow/types';
 
-
 export interface RedisPoolOptions {
   nodes: Array<{
     host: string;
@@ -23,29 +22,26 @@ export interface RedisPoolState {
   }>;
 }
 
-const createClient = (
-  node: { host: string; port: number },
-  logger: Logger
-): Promise<Redis> =>
+const createClient = (node: { host: string; port: number }, logger: Logger): Promise<Redis> =>
   new Promise((resolve, reject) => {
     const client = new Redis({
       host: node.host,
       port: node.port,
-      retryStrategy: (times) => Math.min(times * 50, 2000)
+      retryStrategy: (times) => Math.min(times * 50, 2000),
     });
 
     client.on('error', (error) => {
       logger.error('Redis client error', {
         error: error.message,
         host: node.host,
-        port: node.port
+        port: node.port,
       });
     });
 
     client.on('connect', () => {
       logger.info('Redis client connected', {
         host: node.host,
-        port: node.port
+        port: node.port,
       });
       resolve(client);
     });
@@ -53,20 +49,17 @@ const createClient = (
     client.on('close', () => {
       logger.warn('Redis client disconnected', {
         host: node.host,
-        port: node.port
+        port: node.port,
       });
     });
   });
 
-const initialize = async (
-  options: RedisPoolOptions,
-  logger: Logger
-): Promise<RedisPoolState> => {
+const initialize = async (options: RedisPoolOptions, logger: Logger): Promise<RedisPoolState> => {
   const minConnections = options.minConnections || 1;
   const state: RedisPoolState = {
     pool: [],
     inUse: new Set(),
-    waitingOperations: []
+    waitingOperations: [],
   };
 
   try {
@@ -78,13 +71,13 @@ const initialize = async (
 
     logger.info('Redis pool initialized', {
       poolSize: state.pool.length,
-      maxConnections: options.maxConnections
+      maxConnections: options.maxConnections,
     });
 
     return state;
   } catch (error) {
     logger.error('Failed to initialize Redis pool', {
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }
@@ -96,7 +89,7 @@ const acquire = async (
   logger: Logger
 ): Promise<[Redis, RedisPoolState]> => {
   // Check for available connection
-  const available = state.pool.find(client => !state.inUse.has(client));
+  const available = state.pool.find((client) => !state.inUse.has(client));
   if (available) {
     state.inUse.add(available);
     return [available, state];
@@ -114,9 +107,7 @@ const acquire = async (
   // Wait for available connection
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      const index = state.waitingOperations.findIndex(
-        op => op.id === timeout
-      );
+      const index = state.waitingOperations.findIndex((op) => op.id === timeout);
       if (index !== -1) {
         state.waitingOperations.splice(index, 1);
       }
@@ -132,7 +123,7 @@ const acquire = async (
       reject: (error: Error) => {
         clearTimeout(timeout);
         reject(error);
-      }
+      },
     });
   });
 };
@@ -164,7 +155,7 @@ const release = (
           client.disconnect();
           logger.info('Closed idle Redis connection', {
             poolSize: state.pool.length,
-            maxConnections: options.maxConnections
+            maxConnections: options.maxConnections,
           });
         }
       }
@@ -181,12 +172,10 @@ export const createRedisPool = (options: RedisPoolOptions, logger: Logger) => {
     state = await initialize(options, logger);
   };
 
-  const withClient = async <T>(
-    operation: (client: Redis) => Promise<T>
-  ): Promise<T> => {
+  const withClient = async <T>(operation: (client: Redis) => Promise<T>): Promise<T> => {
     const [client, newState] = await acquire(state, options, logger);
     state = newState;
-    
+
     try {
       return await operation(client);
     } finally {
@@ -196,8 +185,8 @@ export const createRedisPool = (options: RedisPoolOptions, logger: Logger) => {
 
   const close = async () => {
     await Promise.all([
-      ...state.pool.map(client => client.quit()),
-      ...Array.from(state.inUse).map(client => client.quit())
+      ...state.pool.map((client) => client.quit()),
+      ...Array.from(state.inUse).map((client) => client.quit()),
     ]);
 
     state.waitingOperations.forEach(({ reject }) => {
@@ -207,7 +196,7 @@ export const createRedisPool = (options: RedisPoolOptions, logger: Logger) => {
     state = {
       pool: [],
       inUse: new Set(),
-      waitingOperations: []
+      waitingOperations: [],
     };
 
     logger.info('Redis pool closed');
@@ -216,6 +205,6 @@ export const createRedisPool = (options: RedisPoolOptions, logger: Logger) => {
   return {
     init,
     withClient,
-    close
+    close,
   };
-}; 
+};

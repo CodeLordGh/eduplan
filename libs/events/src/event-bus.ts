@@ -4,7 +4,14 @@ import * as O from 'fp-ts/Option';
 import * as E from 'fp-ts/Either';
 import amqp, { Channel, Connection } from 'amqplib';
 import Redis from 'ioredis';
-import { Logger, Event, EventBusConfig, EventHandler, PublishOptions, SubscribeOptions } from '@eduflow/types';
+import {
+  Logger,
+  Event,
+  EventBusConfig,
+  EventHandler,
+  PublishOptions,
+  SubscribeOptions,
+} from '@eduflow/types';
 import { EventBusInternalState } from './internal-types';
 
 // Initialize RabbitMQ connection
@@ -13,79 +20,52 @@ const initializeRabbitMQ = (
   logger: Logger
 ): TE.TaskEither<Error, { connection: Connection; channel: Channel }> =>
   pipe(
-    TE.tryCatch(
-      () => amqp.connect(config.rabbitmq.url),
-      E.toError
-    ),
-    TE.chain(connection =>
+    TE.tryCatch(() => amqp.connect(config.rabbitmq.url), E.toError),
+    TE.chain((connection) =>
       pipe(
-        TE.tryCatch(
-          () => connection.createChannel(),
-          E.toError
-        ),
-        TE.map(channel => ({ connection, channel }))
+        TE.tryCatch(() => connection.createChannel(), E.toError),
+        TE.map((channel) => ({ connection, channel }))
       )
     ),
     TE.chain(({ connection, channel }) =>
       pipe(
-        TE.tryCatch(
-          async () => {
-            await channel.assertExchange(config.rabbitmq.exchange, 'topic', { durable: true });
-            await channel.assertExchange(config.rabbitmq.deadLetterExchange, 'topic', { durable: true });
-            return { connection, channel };
-          },
-          E.toError
-        )
+        TE.tryCatch(async () => {
+          await channel.assertExchange(config.rabbitmq.exchange, 'topic', { durable: true });
+          await channel.assertExchange(config.rabbitmq.deadLetterExchange, 'topic', {
+            durable: true,
+          });
+          return { connection, channel };
+        }, E.toError)
       )
     )
   );
 
 // Initialize Redis connection (for caching only)
-const initializeRedis = (
-  config: EventBusConfig
-): TE.TaskEither<Error, Redis> =>
-  TE.tryCatch(
-    () => {
-      const client = new Redis(config.redis.url);
-      return Promise.resolve(client);
-    },
-    E.toError
-  );
+const initializeRedis = (config: EventBusConfig): TE.TaskEither<Error, Redis> =>
+  TE.tryCatch(() => {
+    const client = new Redis(config.redis.url);
+    return Promise.resolve(client);
+  }, E.toError);
 
 // Redis cache operations
-const cacheLastKnownEvent = (
-  redis: Redis,
-  keyPrefix: string,
-  eventTTL: number
-) => <T>(
-  event: Event<T>
-): TE.TaskEither<Error, void> =>
-  TE.tryCatch(
-    async () => {
+const cacheLastKnownEvent =
+  (redis: Redis, keyPrefix: string, eventTTL: number) =>
+  <T>(event: Event<T>): TE.TaskEither<Error, void> =>
+    TE.tryCatch(async () => {
       const key = `${keyPrefix}:last:${String(event.type)}`;
-      await redis.set(
-        key,
-        JSON.stringify(event),
-        'EX',
-        eventTTL
-      );
-    },
-    E.toError
-  );
+      await redis.set(key, JSON.stringify(event), 'EX', eventTTL);
+    }, E.toError);
 
-const getLastKnownEvent = (redis: Redis, keyPrefix: string) => <T>(
-  eventType: string
-): TE.TaskEither<Error, O.Option<Event<T>>> =>
-  pipe(
-    TE.tryCatch(
-      async () => {
+const getLastKnownEvent =
+  (redis: Redis, keyPrefix: string) =>
+  <T>(eventType: string): TE.TaskEither<Error, O.Option<Event<T>>> =>
+    pipe(
+      TE.tryCatch(async () => {
         const key = `${keyPrefix}:last:${eventType}`;
         const cached = await redis.get(key);
         return cached ? O.some(JSON.parse(cached)) : O.none;
-      },
-      E.toError
-    )
-  );
+      }, E.toError)
+    );
 
 // Event publishing
 const publishToRabbitMQ = (
@@ -94,25 +74,17 @@ const publishToRabbitMQ = (
   event: Event<unknown>,
   options: { persistent: boolean; priority?: number }
 ): TE.TaskEither<Error, void> =>
-  TE.tryCatch(
-    async () => {
-      await channel.publish(
-        exchange,
-        String(event.type),
-        Buffer.from(JSON.stringify(event)),
-        {
-          persistent: options.persistent,
-          priority: options.priority,
-          headers: {
-            'x-event-version': event.metadata.version,
-            'x-event-source': event.metadata.source,
-            'x-correlation-id': event.metadata.correlationId
-          }
-        }
-      );
-    },
-    E.toError
-  );
+  TE.tryCatch(async () => {
+    await channel.publish(exchange, String(event.type), Buffer.from(JSON.stringify(event)), {
+      persistent: options.persistent,
+      priority: options.priority,
+      headers: {
+        'x-event-version': event.metadata.version,
+        'x-event-source': event.metadata.source,
+        'x-correlation-id': event.metadata.correlationId,
+      },
+    });
+  }, E.toError);
 
 // Queue setup for subscribers
 const setupEventQueue = (
@@ -122,20 +94,17 @@ const setupEventQueue = (
   eventType: string,
   options: SubscribeOptions
 ): TE.TaskEither<Error, string> =>
-  TE.tryCatch(
-    async () => {
-      const { queueName = `queue.${eventType}`, durable = true } = options;
+  TE.tryCatch(async () => {
+    const { queueName = `queue.${eventType}`, durable = true } = options;
 
-      await channel.assertQueue(queueName, {
-        durable,
-        deadLetterExchange
-      });
+    await channel.assertQueue(queueName, {
+      durable,
+      deadLetterExchange,
+    });
 
-      await channel.bindQueue(queueName, exchange, eventType);
-      return queueName;
-    },
-    E.toError
-  );
+    await channel.bindQueue(queueName, exchange, eventType);
+    return queueName;
+  }, E.toError);
 
 // State management
 export const createEventBusState = (
@@ -147,7 +116,7 @@ export const createEventBusState = (
   redisClient: null,
   config,
   logger,
-  handlers: new Map()
+  handlers: new Map(),
 });
 
 // Initialize connections
@@ -159,75 +128,73 @@ export const initialize = (
     TE.chain(({ connection, channel }) =>
       pipe(
         initializeRedis(state.config),
-        TE.map(redis => ({
+        TE.map((redis) => ({
           ...state,
           rabbitmqConnection: connection,
           rabbitmqChannel: channel,
-          redisClient: redis
+          redisClient: redis,
         }))
       )
     )
   );
 
 // Publishing events
-export const publish = (state: EventBusInternalState) => <T>(
-  event: Event<T>,
-  options: PublishOptions = {}
-): TE.TaskEither<Error, void> => {
-  const { persistent = true, cache = true, priority } = options;
-  const enhancedEvent: Event<T> = {
-    ...event,
-    metadata: {
-      ...event.metadata,
-      source: state.config.serviceName,
-      timestamp: new Date().toISOString()
-    }
+export const publish =
+  (state: EventBusInternalState) =>
+  <T>(event: Event<T>, options: PublishOptions = {}): TE.TaskEither<Error, void> => {
+    const { persistent = true, cache = true, priority } = options;
+    const enhancedEvent: Event<T> = {
+      ...event,
+      metadata: {
+        ...event.metadata,
+        source: state.config.serviceName,
+        timestamp: new Date().toISOString(),
+      },
+    };
+
+    return pipe(
+      // Always publish to RabbitMQ first
+      state.rabbitmqChannel
+        ? publishToRabbitMQ(state.rabbitmqChannel, state.config.rabbitmq.exchange, enhancedEvent, {
+            persistent,
+            priority,
+          })
+        : TE.left(new Error('RabbitMQ not initialized')),
+      // Then optionally cache last known state
+      TE.chain(() =>
+        cache && state.redisClient
+          ? cacheLastKnownEvent(
+              state.redisClient,
+              state.config.redis.keyPrefix,
+              state.config.redis.eventTTL
+            )(enhancedEvent)
+          : TE.right(undefined)
+      )
+    );
   };
 
-  return pipe(
-    // Always publish to RabbitMQ first
-    state.rabbitmqChannel
-      ? publishToRabbitMQ(
-          state.rabbitmqChannel,
-          state.config.rabbitmq.exchange,
-          enhancedEvent,
-          { persistent, priority }
-        )
-      : TE.left(new Error('RabbitMQ not initialized')),
-    // Then optionally cache last known state
-    TE.chain(() =>
-      cache && state.redisClient
-        ? cacheLastKnownEvent(
-            state.redisClient,
-            state.config.redis.keyPrefix,
-            state.config.redis.eventTTL
-          )(enhancedEvent)
-        : TE.right(undefined)
-    )
-  );
-};
-
 // Subscribing to events
-export const subscribe = (state: EventBusInternalState) => <T>(
-  eventType: string,
-  handler: EventHandler<T>,
-  options: SubscribeOptions = {}
-): TE.TaskEither<Error, void> => {
-  if (!state.rabbitmqChannel) {
-    return TE.left(new Error('RabbitMQ not initialized'));
-  }
+export const subscribe =
+  (state: EventBusInternalState) =>
+  <T>(
+    eventType: string,
+    handler: EventHandler<T>,
+    options: SubscribeOptions = {}
+  ): TE.TaskEither<Error, void> => {
+    if (!state.rabbitmqChannel) {
+      return TE.left(new Error('RabbitMQ not initialized'));
+    }
 
-  return pipe(
-    setupEventQueue(
-      state.rabbitmqChannel,
-      state.config.rabbitmq.exchange,
-      state.config.rabbitmq.deadLetterExchange,
-      eventType,
-      options
-    ),
-    TE.chain(queueName =>
-      TE.tryCatch(
-        async () => {
+    return pipe(
+      setupEventQueue(
+        state.rabbitmqChannel,
+        state.config.rabbitmq.exchange,
+        state.config.rabbitmq.deadLetterExchange,
+        eventType,
+        options
+      ),
+      TE.chain((queueName) =>
+        TE.tryCatch(async () => {
           await state.rabbitmqChannel!.consume(queueName, async (msg) => {
             if (!msg) return;
 
@@ -237,8 +204,11 @@ export const subscribe = (state: EventBusInternalState) => <T>(
               // Check last known state from Redis if enabled
               if (options.useCache && state.redisClient) {
                 const lastKnownResult = await pipe(
-                  getLastKnownEvent(state.redisClient, state.config.redis.keyPrefix)(String(event.type)),
-                  TE.map(O.chain(cached => O.some(cached as Event<T>)))
+                  getLastKnownEvent(
+                    state.redisClient,
+                    state.config.redis.keyPrefix
+                  )(String(event.type)),
+                  TE.map(O.chain((cached) => O.some(cached as Event<T>)))
                 )();
 
                 if (E.isRight(lastKnownResult) && O.isSome(lastKnownResult.right)) {
@@ -270,11 +240,11 @@ export const subscribe = (state: EventBusInternalState) => <T>(
                 retryCount: (msg.properties?.headers?.['x-retry-count'] ?? 0) + 1,
                 timestamp: new Date().toISOString(),
                 correlationId: msg.properties?.headers?.['x-correlation-id'],
-                source: msg.properties?.headers?.['x-event-source']
+                source: msg.properties?.headers?.['x-event-source'],
               };
-              
+
               state.logger.error('Error processing event', errorContext);
-              
+
               if (errorContext.retryCount <= state.config.rabbitmq.retryCount) {
                 setTimeout(() => {
                   // Add error context to message headers for retry
@@ -282,18 +252,18 @@ export const subscribe = (state: EventBusInternalState) => <T>(
                     ...msg.properties.headers,
                     'x-retry-count': errorContext.retryCount,
                     'x-last-error': errorContext.error,
-                    'x-last-retry': errorContext.timestamp
+                    'x-last-retry': errorContext.timestamp,
                   };
-                  
+
                   state.rabbitmqChannel?.reject(msg, false);
                 }, state.config.rabbitmq.retryDelay * errorContext.retryCount);
               } else {
                 // When moving to DLQ, include full error context
                 const deadLetterMsg = {
                   ...JSON.parse(msg.content.toString()),
-                  error: errorContext
+                  error: errorContext,
                 };
-                
+
                 // Publish to dead letter exchange with error context
                 state.rabbitmqChannel?.publish(
                   state.config.rabbitmq.deadLetterExchange,
@@ -306,56 +276,52 @@ export const subscribe = (state: EventBusInternalState) => <T>(
                       'x-failed-at': errorContext.timestamp,
                       'x-retry-count': errorContext.retryCount,
                       'x-correlation-id': errorContext.correlationId,
-                      'x-source': errorContext.source
-                    }
+                      'x-source': errorContext.source,
+                    },
                   }
                 );
-                
+
                 state.rabbitmqChannel?.ack(msg); // Ack the original message
               }
             }
           });
-        },
-        E.toError
+        }, E.toError)
       )
-    )
-  );
-};
+    );
+  };
 
 // Unsubscribe from events
-export const unsubscribe = (state: EventBusInternalState) => (
-  eventType: string
-): TE.TaskEither<Error, void> => {
-  if (!state.rabbitmqChannel) {
-    return TE.left(new Error('RabbitMQ not initialized'));
-  }
+export const unsubscribe =
+  (state: EventBusInternalState) =>
+  (eventType: string): TE.TaskEither<Error, void> => {
+    if (!state.rabbitmqChannel) {
+      return TE.left(new Error('RabbitMQ not initialized'));
+    }
 
-  return TE.tryCatch(
-    async () => {
+    return TE.tryCatch(async () => {
       const queueName = `queue.${eventType}`;
-      await state.rabbitmqChannel!.unbindQueue(queueName, state.config.rabbitmq.exchange, eventType);
+      await state.rabbitmqChannel!.unbindQueue(
+        queueName,
+        state.config.rabbitmq.exchange,
+        eventType
+      );
       await state.rabbitmqChannel!.deleteQueue(queueName);
       state.handlers.delete(eventType);
-    },
-    E.toError
-  );
-};
+    }, E.toError);
+  };
 
 // Cleanup
 export const close = (state: EventBusInternalState): TE.TaskEither<Error, void> =>
   pipe(
-    TE.tryCatch(
-      async () => {
-        if (state.rabbitmqChannel) {
-          await state.rabbitmqChannel.close();
-        }
-        if (state.rabbitmqConnection) {
-          await state.rabbitmqConnection.close();
-        }
-        if (state.redisClient) {
-          await state.redisClient.quit();
-        }
-      },
-      E.toError
-    )
-  ); 
+    TE.tryCatch(async () => {
+      if (state.rabbitmqChannel) {
+        await state.rabbitmqChannel.close();
+      }
+      if (state.rabbitmqConnection) {
+        await state.rabbitmqConnection.close();
+      }
+      if (state.redisClient) {
+        await state.redisClient.quit();
+      }
+    }, E.toError)
+  );

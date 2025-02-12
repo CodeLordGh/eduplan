@@ -24,7 +24,10 @@ export const getFileById = (id: string): TE.TaskEither<BaseError, File | null> =
   );
 };
 
-export const updateFile = (id: string, data: Prisma.FileUpdateInput): TE.TaskEither<BaseError, File> => {
+export const updateFile = (
+  id: string,
+  data: Prisma.FileUpdateInput
+): TE.TaskEither<BaseError, File> => {
   return pipe(
     TE.tryCatch(
       () => prisma.file.update({ where: { id }, data }),

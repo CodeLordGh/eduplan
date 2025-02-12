@@ -3,12 +3,12 @@ import * as TE from 'fp-ts/TaskEither';
 import { Logger } from '@eduflow/logger';
 import { AppError } from '@eduflow/types';
 import { createAppError } from '@eduflow/common';
-import { 
-  getRedisClient, 
-  incrementRedisValue, 
-  setRedisExpiry, 
+import {
+  getRedisClient,
+  incrementRedisValue,
+  setRedisExpiry,
   getRedisTimeToLive,
-  createRateLimitKey 
+  createRateLimitKey,
 } from '@eduflow/middleware';
 import { OperationContext } from './types';
 
@@ -31,41 +31,47 @@ export const checkSchoolRegistrationRateLimit = (
 
   return pipe(
     getRedisClient(),
-    TE.chain(client => pipe(
-      incrementRedisValue(client)(key),
-      TE.chain(count => 
-        count === 1
-          ? pipe(
-              setRedisExpiry(client)(key, window * 1000),
-              TE.map(() => count)
-            )
-          : TE.right(count)
-      ),
-      TE.chain(count => pipe(
-        getRedisTimeToLive(client)(key),
-        TE.chain(ttl => {
-          logger.debug('School registration rate limit check', {
-            ip: context.clientInfo.ip,
-            count,
-            limit: maxRequests,
-            resetIn: Math.ceil(ttl / 1000)
-          });
+    TE.chain((client) =>
+      pipe(
+        incrementRedisValue(client)(key),
+        TE.chain((count) =>
+          count === 1
+            ? pipe(
+                setRedisExpiry(client)(key, window * 1000),
+                TE.map(() => count)
+              )
+            : TE.right(count)
+        ),
+        TE.chain((count) =>
+          pipe(
+            getRedisTimeToLive(client)(key),
+            TE.chain((ttl) => {
+              logger.debug('School registration rate limit check', {
+                ip: context.clientInfo.ip,
+                count,
+                limit: maxRequests,
+                resetIn: Math.ceil(ttl / 1000),
+              });
 
-          if (count > maxRequests) {
-            return TE.left(createAppError({
-              code: 'SERVICE_UNAVAILABLE',
-              message: 'School registration rate limit exceeded',
-              metadata: {
-                service: 'school-service',
-                operation: 'school-registration-rate-limit',
-                timestamp: new Date()
+              if (count > maxRequests) {
+                return TE.left(
+                  createAppError({
+                    code: 'SERVICE_UNAVAILABLE',
+                    message: 'School registration rate limit exceeded',
+                    metadata: {
+                      service: 'school-service',
+                      operation: 'school-registration-rate-limit',
+                      timestamp: new Date(),
+                    },
+                  })
+                );
               }
-            }));
-          }
 
-          return TE.right(undefined);
-        })
-      ))
-    ))
+              return TE.right(undefined);
+            })
+          )
+        )
+      )
+    )
   );
-}; 
+};

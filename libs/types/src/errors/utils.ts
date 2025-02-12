@@ -8,22 +8,22 @@ export const HTTP_STATUS_CODES: Record<ErrorCode, number> = {
   AUTH_ERROR: 401,
   UNAUTHORIZED: 403,
   FORBIDDEN: 403,
-  
+
   // Resource Errors
   NOT_FOUND: 404,
   CONFLICT: 409,
-  
+
   // Validation & Input
   VALIDATION_ERROR: 400,
   BAD_REQUEST: 400,
-  
+
   // File Operations
   FILE_SIZE_ERROR: 413,
   FILE_TYPE_ERROR: 415,
   FILE_QUOTA_ERROR: 507,
   FILE_ACCESS_ERROR: 403,
   FILE_NOT_FOUND: 404,
-  
+
   // System Errors
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
@@ -44,8 +44,14 @@ export const errorUtils = {
       AUTH: ['AUTH_ERROR', 'UNAUTHORIZED', 'FORBIDDEN'],
       RESOURCE: ['NOT_FOUND', 'CONFLICT'],
       VALIDATION: ['VALIDATION_ERROR', 'BAD_REQUEST'],
-      FILE: ['FILE_SIZE_ERROR', 'FILE_TYPE_ERROR', 'FILE_QUOTA_ERROR', 'FILE_ACCESS_ERROR', 'FILE_NOT_FOUND'],
-      SYSTEM: ['INTERNAL_SERVER_ERROR', 'SERVICE_UNAVAILABLE']
+      FILE: [
+        'FILE_SIZE_ERROR',
+        'FILE_TYPE_ERROR',
+        'FILE_QUOTA_ERROR',
+        'FILE_ACCESS_ERROR',
+        'FILE_NOT_FOUND',
+      ],
+      SYSTEM: ['INTERNAL_SERVER_ERROR', 'SERVICE_UNAVAILABLE'],
     };
     return categoryMap[category].includes(error.code);
   },
@@ -71,7 +77,16 @@ export const errorUtils = {
     if (['AUTH_ERROR', 'UNAUTHORIZED', 'FORBIDDEN'].includes(code)) return 'AUTH';
     if (['NOT_FOUND', 'CONFLICT'].includes(code)) return 'RESOURCE';
     if (['VALIDATION_ERROR', 'BAD_REQUEST'].includes(code)) return 'VALIDATION';
-    if (['FILE_SIZE_ERROR', 'FILE_TYPE_ERROR', 'FILE_QUOTA_ERROR', 'FILE_ACCESS_ERROR', 'FILE_NOT_FOUND'].includes(code)) return 'FILE';
+    if (
+      [
+        'FILE_SIZE_ERROR',
+        'FILE_TYPE_ERROR',
+        'FILE_QUOTA_ERROR',
+        'FILE_ACCESS_ERROR',
+        'FILE_NOT_FOUND',
+      ].includes(code)
+    )
+      return 'FILE';
     return 'SYSTEM';
-  }
-}; 
+  },
+};

@@ -1,10 +1,10 @@
-import { 
-  UserAttributes, 
+import {
+  UserAttributes,
   KYCStatus,
   EmploymentEligibilityStatus,
   Role,
   UserContext,
-  KYCOfficerStatus
+  KYCOfficerStatus,
 } from '@eduflow/types';
 import { Prisma } from '@eduflow/prisma';
 
@@ -14,7 +14,7 @@ export type UserWithIncludes = Prisma.UserGetPayload<{
     profile: true;
     documents: true;
     verifications: true;
-  }
+  };
 }> & {
   roles: Role[];
   permissions: string[];
@@ -40,21 +40,24 @@ export const transformKYCAttributes = (user: UserWithIncludes) => ({
   status: (user.kycStatus || KYCStatus.NOT_STARTED) as KYCStatus,
   verifiedAt: user.kycVerifiedAt || undefined,
   documentIds: user.kycDocumentIds || [],
-  officerStatus: user.roles.includes('KYC_OFFICER') ? {
-    permissions: {
-      canVerifyIdentity: true,
-      canVerifyDocuments: true,
-      canApproveKYC: user.roles.includes('SYSTEM_ADMIN')
-    }
-  } : undefined
+  officerStatus: user.roles.includes('KYC_OFFICER')
+    ? {
+        permissions: {
+          canVerifyIdentity: true,
+          canVerifyDocuments: true,
+          canApproveKYC: user.roles.includes('SYSTEM_ADMIN'),
+        },
+      }
+    : undefined,
 });
 
 export const transformEmploymentAttributes = (user: UserWithIncludes) => ({
-  status: (user.employmentStatus || EmploymentEligibilityStatus.UNVERIFIED) as EmploymentEligibilityStatus,
+  status: (user.employmentStatus ||
+    EmploymentEligibilityStatus.UNVERIFIED) as EmploymentEligibilityStatus,
   verifiedAt: user.employmentVerifiedAt || undefined,
   verifiedBy: user.verifications?.[0]?.id,
   documentIds: user.employmentDocumentIds || [],
-  currentSchools: [] // Will be populated by school service
+  currentSchools: [], // Will be populated by school service
 });
 
 export const transformAccessAttributes = async (
@@ -62,7 +65,7 @@ export const transformAccessAttributes = async (
   getAccessData: (userId: string) => Promise<any>
 ) => {
   const accessData = await getAccessData(userId);
-  
+
   return {
     failedAttempts: accessData.failedAttempts || 0,
     lastLogin: accessData.lastLogin,
@@ -71,8 +74,8 @@ export const transformAccessAttributes = async (
     restrictions: {
       ipWhitelist: accessData.ipWhitelist,
       allowedCountries: accessData.allowedCountries,
-      timeRestrictions: accessData.timeRestrictions
-    }
+      timeRestrictions: accessData.timeRestrictions,
+    },
   };
 };
 
@@ -83,12 +86,14 @@ export const transformContextAttributes = async (
 ): Promise<UserContext> => ({
   currentSchoolId: getCurrentSchoolId ? await getCurrentSchoolId(user.id) : undefined,
   location: requestContext?.location,
-  deviceInfo: requestContext?.deviceInfo ? {
-    id: requestContext.deviceInfo.id,
-    type: requestContext.deviceInfo.type,
-    trustScore: requestContext.deviceInfo.trustScore || 0,
-    lastVerified: requestContext.deviceInfo.lastVerified || new Date()
-  } : undefined
+  deviceInfo: requestContext?.deviceInfo
+    ? {
+        id: requestContext.deviceInfo.id,
+        type: requestContext.deviceInfo.type,
+        trustScore: requestContext.deviceInfo.trustScore || 0,
+        lastVerified: requestContext.deviceInfo.lastVerified || new Date(),
+      }
+    : undefined,
 });
 
 export const transformToUserAttributes = async (
@@ -104,13 +109,13 @@ export const transformToUserAttributes = async (
     requestContext,
     getAccessData = async () => ({}),
     getCurrentSchoolId = async () => undefined,
-    getSchoolRoles = async () => ({})
+    getSchoolRoles = async () => ({}),
   } = options;
 
   const [accessAttributes, contextAttributes, schoolRoles] = await Promise.all([
     transformAccessAttributes(user.id, getAccessData),
     transformContextAttributes(user, requestContext, getCurrentSchoolId),
-    getSchoolRoles(user.id)
+    getSchoolRoles(user.id),
   ]);
 
   return {
@@ -122,6 +127,6 @@ export const transformToUserAttributes = async (
     kyc: transformKYCAttributes(user),
     employment: transformEmploymentAttributes(user),
     access: accessAttributes,
-    context: contextAttributes
+    context: contextAttributes,
   };
-}; 
+};

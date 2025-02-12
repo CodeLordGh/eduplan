@@ -16,67 +16,67 @@ const services: ServiceConfig[] = [
     name: 'auth',
     prefix: '/api/v1/auth',
     target: 'http://localhost:3001',
-    auth: false
+    auth: false,
   },
   {
     name: 'user',
     prefix: '/api/v1/users',
     target: 'http://localhost:3003',
-    auth: true
+    auth: true,
   },
   {
     name: 'kyc',
     prefix: '/api/v1/kyc',
     target: 'http://localhost:3002',
-    auth: true
+    auth: true,
   },
   {
     name: 'school',
     prefix: '/api/v1/schools',
     target: 'http://localhost:3004',
-    auth: true
+    auth: true,
   },
   {
     name: 'academic',
     prefix: '/api/v1/academic',
     target: 'http://localhost:3005',
-    auth: true
+    auth: true,
   },
   {
     name: 'payment',
     prefix: '/api/v1/payments',
     target: 'http://localhost:3006',
-    auth: true
+    auth: true,
   },
   {
     name: 'file',
     prefix: '/api/v1/files',
     target: 'http://localhost:3007',
-    auth: true
+    auth: true,
   },
   {
     name: 'chat',
     prefix: '/api/v1/chat',
     target: 'http://localhost:3008',
-    auth: true
+    auth: true,
   },
   {
     name: 'notification',
     prefix: '/api/v1/notifications',
     target: 'http://localhost:3009',
-    auth: true
-  }
+    auth: true,
+  },
 ];
 
 export async function setupProxies(server: FastifyInstance, versionManager?: VersionManager) {
   const proxy = httpProxy.createProxyServer({
     changeOrigin: true,
-    ws: true
+    ws: true,
   });
 
   // Handle proxy errors
   proxy.on('error', (err, req, res) => {
-    const service = services.find(s => {
+    const service = services.find((s) => {
       const version = versionManager?.getCurrentVersion() || 'v1';
       const versionedPrefix = s.prefix.replace('/v1/', `/${version}/`);
       return req.url?.startsWith(versionedPrefix);
@@ -88,7 +88,7 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
       target: service?.target,
       url: req.url,
       correlationId: (req as any).correlationId,
-      requestId: (req as any).id
+      requestId: (req as any).id,
     });
 
     if (res instanceof ServerResponse && !res.headersSent) {
@@ -98,7 +98,7 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
   });
 
   // Register proxy routes
-  services.forEach(service => {
+  services.forEach((service) => {
     server.all(`${service.prefix}/*`, async (request: FastifyRequest, reply: FastifyReply) => {
       // Skip auth check for non-auth required endpoints
       if (service.auth) {
@@ -119,18 +119,23 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
         ...context,
         service: service.name,
         target,
-        version
+        version,
       });
 
       return new Promise((resolve, reject) => {
-        proxy.web(request.raw, reply.raw, {
-          target,
-          selfHandleResponse: false
-        }, (err) => {
-          if (err) {
-            reject(err);
+        proxy.web(
+          request.raw,
+          reply.raw,
+          {
+            target,
+            selfHandleResponse: false,
+          },
+          (err) => {
+            if (err) {
+              reject(err);
+            }
           }
-        });
+        );
       });
     });
   });
@@ -139,4 +144,4 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
   server.get('/health', async () => {
     return { status: 'ok' };
   });
-} 
+}
