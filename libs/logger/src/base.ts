@@ -56,18 +56,38 @@ const createLogFunction = (
   pinoLogger: pino.Logger,
   baseContext: Partial<LogContext>,
   level: LogLevel
-): LogFn => (message: string, context: Partial<LogContext> = {}) => {
-  const timestamp = new Date().toISOString();
-  const finalContext = {
-    ...baseContext,
-    ...context,
-    timestamp
+): LogFn => {
+  const logFn = (msgOrObj: string | object, ...args: any[]): void => {
+    const timestamp = new Date().toISOString();
+    
+    if (typeof msgOrObj === 'string') {
+      const [context = {}] = args;
+      const finalContext = {
+        ...baseContext,
+        ...context,
+        timestamp
+      };
+      
+      pinoLogger[level]({
+        msg: msgOrObj,
+        ...finalContext
+      });
+    } else {
+      const [msg, ...restArgs] = args;
+      const finalContext = {
+        ...baseContext,
+        ...msgOrObj,
+        timestamp
+      };
+      
+      pinoLogger[level]({
+        msg: msg || '',
+        ...finalContext
+      });
+    }
   };
-
-  pinoLogger[level]({
-    msg: message,
-    ...finalContext
-  });
+  
+  return logFn;
 };
 
 /**
