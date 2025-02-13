@@ -1,11 +1,13 @@
 # Events Usage Guide for Microservices
 
 ## Overview
+
 This guide explains how to use the event system in microservices under the `apps` folder. The system provides a functional approach to event-driven communication between services.
 
 ## Setup
 
 ### 1. Install Dependencies
+
 ```json
 {
   "dependencies": {
@@ -18,39 +20,33 @@ This guide explains how to use the event system in microservices under the `apps
 ```
 
 ### 2. Initialize Event Bus
+
 ```typescript
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { 
-  createEventBus,
-  EventBusConfig,
-  EventBusOperations 
-} from '@eduflow/events';
+import { createEventBus, EventBusConfig, EventBusOperations } from '@eduflow/events';
 import { logger } from '@eduflow/common';
 
-const initializeService = (
-  serviceName: string
-): TE.TaskEither<Error, EventBusOperations> =>
+const initializeService = (serviceName: string): TE.TaskEither<Error, EventBusOperations> =>
   pipe(
     createEventBus({
       serviceName,
       rabbitmq: {
         url: process.env.RABBITMQ_URL,
-        exchange: 'eduflow.events'
+        exchange: 'eduflow.events',
       },
       redis: {
-        url: process.env.REDIS_URL
-      }
+        url: process.env.REDIS_URL,
+      },
     }),
-    TE.tap(() => TE.right(
-      logger.info('Service initialized', { serviceName })
-    ))
+    TE.tap(() => TE.right(logger.info('Service initialized', { serviceName })))
   );
 ```
 
 ## Usage Patterns
 
 ### 1. Publishing Events
+
 ```typescript
 const publishUserCreated = (
   eventBus: EventBusOperations,
@@ -60,30 +56,24 @@ const publishUserCreated = (
 ): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
-      () => eventBus.publish('USER_CREATED', {
-        id: userId,
-        email,
-        role
-      }),
-      error => new Error(`Failed to publish user created event: ${error}`)
+      () =>
+        eventBus.publish('USER_CREATED', {
+          id: userId,
+          email,
+          role,
+        }),
+      (error) => new Error(`Failed to publish user created event: ${error}`)
     ),
-    TE.tap(() => TE.right(
-      logger.info('User created event published', { userId })
-    ))
+    TE.tap(() => TE.right(logger.info('User created event published', { userId })))
   );
 
 // Usage in API route
 app.post('/users', async (request, reply) =>
   pipe(
     createUser(request.body),
-    TE.chain(user => publishUserCreated(
-      eventBus,
-      user.id,
-      user.email,
-      user.role
-    )),
+    TE.chain((user) => publishUserCreated(eventBus, user.id, user.email, user.role)),
     TE.fold(
-      error => {
+      (error) => {
         logger.error('Failed to create user', { error });
         return reply.status(500).send(error);
       },
@@ -94,58 +84,50 @@ app.post('/users', async (request, reply) =>
 ```
 
 ### 2. Subscribing to Events
+
 ```typescript
-const setupKYCVerificationHandler = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
+const setupKYCVerificationHandler = (eventBus: EventBusOperations): TE.TaskEither<Error, void> =>
   pipe(
     eventBus.subscribe<KYCVerifiedEvent['data']>(
       'KYC_VERIFIED',
-      event => pipe(
-        validateKYCData(event.data),
-        TE.chain(updateUserKYCStatus),
-        TE.mapLeft(error => {
-          logger.error('KYC verification failed', {
-            userId: event.data.userId,
-            error
-          });
-          return error;
-        })
-      ),
+      (event) =>
+        pipe(
+          validateKYCData(event.data),
+          TE.chain(updateUserKYCStatus),
+          TE.mapLeft((error) => {
+            logger.error('KYC verification failed', {
+              userId: event.data.userId,
+              error,
+            });
+            return error;
+          })
+        ),
       {
         useCache: true,
-        durable: true
+        durable: true,
       }
     ),
-    TE.tap(() => TE.right(
-      logger.info('KYC verification handler setup')
-    ))
+    TE.tap(() => TE.right(logger.info('KYC verification handler setup')))
   );
 ```
 
 ### 3. Event-Driven Workflows
+
 ```typescript
-const setupEnrollmentWorkflow = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
+const setupEnrollmentWorkflow = (eventBus: EventBusOperations): TE.TaskEither<Error, void> =>
   pipe(
     TE.Do,
     TE.chain(() => setupPaymentVerification(eventBus)),
     TE.chain(() => setupDocumentVerification(eventBus)),
     TE.chain(() => setupCourseAssignment(eventBus)),
     TE.chain(() => setupWelcomeEmailTrigger(eventBus)),
-    TE.tap(() => TE.right(
-      logger.info('Enrollment workflow setup complete')
-    ))
+    TE.tap(() => TE.right(logger.info('Enrollment workflow setup complete')))
   );
 
-const setupPaymentVerification = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
+const setupPaymentVerification = (eventBus: EventBusOperations): TE.TaskEither<Error, void> =>
   pipe(
-    eventBus.subscribe<PaymentVerifiedEvent['data']>(
-      'PAYMENT_VERIFIED',
-      event => pipe(
+    eventBus.subscribe<PaymentVerifiedEvent['data']>('PAYMENT_VERIFIED', (event) =>
+      pipe(
         verifyPayment(event.data),
         TE.chain(updateEnrollmentStatus),
         TE.chain(() => triggerDocumentVerification(event.data.userId))
@@ -155,6 +137,7 @@ const setupPaymentVerification = (
 ```
 
 ### 4. Error Handling
+
 ```typescript
 const withErrorHandling = <T>(
   operation: () => TE.TaskEither<Error, T>,
@@ -162,29 +145,27 @@ const withErrorHandling = <T>(
 ): TE.TaskEither<Error, T> =>
   pipe(
     operation(),
-    TE.mapLeft(error => {
+    TE.mapLeft((error) => {
       logger.error('Event processing failed', {
         ...context,
-        error: error.message
+        error: error.message,
       });
-      
+
       if (isRetryableError(error)) {
         return new RetryableError(error.message);
       }
-      
+
       return error;
     })
   );
 
 // Usage
-const handleGradeUpdate = (
-  event: Event<GradeUpdateEvent['data']>
-): TE.TaskEither<Error, void> =>
+const handleGradeUpdate = (event: Event<GradeUpdateEvent['data']>): TE.TaskEither<Error, void> =>
   pipe(
     () => updateStudentGrade(event.data),
     withErrorHandling({
       userId: event.data.studentId,
-      eventType: event.type
+      eventType: event.type,
     })
   );
 ```
@@ -192,6 +173,7 @@ const handleGradeUpdate = (
 ## Performance Optimization
 
 ### 1. Event Batching
+
 ```typescript
 const processBatchedEvents = <T>(
   events: Array<Event<T>>,
@@ -199,13 +181,13 @@ const processBatchedEvents = <T>(
 ): TE.TaskEither<Error, void> =>
   pipe(
     events,
-    TE.traverseArray(event =>
+    TE.traverseArray((event) =>
       pipe(
         processor(event),
-        TE.mapLeft(error => {
+        TE.mapLeft((error) => {
           logger.error('Batch processing failed', {
             eventId: event.id,
-            error: error.message
+            error: error.message,
           });
           return error;
         })
@@ -216,28 +198,26 @@ const processBatchedEvents = <T>(
 ```
 
 ### 2. Caching Strategy
+
 ```typescript
-const withCache = <T>(
-  eventBus: EventBusOperations,
-  event: Event<T>
-): TE.TaskEither<Error, void> =>
+const withCache = <T>(eventBus: EventBusOperations, event: Event<T>): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
       async () => {
         const cacheKey = `event:${event.id}`;
         const cached = await eventBus.checkCache(cacheKey);
-        
+
         if (cached) {
           logger.info('Event already processed', {
-            eventId: event.id
+            eventId: event.id,
           });
           return;
         }
-        
+
         await processEvent(event);
         await eventBus.setCache(cacheKey, 'processed', 3600);
       },
-      error => new Error(`Cache operation failed: ${error}`)
+      (error) => new Error(`Cache operation failed: ${error}`)
     )
   );
 ```
@@ -245,6 +225,7 @@ const withCache = <T>(
 ## Monitoring and Debugging
 
 ### 1. Event Logging
+
 ```typescript
 const withEventLogging = <T>(
   event: Event<T>,
@@ -252,25 +233,29 @@ const withEventLogging = <T>(
 ): TE.TaskEither<Error, void> =>
   pipe(
     TE.Do,
-    TE.tap(() => TE.right(
-      logger.info('Processing event', {
-        type: event.type,
-        id: event.id,
-        timestamp: event.timestamp
-      })
-    )),
+    TE.tap(() =>
+      TE.right(
+        logger.info('Processing event', {
+          type: event.type,
+          id: event.id,
+          timestamp: event.timestamp,
+        })
+      )
+    ),
     TE.chain(() => processor(event)),
-    TE.tap(() => TE.right(
-      logger.info('Event processed', {
-        type: event.type,
-        id: event.id
-      })
-    )),
-    TE.mapLeft(error => {
+    TE.tap(() =>
+      TE.right(
+        logger.info('Event processed', {
+          type: event.type,
+          id: event.id,
+        })
+      )
+    ),
+    TE.mapLeft((error) => {
       logger.error('Event processing failed', {
         type: event.type,
         id: event.id,
-        error: error.message
+        error: error.message,
       });
       return error;
     })
@@ -278,23 +263,22 @@ const withEventLogging = <T>(
 ```
 
 ### 2. Health Checks
+
 ```typescript
-const monitorEventSystem = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
+const monitorEventSystem = (eventBus: EventBusOperations): TE.TaskEither<Error, void> =>
   pipe(
     TE.tryCatch(
       async () => {
         setInterval(async () => {
           const health = await eventBus.checkHealth();
           logger.info('Event system health', health);
-          
+
           if (health.status === 'unhealthy') {
             logger.error('Event system unhealthy', health.details);
           }
         }, 60000);
       },
-      error => new Error(`Health check failed: ${error}`)
+      (error) => new Error(`Health check failed: ${error}`)
     )
   );
 ```
@@ -302,50 +286,46 @@ const monitorEventSystem = (
 ## Testing Events
 
 ### 1. Event Mocking
+
 ```typescript
-const createTestEvent = <T>(
-  type: string,
-  data: T
-): Event<T> => ({
+const createTestEvent = <T>(type: string, data: T): Event<T> => ({
   id: 'test-id',
   type,
   timestamp: new Date().toISOString(),
   source: 'test',
-  data
+  data,
 });
 
 const mockEventBus = (): EventBusOperations => ({
   publish: jest.fn().mockReturnValue(TE.right(undefined)),
   subscribe: jest.fn().mockReturnValue(TE.right(undefined)),
   unsubscribe: jest.fn().mockReturnValue(TE.right(undefined)),
-  close: jest.fn().mockResolvedValue(undefined)
+  close: jest.fn().mockResolvedValue(undefined),
 });
 ```
 
 ### 2. Event Testing
+
 ```typescript
 describe('Grade Update Flow', () => {
   const eventBus = mockEventBus();
-  
+
   it('should process grade updates', async () => {
     const event = createTestEvent('GRADE_UPDATED', {
       studentId: 'student-1',
       courseId: 'course-1',
-      grade: 95
+      grade: 95,
     });
-    
+
     await pipe(
       handleGradeUpdate(event),
       TE.fold(
-        error => {
+        (error) => {
           fail(`Should not fail: ${error.message}`);
           return TE.right(undefined);
         },
         () => {
-          expect(eventBus.publish).toHaveBeenCalledWith(
-            'GRADE_NOTIFICATION',
-            expect.any(Object)
-          );
+          expect(eventBus.publish).toHaveBeenCalledWith('GRADE_NOTIFICATION', expect.any(Object));
           return TE.right(undefined);
         }
       )
@@ -357,14 +337,17 @@ describe('Grade Update Flow', () => {
 ## Related Documentation
 
 ### Core Implementation
+
 - [Events Implementation](../../libs/common/docs/events.md)
 - [Error Handling Implementation](../../libs/common/docs/error-handling.md)
 - [Logger Implementation](../../libs/logger/docs/logger-implementation.md)
 
 ### Integration Guides
+
 - [Events Integration Guide](../../libs/docs/events-integration.md)
 - [Error Handling Integration](../../libs/docs/error-handling-integration.md)
 - [Logger Integration](../../libs/docs/logger-integration.md)
 
 ### Additional Resources
+
 - [System Integration](./system-integration.md)

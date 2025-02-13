@@ -49,13 +49,13 @@ export async function setupSwagger(server: FastifyInstance) {
       info: {
         title: 'EduFlow API Documentation',
         description: 'Comprehensive API documentation for all EduFlow services',
-        version: '1.0.0'
+        version: '1.0.0',
       },
       servers: [
         {
           url: 'http://localhost:4000/api/v1',
-          description: 'Development server'
-        }
+          description: 'Development server',
+        },
       ],
       tags: [
         { name: 'auth', description: 'Authentication endpoints' },
@@ -68,19 +68,19 @@ export async function setupSwagger(server: FastifyInstance) {
         { name: 'verification', description: 'Verification operations' },
         { name: 'files', description: 'File management endpoints' },
         { name: 'chat', description: 'Chat system endpoints' },
-        { name: 'notifications', description: 'Notification system endpoints' }
+        { name: 'notifications', description: 'Notification system endpoints' },
       ],
       components: {
         securitySchemes: {
           bearerAuth: {
             type: 'http',
             scheme: 'bearer',
-            bearerFormat: 'JWT'
-          }
-        }
+            bearerFormat: 'JWT',
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
-    }
+      security: [{ bearerAuth: [] }],
+    },
   });
 
   // Register Swagger UI with CSP disabled for development
@@ -93,24 +93,60 @@ export async function setupSwagger(server: FastifyInstance) {
       filter: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
-      persistAuthorization: true
+      persistAuthorization: true,
     },
-    staticCSP: false
+    staticCSP: false,
   });
 
   // Add hook to fetch and merge documentation from services
   server.addHook('onReady', async () => {
     try {
       const services = [
-        { url: 'http://localhost:3001/documentation/json', name: 'Auth Service', prefix: '/api/v1/auth' },
-        { url: 'http://localhost:3002/documentation/json', name: 'KYC Service', prefix: '/api/v1/kyc' },
-        { url: 'http://localhost:3003/documentation/json', name: 'User Service', prefix: '/api/v1/users' },
-        { url: 'http://localhost:3004/documentation/json', name: 'School Service', prefix: '/api/v1/schools' },
-        { url: 'http://localhost:3005/documentation/json', name: 'Academic Service', prefix: '/api/v1/academic' },
-        { url: 'http://localhost:3006/documentation/json', name: 'Payment Service', prefix: '/api/v1/payments' },
-        { url: 'http://localhost:3007/documentation/json', name: 'File Service', prefix: '/api/v1/files' },
-        { url: 'http://localhost:3008/documentation/json', name: 'Chat Service', prefix: '/api/v1/chat' },
-        { url: 'http://localhost:3009/documentation/json', name: 'Notification Service', prefix: '/api/v1/notifications' }
+        {
+          url: 'http://localhost:3001/documentation/json',
+          name: 'Auth Service',
+          prefix: '/api/v1/auth',
+        },
+        {
+          url: 'http://localhost:3002/documentation/json',
+          name: 'KYC Service',
+          prefix: '/api/v1/kyc',
+        },
+        {
+          url: 'http://localhost:3003/documentation/json',
+          name: 'User Service',
+          prefix: '/api/v1/users',
+        },
+        {
+          url: 'http://localhost:3004/documentation/json',
+          name: 'School Service',
+          prefix: '/api/v1/schools',
+        },
+        {
+          url: 'http://localhost:3005/documentation/json',
+          name: 'Academic Service',
+          prefix: '/api/v1/academic',
+        },
+        {
+          url: 'http://localhost:3006/documentation/json',
+          name: 'Payment Service',
+          prefix: '/api/v1/payments',
+        },
+        {
+          url: 'http://localhost:3007/documentation/json',
+          name: 'File Service',
+          prefix: '/api/v1/files',
+        },
+        {
+          url: 'http://localhost:3008/documentation/json',
+          name: 'Chat Service',
+          prefix: '/api/v1/chat',
+        },
+        {
+          url: 'http://localhost:3009/documentation/json',
+          name: 'Notification Service',
+          prefix: '/api/v1/notifications',
+        },
       ];
 
       const swaggerObject = server.swagger() as SwaggerDocument;
@@ -120,36 +156,36 @@ export async function setupSwagger(server: FastifyInstance) {
 
       for (const service of services) {
         try {
-          logger.info('Fetching service documentation', { 
-            service: service.name, 
-            url: service.url 
+          logger.info('Fetching service documentation', {
+            service: service.name,
+            url: service.url,
           });
-          
+
           const response = await fetch(service.url);
           if (!response.ok) {
-            logger.warn('Failed to fetch service documentation', { 
-              service: service.name, 
+            logger.warn('Failed to fetch service documentation', {
+              service: service.name,
               statusCode: response.status,
-              statusText: response.statusText 
+              statusText: response.statusText,
             });
             continue;
           }
-          
+
           const serviceDoc = await response.json();
-          logger.info('Successfully fetched service documentation', { 
+          logger.info('Successfully fetched service documentation', {
             service: service.name,
             pathCount: Object.keys(serviceDoc.paths || {}).length,
-            paths: Object.keys(serviceDoc.paths || {})
+            paths: Object.keys(serviceDoc.paths || {}),
           });
-          
+
           // Merge paths with prefix if not already prefixed
           if (serviceDoc.paths) {
             for (const [path, pathItem] of Object.entries(serviceDoc.paths)) {
               const finalPath = path.startsWith(service.prefix) ? path : `${service.prefix}${path}`;
-              logger.debug('Merging service path', { 
+              logger.debug('Merging service path', {
                 service: service.name,
                 originalPath: path,
-                finalPath: finalPath 
+                finalPath: finalPath,
               });
               swaggerObject.paths[finalPath] = JSON.parse(JSON.stringify(pathItem));
             }
@@ -159,50 +195,55 @@ export async function setupSwagger(server: FastifyInstance) {
           if (serviceDoc.components?.schemas) {
             for (const [schemaName, schema] of Object.entries(serviceDoc.components.schemas)) {
               const prefixedSchemaName = `${service.name.replace(' ', '')}_${schemaName}`;
-              swaggerObject.components.schemas[prefixedSchemaName] = JSON.parse(JSON.stringify(schema));
-              
+              swaggerObject.components.schemas[prefixedSchemaName] = JSON.parse(
+                JSON.stringify(schema)
+              );
+
               // Update references in paths to use the prefixed schema name
-              Object.values(swaggerObject.paths).forEach(pathItem => {
-                Object.values(pathItem as SwaggerPathItem).forEach(operation => {
+              Object.values(swaggerObject.paths).forEach((pathItem) => {
+                Object.values(pathItem as SwaggerPathItem).forEach((operation) => {
                   const op = operation as SwaggerOperation;
                   if (op.requestBody?.content?.['application/json']?.schema?.$ref) {
-                    op.requestBody.content['application/json'].schema.$ref = 
-                      op.requestBody.content['application/json'].schema.$ref.replace(
-                        `#/components/schemas/${schemaName}`,
-                        `#/components/schemas/${prefixedSchemaName}`
-                      );
+                    op.requestBody.content['application/json'].schema.$ref = op.requestBody.content[
+                      'application/json'
+                    ].schema.$ref.replace(
+                      `#/components/schemas/${schemaName}`,
+                      `#/components/schemas/${prefixedSchemaName}`
+                    );
                   }
-                  op.responses && Object.values(op.responses).forEach(response => {
-                    if (response.content?.['application/json']?.schema?.$ref) {
-                      response.content['application/json'].schema.$ref = 
-                        response.content['application/json'].schema.$ref.replace(
+                  op.responses &&
+                    Object.values(op.responses).forEach((response) => {
+                      if (response.content?.['application/json']?.schema?.$ref) {
+                        response.content['application/json'].schema.$ref = response.content[
+                          'application/json'
+                        ].schema.$ref.replace(
                           `#/components/schemas/${schemaName}`,
                           `#/components/schemas/${prefixedSchemaName}`
                         );
-                    }
-                  });
+                      }
+                    });
                 });
               });
             }
           }
 
           server.swagger({ ...swaggerObject, yaml: false });
-          logger.info('Service documentation merged successfully', { 
+          logger.info('Service documentation merged successfully', {
             service: service.name,
             totalPaths: Object.keys(swaggerObject.paths).length,
-            totalSchemas: Object.keys(swaggerObject.components.schemas).length
+            totalSchemas: Object.keys(swaggerObject.components.schemas).length,
           });
         } catch (error) {
           logger.error('Failed to process service documentation', {
             service: service.name,
-            error: error instanceof Error ? error.stack : error
+            error: error instanceof Error ? error.stack : error,
           });
         }
       }
     } catch (error) {
       logger.error('Failed to aggregate service documentation', {
-        error: error instanceof Error ? error.stack : error
+        error: error instanceof Error ? error.stack : error,
       });
     }
   });
-} 
+}

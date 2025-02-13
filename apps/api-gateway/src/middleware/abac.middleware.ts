@@ -18,14 +18,12 @@ interface RequestWithAttributes extends FastifyRequest {
 }
 
 // Enrich request with user attributes
-export const enrichRequestWithAttributes = async (
-  req: RequestWithAttributes
-): Promise<void> => {
+export const enrichRequestWithAttributes = async (req: RequestWithAttributes): Promise<void> => {
   try {
     if (!req.user?.userId) {
       throw createAppError({
         code: 'UNAUTHORIZED',
-        message: 'User not authenticated'
+        message: 'User not authenticated',
       });
     }
 
@@ -38,9 +36,9 @@ export const enrichRequestWithAttributes = async (
       deviceInfo: {
         id: req.headers['x-device-id'] as string,
         type: req.headers['x-device-type'] as string,
-        lastUsed: new Date()
+        lastUsed: new Date(),
       },
-      location: await getLocationFromIP(req.ip)
+      location: await getLocationFromIP(req.ip),
     };
 
     req.userAttributes = userAttributes;
@@ -48,13 +46,14 @@ export const enrichRequestWithAttributes = async (
     throw createAppError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Failed to enrich request with user attributes',
-      cause: error
+      cause: error,
     });
   }
 };
 
 // Create ABAC middleware
-export const createAbacMiddleware = (policy: AccessPolicy) => 
+export const createAbacMiddleware =
+  (policy: AccessPolicy) =>
   async (req: RequestWithAttributes, reply: FastifyReply): Promise<void> => {
     try {
       if (!req.userAttributes) {
@@ -70,7 +69,7 @@ export const createAbacMiddleware = (policy: AccessPolicy) =>
       if (!validationResult.granted) {
         throw createAppError({
           code: 'FORBIDDEN',
-          message: validationResult.reason || 'Access denied'
+          message: validationResult.reason || 'Access denied',
         });
       }
     } catch (error: unknown) {
@@ -80,13 +79,14 @@ export const createAbacMiddleware = (policy: AccessPolicy) =>
       throw createAppError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to validate access',
-        cause: error
+        cause: error,
       });
     }
   };
 
 // Helper function to combine multiple ABAC policies
-export const combineAbacPolicies = (policies: AccessPolicy[]) => 
+export const combineAbacPolicies =
+  (policies: AccessPolicy[]) =>
   async (req: RequestWithAttributes, reply: FastifyReply): Promise<void> => {
     for (const policy of policies) {
       await createAbacMiddleware(policy)(req, reply);
@@ -104,7 +104,7 @@ export async function abacMiddleware(
       throw createAppError({
         code: 'UNAUTHORIZED',
         message: 'User not authenticated',
-        metadata: { userId: user?.userId }
+        metadata: { userId: user?.userId },
       });
     }
 
@@ -117,7 +117,7 @@ export async function abacMiddleware(
       throw createAppError({
         code: 'FORBIDDEN',
         message: 'User attributes not found',
-        metadata: { userId: user.userId }
+        metadata: { userId: user.userId },
       });
     }
 
@@ -128,15 +128,15 @@ export async function abacMiddleware(
         code: 'FORBIDDEN',
         message: validationResult.reason || 'Access denied',
         metadata: {
-          userId: user.userId
-        }
+          userId: user.userId,
+        },
       });
     }
   } catch (error) {
     throw createAppError({
       code: 'FORBIDDEN',
       message: 'Access denied',
-      cause: error
+      cause: error,
     });
   }
-} 
+}

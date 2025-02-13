@@ -1,11 +1,17 @@
 import { FastifyRedis } from '@fastify/redis';
 import { Role } from '@eduflow/types';
 import * as TE from 'fp-ts/TaskEither';
-import { createSession, getSession, updateSession, deleteSession, validateSession } from '../service/session.service';
+import {
+  createSession,
+  getSession,
+  updateSession,
+  deleteSession,
+  validateSession,
+} from '../service/session.service';
 
 describe('SessionService', () => {
   let mockRedis: jest.Mocked<FastifyRedis>;
-  
+
   const mockSessionData = {
     userId: '123',
     email: 'test@example.com',
@@ -13,7 +19,7 @@ describe('SessionService', () => {
     permissions: [],
     lastActivity: new Date().toISOString(),
     ipAddress: '127.0.0.1',
-    userAgent: 'test-agent'
+    userAgent: 'test-agent',
   };
 
   beforeEach(() => {
@@ -22,7 +28,7 @@ describe('SessionService', () => {
       set: jest.fn(),
       del: jest.fn(),
     } as any;
-    
+
     jest.clearAllMocks();
   });
 
@@ -70,11 +76,10 @@ describe('SessionService', () => {
       mockRedis.get.mockResolvedValue(JSON.stringify(mockSessionData));
       mockRedis.set.mockResolvedValue('OK');
 
-      const result = await updateSession(
-        mockRedis,
-        mockSessionData.userId,
-        { ipAddress: mockSessionData.ipAddress, userAgent: mockSessionData.userAgent }
-      )();
+      const result = await updateSession(mockRedis, mockSessionData.userId, {
+        ipAddress: mockSessionData.ipAddress,
+        userAgent: mockSessionData.userAgent,
+      })();
 
       expect(result._tag).toBe('Right');
       expect(mockRedis.set).toHaveBeenCalled();
@@ -96,7 +101,7 @@ describe('SessionService', () => {
     it('should validate active session successfully', async () => {
       const activeSession = {
         ...mockSessionData,
-        lastActivity: new Date().toISOString()
+        lastActivity: new Date().toISOString(),
       };
       mockRedis.get.mockResolvedValue(JSON.stringify(activeSession));
 
@@ -111,7 +116,7 @@ describe('SessionService', () => {
     it('should reject expired session', async () => {
       const expiredSession = {
         ...mockSessionData,
-        lastActivity: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString() // 25 hours ago
+        lastActivity: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
       };
       mockRedis.get.mockResolvedValue(JSON.stringify(expiredSession));
 
@@ -120,4 +125,4 @@ describe('SessionService', () => {
       expect(result._tag).toBe('Left');
     });
   });
-}); 
+});

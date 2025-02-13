@@ -1,7 +1,9 @@
 # Development Rules & Guidelines
 
 ## Core Principles
+
 1. **Functional Programming Only**
+
    - No classes
    - Functional programming only
    - Immutable data structures
@@ -11,18 +13,21 @@
    - Avoid this/new keywords
 
    ### 2. Function Rules
+
 - Maximum 20 lines per function
 - Clear input and output types
 - Pure functions whenever possible
 - Meaningful function names describing the operation
 
 ### 3. File Size Limits
+
 - Maximum 200 lines per file
 - If approaching limit, split into focused modules
 - Include comments and types in line count
 - Exclude import statements from count
 
 2. **Code Organization**
+
    - Maximum 200 lines per file
    - Single responsibility principle
    - Clear function naming (verb + noun)
@@ -38,7 +43,9 @@
    - Clear separation of concerns
 
 ## Pre-Implementation Checklist
+
 1. **Read and Understand**
+
    - Review all related documentation
    - Check existing implementations
    - Understand service dependencies
@@ -46,6 +53,7 @@
    - Check shared library usage
 
 2. **Ask Questions**
+
    - Clarify business requirements
    - Verify technical constraints
    - Confirm integration points
@@ -62,6 +70,7 @@
 ## Implementation Guidelines
 
 ### Function Structure
+
 ```typescript
 // Good
 const handleUserRegistration = (
@@ -83,14 +92,10 @@ class UserService {
 ```
 
 ### Error Handling
+
 ```typescript
 // Good
-const result = pipe(
-  validateInput,
-  hashPassword,
-  saveUser,
-  publishEvent
-)(userData);
+const result = pipe(validateInput, hashPassword, saveUser, publishEvent)(userData);
 
 // Bad
 try {
@@ -101,14 +106,12 @@ try {
 ```
 
 ### State Management
+
 ```typescript
 // Good
-const updateUserState = (
-  currentState: UserState,
-  update: Partial<UserState>
-): UserState => ({
+const updateUserState = (currentState: UserState, update: Partial<UserState>): UserState => ({
   ...currentState,
-  ...update
+  ...update,
 });
 
 // Bad
@@ -116,9 +119,8 @@ let userState = {};
 userState.status = 'active';
 ```
 
-
-
 ## Testing Requirements
+
 - Unit tests for all pure functions
 - Integration tests for API endpoints
 - E2E tests for critical flows
@@ -126,6 +128,7 @@ userState.status = 'active';
 - Minimum 80% coverage
 
 ## Documentation Requirements
+
 - TSDoc for all functions
 - Event documentation
 - API documentation (OpenAPI)
@@ -133,9 +136,11 @@ userState.status = 'active';
 - Architecture decision records
 
 ## Technology Choices Justification
+
 When selecting technologies, document the reasoning:
 
 Example - Fastify over Express:
+
 1. **Performance**: Fastify is significantly faster due to its schema-based approach
 2. **TypeScript Support**: Better built-in TypeScript support
 3. **Schema Validation**: Built-in JSON Schema validation
@@ -146,7 +151,9 @@ Example - Fastify over Express:
 8. **Security**: Better security defaults
 
 ## Review Checklist
+
 Before submitting code:
+
 1. Follows functional programming principles
 2. No side effects in business logic
 3. All functions are pure (except designated areas)
@@ -156,4 +163,4 @@ Before submitting code:
 7. Documentation complete
 8. Events properly typed
 9. Error handling comprehensive
-10. Security considerations addressed 
+10. Security considerations addressed

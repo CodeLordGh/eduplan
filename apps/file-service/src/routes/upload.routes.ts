@@ -12,4 +12,4 @@ const routes: FastifyPluginAsync = async (fastify) => {
   // POST /upload/batch - Upload multiple files
 };
 
-export default routes; 
+export default routes;

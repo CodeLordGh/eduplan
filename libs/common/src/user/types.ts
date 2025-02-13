@@ -29,4 +29,4 @@ export interface UserRepository {
   findById: (id: string) => Promise<User | null>;
   update: (id: string, input: UpdateUserInput) => Promise<User>;
   delete: (id: string) => Promise<void>;
-} 
+}

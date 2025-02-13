@@ -1,7 +1,7 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import * as E from 'fp-ts/Either';
-import { Event } from './types';
+import { Event } from '@eduflow/types';
 import { Logger } from '@eduflow/logger';
 
 interface MetricsState {
@@ -17,7 +17,7 @@ const createMetricsState = (): MetricsState => ({
   eventCounts: new Map(),
   queueSizes: new Map(),
   deadLetterQueueSizes: new Map(),
-  cacheStats: new Map()
+  cacheStats: new Map(),
 });
 
 let metricsState = createMetricsState();
@@ -32,7 +32,7 @@ export const recordProcessingTime = (
   startTime: number
 ): void => {
   const duration = (Date.now() - startTime) / 1000;
-  
+
   // Update metrics state
   const times = metricsState.eventProcessingTimes.get(eventType) || [];
   times.push(duration);
@@ -44,7 +44,7 @@ export const recordProcessingTime = (
     eventType,
     service,
     duration,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -69,18 +69,14 @@ export const incrementEventCounter = (
     service,
     status,
     count: counts[status],
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
 /**
  * Updates queue size metric
  */
-export const updateQueueSize = (
-  logger: Logger,
-  queueName: string,
-  size: number
-): void => {
+export const updateQueueSize = (logger: Logger, queueName: string, size: number): void => {
   // Update metrics state
   metricsState.queueSizes.set(queueName, size);
 
@@ -89,7 +85,7 @@ export const updateQueueSize = (
     metric: 'event_queue_size',
     queueName,
     size,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -109,7 +105,7 @@ export const updateDeadLetterQueueSize = (
     metric: 'dead_letter_queue_size',
     queueName,
     size,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -134,7 +130,7 @@ export const updateCacheHitRatio = (
     hits,
     total,
     ratio,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -150,21 +146,21 @@ export const getMetricsSummary = (logger: Logger): Record<string, any> => {
           count: times.length,
           average: times.reduce((a, b) => a + b, 0) / times.length,
           min: Math.min(...times),
-          max: Math.max(...times)
-        }
+          max: Math.max(...times),
+        },
       ])
     ),
     eventCounts: Object.fromEntries(metricsState.eventCounts),
     queueSizes: Object.fromEntries(metricsState.queueSizes),
     deadLetterQueueSizes: Object.fromEntries(metricsState.deadLetterQueueSizes),
-    cacheStats: Object.fromEntries(metricsState.cacheStats)
+    cacheStats: Object.fromEntries(metricsState.cacheStats),
   };
 
   // Log summary
   logger.info('Metrics summary generated', {
     metric: 'metrics_summary',
     summary,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   return summary;
@@ -194,9 +190,9 @@ export const withMetrics = <T>(
       recordProcessingTime(logger, event.type, service, startTime);
       incrementEventCounter(logger, event.type, service, 'success');
     }),
-    TE.mapLeft(error => {
+    TE.mapLeft((error) => {
       incrementEventCounter(logger, event.type, service, 'error');
       return error;
     })
   );
-}; 
+};

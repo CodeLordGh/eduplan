@@ -1,6 +1,7 @@
 # EduFlow Development Plan (Unified)
 
 ## Development Rules & Standards
+
 - Functional programming only
 - Maximum 200 lines per file
 - CQRS pattern implementation
@@ -10,6 +11,7 @@
 - TypeScript strict mode enabled
 
 ## Module Management Strategy
+
 - Shared utilities in `libs/` directory
 - Common types in `libs/types`
 - Shared validation rules in `libs/validators`
@@ -20,6 +22,7 @@
 ## Service Architecture
 
 ### API Gateway Service
+
 ```typescript
 // Primary responsibilities:
 - Request routing
@@ -37,6 +40,7 @@
 ```
 
 ### Auth Service
+
 ```typescript
 // Primary responsibilities:
 - User authentication
@@ -87,6 +91,7 @@ employment_eligibility
 ```
 
 ### User Service
+
 ```typescript
 // Primary responsibilities:
 - User profile management
@@ -172,6 +177,7 @@ parent_settings
 ```
 
 ### KYC Service
+
 ```typescript
 // Primary responsibilities:
 - Document verification
@@ -215,6 +221,7 @@ verification_history
 ```
 
 ### School Service
+
 ```typescript
 // Primary responsibilities:
 - School management (system admin only)
@@ -281,6 +288,7 @@ school_roles
 ```
 
 ### Academic Service
+
 ```typescript
 // Primary responsibilities:
 - Grade management
@@ -398,6 +406,7 @@ tutor_applications
 ```
 
 ### Payment Service
+
 ```typescript
 // Primary responsibilities:
 - Payment processing
@@ -507,6 +516,7 @@ payment_settings
 ```
 
 ### Social Service
+
 ```typescript
 // Primary responsibilities:
 - Post management (Hub & B-Hub)
@@ -563,6 +573,7 @@ connections
 ```
 
 ### Chat Service
+
 ```typescript
 // Primary responsibilities:
 - Direct messaging
@@ -643,6 +654,7 @@ broadcast_groups
 ```
 
 ### Notification Service
+
 ```typescript
 // Primary responsibilities:
 - Real-time notifications
@@ -706,6 +718,7 @@ notification_templates
 ```
 
 ### AI Service
+
 ```typescript
 // Primary responsibilities:
 - Assignment generation
@@ -736,6 +749,7 @@ predictions
 ```
 
 ### File Service
+
 ```typescript
 // Primary responsibilities:
 - File upload/download
@@ -760,6 +774,7 @@ files
 ```
 
 ## Implementation Priority
+
 1. Auth Service (with KYC integration)
 2. User Service (with professional profiles)
 3. KYC Service
@@ -773,19 +788,23 @@ files
 11. AI Service
 
 ## Event Communication
+
 Using RabbitMQ for:
+
 - Reliability
 - Message persistence
 - Dead letter queues
 - Message routing capabilities
 
 ## Database Strategy
+
 - PostgreSQL with separate schemas per service
 - Shared instance initially
 - Prepared for future database separation
 - Migrations managed through TypeORM
 
 ## Testing Strategy
+
 - Unit tests for business logic
 - Integration tests for API endpoints
 - Contract tests for service communication
@@ -801,6 +820,7 @@ Using RabbitMQ for:
 - Connection flows testing
 
 ## Security Measures
+
 - Request validation
 - Rate limiting
 - JWT with short expiry
@@ -819,8 +839,12 @@ Using RabbitMQ for:
 - User reporting system
 
 ## Integration Considerations
+
 - KYC Service requires File Service for document storage
 - Social Service requires Notification Service for alerts
 - Chat Service requires File Service for media sharing
 - All services require Auth Service for verification
-``` 
+
+```
+
+```

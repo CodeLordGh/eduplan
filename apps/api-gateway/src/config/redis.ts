@@ -1,11 +1,11 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fastifyRedis from '@fastify/redis';
 import { Redis, RedisOptions } from 'ioredis';
-import { 
+import {
   createRateLimiter,
   createOTPManager,
   createSessionMiddleware,
-  createCacheManager
+  createCacheManager,
 } from '@eduflow/middleware';
 
 // Routes that don't require session validation
@@ -20,14 +20,14 @@ const PUBLIC_ROUTES = [
   '/swagger.json',
   '/swagger-ui/*',
   '/health',
-  '/favicon.ico'
+  '/favicon.ico',
 ];
 
 const isPublicRoute = (url: string) => {
   // Normalize URL by removing query parameters
   const normalizedUrl = url.split('?')[0];
-  
-  return PUBLIC_ROUTES.some(route => {
+
+  return PUBLIC_ROUTES.some((route) => {
     if (route.endsWith('/*')) {
       const baseRoute = route.slice(0, -2);
       return normalizedUrl === baseRoute || normalizedUrl.startsWith(baseRoute + '/');
@@ -44,7 +44,7 @@ const getRedisConfig = (): RedisOptions => ({
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
-  }
+  },
 });
 
 export const createRedisClient = (): Redis => new Redis(getRedisConfig());
@@ -58,13 +58,13 @@ export async function setupRedis(server: FastifyInstance) {
   // Register Redis instance with Fastify
   await server.register(fastifyRedis, {
     client: redisClient,
-    closeClient: true
+    closeClient: true,
   });
 
   // Setup Redis-based middleware
   const rateLimiter = createRateLimiter(redisClient, {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    max: 100, // limit each IP to 100 requests per windowMs
   });
 
   const sessionMiddleware = createSessionMiddleware(redisClient);
@@ -93,4 +93,4 @@ export async function setupRedis(server: FastifyInstance) {
   server.addHook('onClose', async () => {
     await redisClient.quit();
   });
-} 
+}

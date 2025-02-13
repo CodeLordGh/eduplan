@@ -20,4 +20,4 @@ export interface OTPData {
 export interface CacheConfig {
   ttl: number;
   prefix?: string;
-} 
+}

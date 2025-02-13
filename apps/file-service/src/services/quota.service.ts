@@ -25,7 +25,7 @@ export class QuotaService {
         }
 
         return this.quotaRepository.update(fileId, {
-          usedSize: quota.usedSize + newSize
+          usedSize: quota.usedSize + newSize,
         });
       })
     );

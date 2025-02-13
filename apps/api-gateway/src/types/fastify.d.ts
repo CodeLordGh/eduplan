@@ -5,4 +5,4 @@ declare module 'fastify' {
     correlationId: string;
     apiVersion: string;
   }
-} 
+}

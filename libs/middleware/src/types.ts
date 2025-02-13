@@ -38,4 +38,4 @@ export interface MiddlewareConfig {
     ttl?: number;
     prefix?: string;
   };
-} 
+}

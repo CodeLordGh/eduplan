@@ -3,7 +3,7 @@ import * as TE from 'fp-ts/TaskEither';
 import * as E from 'fp-ts/Either';
 import { Channel, Connection } from 'amqplib';
 import Redis from 'ioredis';
-import { EventBusState } from './types';
+import { EventBusState } from '@eduflow/types';
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -55,23 +55,23 @@ const checkRabbitMQ = (
         return {
           connected: true,
           exchangeAvailable: true,
-          queues: [{
-            name: queueInfo.queue,
-            available: true,
-            messageCount: queueInfo.messageCount
-          }]
+          queues: [
+            {
+              name: queueInfo.queue,
+              available: true,
+              messageCount: queueInfo.messageCount,
+            },
+          ],
         };
       },
-      error => new Error(`RabbitMQ health check failed: ${error}`)
+      (error) => new Error(`RabbitMQ health check failed: ${error}`)
     )
   );
 
 /**
  * Checks Redis connection health
  */
-const checkRedis = (
-  client: Redis | null
-): TE.TaskEither<Error, HealthStatus['details']['redis']> =>
+const checkRedis = (client: Redis | null): TE.TaskEither<Error, HealthStatus['details']['redis']> =>
   pipe(
     TE.tryCatch(
       async () => {
@@ -84,13 +84,16 @@ const checkRedis = (
         const latency = Date.now() - startTime;
 
         const info = await client.info('memory');
-        const memoryInfo = info.split('\n').reduce((acc, line) => {
-          const [key, value] = line.split(':');
-          if (key && value) {
-            acc[key.trim()] = value.trim();
-          }
-          return acc;
-        }, {} as Record<string, string>);
+        const memoryInfo = info.split('\n').reduce(
+          (acc, line) => {
+            const [key, value] = line.split(':');
+            if (key && value) {
+              acc[key.trim()] = value.trim();
+            }
+            return acc;
+          },
+          {} as Record<string, string>
+        );
 
         return {
           connected: true,
@@ -98,34 +101,30 @@ const checkRedis = (
           memoryUsage: {
             used: parseInt(memoryInfo['used_memory'] || '0', 10),
             peak: parseInt(memoryInfo['used_memory_peak'] || '0', 10),
-            fragmentationRatio: parseFloat(memoryInfo['mem_fragmentation_ratio'] || '0')
-          }
+            fragmentationRatio: parseFloat(memoryInfo['mem_fragmentation_ratio'] || '0'),
+          },
         };
       },
-      error => new Error(`Redis health check failed: ${error}`)
+      (error) => new Error(`Redis health check failed: ${error}`)
     )
   );
 
 /**
  * Performs a complete health check of the event system
  */
-export const checkHealth = (
-  state: EventBusState
-): TE.TaskEither<Error, HealthStatus> =>
+export const checkHealth = (state: EventBusState): TE.TaskEither<Error, HealthStatus> =>
   pipe(
     TE.Do,
-    TE.bind('rabbitmq', () => checkRabbitMQ(
-      state.rabbitmqChannel,
-      state.rabbitmqConnection,
-      state.config.rabbitmq.exchange
-    )),
+    TE.bind('rabbitmq', () =>
+      checkRabbitMQ(state.rabbitmqChannel, state.rabbitmqConnection, state.config.rabbitmq.exchange)
+    ),
     TE.bind('redis', () => checkRedis(state.redisClient)),
     TE.map(({ rabbitmq, redis }) => ({
       status: rabbitmq.connected && redis.connected ? 'healthy' : 'unhealthy',
       details: {
         rabbitmq,
-        redis
+        redis,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }))
-  ); 
+  );

@@ -1,5 +1,5 @@
-import { pipe } from 'fp-ts/function'
-import * as TE from 'fp-ts/TaskEither'
+import { pipe } from 'fp-ts/function';
+import * as TE from 'fp-ts/TaskEither';
 import { Prisma, Role, UserStatus, VerificationStatus, User as PrismaUser } from '@eduflow/prisma';
 import { validateEmail, validatePassword } from '@eduflow/common';
 import { createValidationError, createDuplicateEmailError, AuthErrors } from '../errors/auth';
@@ -20,20 +20,24 @@ export type AuthResult = {
   refreshToken: string;
 };
 
-export const validateCreateUserInput = (input: CreateUserInput): TE.TaskEither<AuthErrors, Prisma.UserCreateInput> =>
+export const validateCreateUserInput = (
+  input: CreateUserInput
+): TE.TaskEither<AuthErrors, Prisma.UserCreateInput> =>
   TE.tryCatch(
     async () => {
       await validateEmail(input.email);
       await validatePassword(input.password);
       return {
         ...input,
-        status: UserStatus.PENDING
+        status: UserStatus.PENDING,
       };
     },
     () => createValidationError('Invalid input')
   );
 
-export const validateUpdateUserInput = (input: UpdateUserInput): TE.TaskEither<AuthErrors, UpdateUserInput> =>
+export const validateUpdateUserInput = (
+  input: UpdateUserInput
+): TE.TaskEither<AuthErrors, UpdateUserInput> =>
   TE.tryCatch(
     async () => {
       if (typeof input.email === 'string') await validateEmail(input.email);
@@ -41,4 +45,4 @@ export const validateUpdateUserInput = (input: UpdateUserInput): TE.TaskEither<A
       return input;
     },
     () => createValidationError('Invalid input')
-  ); 
+  );

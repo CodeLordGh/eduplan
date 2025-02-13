@@ -17,12 +17,12 @@ const deps: {
   publishEvent: async (event: string, data: unknown) => {
     logger.info('Publishing event', { event, data });
     // TODO: Implement event publishing
-  }
+  },
 };
 
 // Create Fastify app
 const app: FastifyInstance = require('fastify')({
-  logger: true
+  logger: true,
 });
 
 // Add error handler
@@ -37,13 +37,13 @@ app.register(require('@fastify/swagger'), {
     info: {
       title: 'User Service API',
       description: 'API documentation for the User Service',
-      version: '1.0.0'
+      version: '1.0.0',
     },
     host: 'localhost',
     schemes: ['http'],
     consumes: ['application/json'],
-    produces: ['application/json']
-  }
+    produces: ['application/json'],
+  },
 });
 
 // Register routes
@@ -65,4 +65,4 @@ const start = async () => {
   }
 };
 
-start(); 
+start();

@@ -18,6 +18,6 @@ module.exports = {
     }
   },
   moduleNameMapper: {
-    '^@eduflow/(.*)$': '<rootDir>/../../libs/$1/src'
+    '^@eduflow/(.*)$': '<rootDir>/../../libss/$1/src'
   }
 }; 

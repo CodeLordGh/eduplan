@@ -7,4 +7,4 @@ export interface EventBusInternalState extends BaseEventBusState {
   rabbitmqConnection: Connection | null;
   redisClient: Redis | null;
   logger: Logger;
-} 
+}

@@ -4,7 +4,6 @@ import { DocumentType, VerificationStatus } from '@eduflow/types';
 import { z } from 'zod';
 import { authenticate, RequestWithUser } from '@eduflow/middleware';
 
-
 const submitDocumentSchema = z.object({
   type: z.nativeEnum(DocumentType),
   documentUrls: z.array(z.string().url()),
@@ -18,9 +17,7 @@ const verifyDocumentSchema = z.object({
 
 type SubmitDocumentBody = z.infer<typeof submitDocumentSchema>;
 
-export const kycRoutes: FastifyPluginAsync = async (
-  fastify: FastifyInstance
-): Promise<void> => {
+export const kycRoutes: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<void> => {
   const kycService = createKYCService({ prisma: fastify.prisma, redis: fastify.redis });
 
   // Submit document
@@ -35,38 +32,47 @@ export const kycRoutes: FastifyPluginAsync = async (
         required: ['type', 'documentUrls', 'metadata'],
         properties: {
           type: { type: 'string', enum: Object.values(DocumentType) },
-          documentUrls: { 
+          documentUrls: {
             type: 'array',
-            items: { type: 'string', format: 'uri' }
+            items: { type: 'string', format: 'uri' },
           },
-          metadata: { 
+          metadata: {
             type: 'object',
-            additionalProperties: true
-          }
-        }
+            additionalProperties: true,
+          },
+        },
       },
       response: {
         201: {
           description: 'Document submitted successfully',
           type: 'object',
-          required: ['id', 'userId', 'type', 'status', 'documentUrls', 'metadata', 'createdAt', 'updatedAt'],
+          required: [
+            'id',
+            'userId',
+            'type',
+            'status',
+            'documentUrls',
+            'metadata',
+            'createdAt',
+            'updatedAt',
+          ],
           properties: {
             id: { type: 'string', format: 'uuid' },
             userId: { type: 'string', format: 'uuid' },
             type: { type: 'string', enum: Object.values(DocumentType) },
             status: { type: 'string', enum: Object.values(VerificationStatus) },
-            documentUrls: { 
+            documentUrls: {
               type: 'array',
-              items: { type: 'string', format: 'uri' }
+              items: { type: 'string', format: 'uri' },
             },
-            metadata: { 
+            metadata: {
               type: 'object',
-              additionalProperties: true
+              additionalProperties: true,
             },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
-            verifiedAt: { type: 'string', format: 'date-time', nullable: true }
-          }
+            verifiedAt: { type: 'string', format: 'date-time', nullable: true },
+          },
         },
         400: {
           description: 'Invalid request body',
@@ -74,8 +80,8 @@ export const kycRoutes: FastifyPluginAsync = async (
           properties: {
             error: { type: 'string' },
             code: { type: 'string' },
-            statusCode: { type: 'number' }
-          }
+            statusCode: { type: 'number' },
+          },
         },
         401: {
           description: 'Unauthorized',
@@ -83,23 +89,18 @@ export const kycRoutes: FastifyPluginAsync = async (
           properties: {
             error: { type: 'string' },
             code: { type: 'string' },
-            statusCode: { type: 'number' }
-          }
-        }
+            statusCode: { type: 'number' },
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
     },
     preHandler: authenticate,
     handler: async (request: RequestWithUser & { body: SubmitDocumentBody }, reply) => {
       const { type, documentUrls, metadata } = request.body;
       const userId = request.user.id;
 
-      const result = await kycService.submitDocument(
-        userId,
-        type,
-        documentUrls,
-        metadata
-      )();
+      const result = await kycService.submitDocument(userId, type, documentUrls, metadata)();
 
       if (result._tag === 'Left') {
         throw result.left;
@@ -121,16 +122,16 @@ export const kycRoutes: FastifyPluginAsync = async (
         type: 'object',
         required: ['documentId'],
         properties: {
-          documentId: { type: 'string' }
-        }
+          documentId: { type: 'string' },
+        },
       },
       body: {
         type: 'object',
         required: ['status'],
         properties: {
           status: { type: 'string', enum: Object.values(VerificationStatus) },
-          notes: { type: 'string' }
-        }
+          notes: { type: 'string' },
+        },
       },
       response: {
         200: {
@@ -140,27 +141,25 @@ export const kycRoutes: FastifyPluginAsync = async (
           properties: {
             id: { type: 'string', format: 'uuid' },
             status: { type: 'string', enum: Object.values(VerificationStatus) },
-            verifiedAt: { type: 'string', format: 'date-time' }
-          }
-        }
+            verifiedAt: { type: 'string', format: 'date-time' },
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
     },
     preHandler: authenticate,
-    handler: async (request: RequestWithUser & { 
-      params: { documentId: string },
-      body: z.infer<typeof verifyDocumentSchema>
-    }, reply) => {
+    handler: async (
+      request: RequestWithUser & {
+        params: { documentId: string };
+        body: z.infer<typeof verifyDocumentSchema>;
+      },
+      reply
+    ) => {
       const { documentId } = request.params;
       const { status, notes } = request.body;
       const verifiedBy = request.user.id;
 
-      const result = await kycService.verifyDocument(
-        documentId,
-        status,
-        verifiedBy,
-        notes
-      )();
+      const result = await kycService.verifyDocument(documentId, status, verifiedBy, notes)();
 
       if (result._tag === 'Left') {
         throw result.left;
@@ -185,15 +184,15 @@ export const kycRoutes: FastifyPluginAsync = async (
               id: { type: 'string', format: 'uuid' },
               type: { type: 'string', enum: Object.values(DocumentType) },
               status: { type: 'string', enum: Object.values(VerificationStatus) },
-              documentUrls: { 
+              documentUrls: {
                 type: 'array',
-                items: { type: 'string', format: 'uri' }
-              }
-            }
-          }
-        }
+                items: { type: 'string', format: 'uri' },
+              },
+            },
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
     },
     preHandler: authenticate,
     handler: async (request: RequestWithUser, reply) => {
@@ -218,8 +217,8 @@ export const kycRoutes: FastifyPluginAsync = async (
         type: 'object',
         required: ['entityId'],
         properties: {
-          entityId: { type: 'string' }
-        }
+          entityId: { type: 'string' },
+        },
       },
       response: {
         200: {
@@ -233,12 +232,12 @@ export const kycRoutes: FastifyPluginAsync = async (
               status: { type: 'string', enum: Object.values(VerificationStatus) },
               verifiedBy: { type: 'string', format: 'uuid' },
               notes: { type: 'string', nullable: true },
-              createdAt: { type: 'string', format: 'date-time' }
-            }
-          }
-        }
+              createdAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
+      security: [{ bearerAuth: [] }],
     },
     preHandler: authenticate,
     handler: async (request: RequestWithUser & { params: { entityId: string } }, reply) => {
@@ -251,4 +250,4 @@ export const kycRoutes: FastifyPluginAsync = async (
       return reply.send(result.right);
     },
   });
-}; 
+};

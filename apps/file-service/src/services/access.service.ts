@@ -5,7 +5,7 @@ import { createError, type BaseError } from '@eduflow/common';
 import { getFileById, updateFile } from '../repositories/file.repository';
 import { File, FileAccessLevel } from '@eduflow/prisma';
 
-export const checkAccess = (fileId: string, userId: string): TE.TaskEither<BaseError, boolean> => 
+export const checkAccess = (fileId: string, userId: string): TE.TaskEither<BaseError, boolean> =>
   pipe(
     getFileById(fileId),
     TE.chain((file) => {
@@ -21,10 +21,7 @@ export const checkAccess = (fileId: string, userId: string): TE.TaskEither<BaseE
         return TE.fromEither(E.right(true));
       }
 
-      if (
-        file.accessLevel === FileAccessLevel.RESTRICTED &&
-        file.accessibleTo.includes(userId)
-      ) {
+      if (file.accessLevel === FileAccessLevel.RESTRICTED && file.accessibleTo.includes(userId)) {
         return TE.fromEither(E.right(true));
       }
 
@@ -53,7 +50,7 @@ export const addAccessUser = (fileId: string, userId: string): TE.TaskEither<Bas
       }
 
       return updateFile(fileId, {
-        accessibleTo: [...file.accessibleTo, userId]
+        accessibleTo: [...file.accessibleTo, userId],
       });
     })
   );
@@ -67,7 +64,7 @@ export const removeAccessUser = (fileId: string, userId: string): TE.TaskEither<
       }
 
       return updateFile(fileId, {
-        accessibleTo: file.accessibleTo.filter((id) => id !== userId)
+        accessibleTo: file.accessibleTo.filter((id) => id !== userId),
       });
     })
   );

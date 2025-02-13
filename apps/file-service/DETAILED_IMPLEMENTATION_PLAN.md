@@ -3,7 +3,9 @@
 ## Prerequisites and Shared Resources
 
 ### Shared Libraries Usage
+
 1. @eduflow/middleware
+
    - Authentication and authorization
    - Rate limiting
    - Redis caching utilities
@@ -11,6 +13,7 @@
    - OTP handling
 
 2. @eduflow/common
+
    - Error handling
    - Logging
    - Event bus
@@ -19,12 +22,14 @@
    - Task Either utilities
 
 3. @eduflow/validators
+
    - File validation schemas
    - Access control validation
    - Quota validation
    - Input validation utilities
 
 4. @eduflow/types
+
    - File types and interfaces
    - Event types
    - Shared type definitions
@@ -36,12 +41,14 @@
    - HTTP status codes
 
 ### Packages Configuration
+
 - Using shared ESLint config from @packages/eslint-config
 - Using shared Jest config from @packages/jest-config
 - Using shared TypeScript config from @packages/tsconfig
 - Using shared dependencies from @packages/shared-deps
 
 ## API Documentation Strategy
+
 - Implementing OpenAPI/Swagger documentation that will be consumed by API Gateway
 - Documentation will be exposed at `/documentation` endpoint
 - API Gateway will merge all service documentations
@@ -52,6 +59,7 @@
 ### Phase 1: Core API Routes Implementation
 
 1. Upload Routes (`src/routes/upload.routes.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/middleware: { authenticate, authorize, rateLimit }
@@ -74,6 +82,7 @@ Documentation:
 ```
 
 2. Access Routes (`src/routes/access.routes.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/middleware: { authenticate, authorize }
@@ -93,6 +102,7 @@ Documentation:
 ```
 
 3. Quota Routes (`src/routes/quota.routes.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/middleware: { authenticate, authorize }
@@ -114,6 +124,7 @@ Documentation:
 ### Phase 2: Event System Implementation
 
 1. Event Subscribers (`src/events/subscribers.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/common: { createEventBus, EventSubscriber }
@@ -129,6 +140,7 @@ Events to Handle:
 ```
 
 2. Event Publishers (`src/events/publishers.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/common: { createEventBus, EventPublisher }
@@ -143,6 +155,7 @@ Events to Publish:
 ### Phase 3: Caching Implementation
 
 1. Redis Cache Service (`src/services/cache.service.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/middleware: { RedisCache, createCacheKey }
@@ -158,6 +171,7 @@ Implementations:
 ### Phase 4: File Processing Features
 
 1. File Processing Service (`src/services/processing.service.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/validators: { fileTypeValidator }
@@ -174,6 +188,7 @@ Features:
 ### Phase 5: Monitoring and Logging
 
 1. Monitoring Service (`src/services/monitoring.service.ts`):
+
 ```typescript
 Dependencies:
 - @eduflow/common: { createLogger }
@@ -189,6 +204,7 @@ Features:
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 Dependencies:
 - @packages/jest-config
@@ -202,6 +218,7 @@ Coverage:
 ```
 
 ### Integration Tests
+
 ```typescript
 Dependencies:
 - @packages/jest-config
@@ -214,6 +231,7 @@ Coverage:
 ```
 
 ### E2E Tests
+
 ```typescript
 Dependencies:
 - @packages/jest-config
@@ -228,6 +246,7 @@ Coverage:
 ## Quality Assurance
 
 ### Code Quality
+
 - Using shared ESLint config
 - Following TypeScript strict mode
 - Maximum 200 lines per file
@@ -236,6 +255,7 @@ Coverage:
 - Detailed logging
 
 ### Performance
+
 - Redis caching
 - File streaming
 - Batch operations
@@ -243,6 +263,7 @@ Coverage:
 - Compression
 
 ### Security
+
 - Authentication via @eduflow/middleware
 - Authorization checks
 - Rate limiting
@@ -253,6 +274,7 @@ Coverage:
 ## Deployment Considerations
 
 ### Environment Variables
+
 ```env
 REDIS_URL=
 CLOUDINARY_CLOUD_NAME=
@@ -263,12 +285,14 @@ QUOTA_WARNING_THRESHOLD=
 ```
 
 ### Health Checks
+
 - Redis connection
 - Cloudinary connection
 - Storage availability
 - Event bus connection
 
 ### Monitoring
+
 - Performance metrics
 - Error rates
 - Storage usage
@@ -278,6 +302,7 @@ QUOTA_WARNING_THRESHOLD=
 ## Documentation
 
 ### API Documentation
+
 - OpenAPI 3.0 specifications
 - Will be consumed by API Gateway
 - Includes all endpoints
@@ -285,12 +310,14 @@ QUOTA_WARNING_THRESHOLD=
 - Response examples
 
 ### Code Documentation
+
 - JSDoc comments
 - Architecture diagrams
 - Setup instructions
 - Troubleshooting guide
 
 ## Implementation Notes
+
 1. All shared libraries are available and no additional implementation needed
 2. API Gateway will handle documentation merging
 3. Using existing middleware for auth, caching, and rate limiting
@@ -298,4 +325,4 @@ QUOTA_WARNING_THRESHOLD=
 5. Shared types are comprehensive and complete
 6. Event system is ready in @eduflow/common
 7. Monitoring tools available in middleware
-8. Testing infrastructure set up in packages 
+8. Testing infrastructure set up in packages

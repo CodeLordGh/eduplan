@@ -10,77 +10,72 @@ type Dependencies = {
   prisma: PrismaClient;
 };
 
-const publishEvent = (deps: Dependencies) => async (
-  eventType: string,
-  payload: Record<string, unknown>
-): Promise<void> => {
-  await deps.redis.publish(
-    'auth_events',
-    JSON.stringify({
-      type: eventType,
-      payload,
-      timestamp: new Date(),
-    })
-  );
-};
+const publishEvent =
+  (deps: Dependencies) =>
+  async (eventType: string, payload: Record<string, unknown>): Promise<void> => {
+    await deps.redis.publish(
+      'auth_events',
+      JSON.stringify({
+        type: eventType,
+        payload,
+        timestamp: new Date(),
+      })
+    );
+  };
 
-export const handleKYCVerified = (deps: Dependencies) => async (event: {
-  userId: string;
-  status: string;
-  type: string;
-}): Promise<void> => {
-  await pipe(
-    TE.tryCatch(
-      async () => {
-        await deps.prisma.user.update({
-          where: { id: event.userId },
-          data: {
+export const handleKYCVerified =
+  (deps: Dependencies) =>
+  async (event: { userId: string; status: string; type: string }): Promise<void> => {
+    await pipe(
+      TE.tryCatch(
+        async () => {
+          await deps.prisma.user.update({
+            where: { id: event.userId },
+            data: {
+              kycStatus: VerificationStatus.VERIFIED,
+              kycVerifiedAt: new Date(),
+              socialAccessEnabled: true,
+            },
+          });
+
+          await publishEvent(deps)(EVENT_TYPES.USER_UPDATED, {
+            userId: event.userId,
             kycStatus: VerificationStatus.VERIFIED,
-            kycVerifiedAt: new Date(),
-            socialAccessEnabled: true
-          }
-        });
+            timestamp: new Date(),
+          });
+        },
+        (error) => new AuthError('Failed to handle KYC verified event', error)
+      )
+    )();
+  };
 
-        await publishEvent(deps)(EVENT_TYPES.USER_UPDATED, {
-          userId: event.userId,
-          kycStatus: VerificationStatus.VERIFIED,
-          timestamp: new Date()
-        });
-      },
-      (error) => new AuthError('Failed to handle KYC verified event', error)
-    )
-  )();
-};
+export const handleKYCRejected =
+  (deps: Dependencies) =>
+  async (event: { userId: string; status: string; type: string }): Promise<void> => {
+    await pipe(
+      TE.tryCatch(
+        async () => {
+          await deps.prisma.user.update({
+            where: { id: event.userId },
+            data: {
+              kycStatus: VerificationStatus.REJECTED,
+              kycVerifiedAt: null,
+              socialAccessEnabled: false,
+            },
+          });
 
-export const handleKYCRejected = (deps: Dependencies) => async (event: {
-  userId: string;
-  status: string;
-  type: string;
-}): Promise<void> => {
-  await pipe(
-    TE.tryCatch(
-      async () => {
-        await deps.prisma.user.update({
-          where: { id: event.userId },
-          data: {
+          await publishEvent(deps)(EVENT_TYPES.USER_UPDATED, {
+            userId: event.userId,
             kycStatus: VerificationStatus.REJECTED,
-            kycVerifiedAt: null,
-            socialAccessEnabled: false
-          }
-        });
-
-        await publishEvent(deps)(EVENT_TYPES.USER_UPDATED, {
-          userId: event.userId,
-          kycStatus: VerificationStatus.REJECTED,
-          timestamp: new Date()
-        });
-      },
-      (error) => new AuthError('Failed to handle KYC rejected event', error)
-    )
-  )();
-};
+            timestamp: new Date(),
+          });
+        },
+        (error) => new AuthError('Failed to handle KYC rejected event', error)
+      )
+    )();
+  };
 
 export const createEventService = (deps: Dependencies) => ({
   handleKYCVerified: handleKYCVerified(deps),
-  handleKYCRejected: handleKYCRejected(deps)
-}); 
+  handleKYCRejected: handleKYCRejected(deps),
+});

@@ -16,20 +16,19 @@ interface ExtendedError extends FastifyError {
 }
 
 const isValidErrorCode = (code: unknown): code is keyof typeof ERROR_CODES => {
-  return typeof code === 'string' && Object.values(ERROR_CODES).includes(code as keyof typeof ERROR_CODES);
+  return (
+    typeof code === 'string' &&
+    Object.values(ERROR_CODES).includes(code as keyof typeof ERROR_CODES)
+  );
 };
 
-export function errorHandler(
-  error: ExtendedError,
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
+export function errorHandler(error: ExtendedError, request: FastifyRequest, reply: FastifyReply) {
   const requestId = request.id;
   const response: ErrorResponse = {
     error: error.message || 'Internal Server Error',
     code: ERROR_CODES.UNKNOWN_ERROR,
     statusCode: error.statusCode || 500,
-    requestId
+    requestId,
   };
 
   // Handle validation errors
@@ -98,7 +97,7 @@ export function errorHandler(
       context: 'request-handler',
       statusCode: response.statusCode,
       code: response.code,
-      details: response.details
+      details: response.details,
     });
   } else {
     errorLogger.logError(error, {
@@ -106,9 +105,9 @@ export function errorHandler(
       context: 'request-handler',
       statusCode: response.statusCode,
       code: response.code,
-      level: 'info'
+      level: 'info',
     });
   }
 
   return reply.status(response.statusCode).send(response);
-} 
+}

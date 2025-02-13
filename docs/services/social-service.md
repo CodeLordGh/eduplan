@@ -1,29 +1,32 @@
 # Social Service Development Plan
 
 ## Service Overview
+
 The Social Service manages social networking features including the Hub (general platform) and B-Hub (business networking). It handles posts, comments, reactions, content moderation, and professional networking.
 
 ## Dependencies
 
 ### Shared Libraries
+
 ```typescript
 // From @eduflow/common
-import { createLogger, ErrorHandler, ContentUtils } from '@eduflow/common'
+import { createLogger, ErrorHandler, ContentUtils } from '@eduflow/common';
 
 // From @eduflow/types
-import { Post, Comment, Reaction, Connection } from '@eduflow/types'
+import { Post, Comment, Reaction, Connection } from '@eduflow/types';
 
 // From @eduflow/validators
-import { validateContent, validateConnection } from '@eduflow/validators'
+import { validateContent, validateConnection } from '@eduflow/validators';
 
 // From @eduflow/middleware
-import { authGuard, roleGuard, contentGuard } from '@eduflow/middleware'
+import { authGuard, roleGuard, contentGuard } from '@eduflow/middleware';
 
 // From @eduflow/constants
-import { POST_TYPES, REACTION_TYPES, VISIBILITY } from '@eduflow/constants'
+import { POST_TYPES, REACTION_TYPES, VISIBILITY } from '@eduflow/constants';
 ```
 
 ### External Dependencies
+
 ```json
 {
   "dependencies": {
@@ -52,6 +55,7 @@ import { POST_TYPES, REACTION_TYPES, VISIBILITY } from '@eduflow/constants'
 ```
 
 ## Database Schema (Prisma)
+
 ```prisma
 model Post {
   id          String     @id @default(uuid())
@@ -142,146 +146,155 @@ model ProfessionalProfile {
 ## Event System
 
 ### Events Published
+
 ```typescript
 type SocialEvents = {
   POST_CREATED: {
-    postId: string
-    userId: string
-    type: PostType
-    timestamp: Date
-  }
+    postId: string;
+    userId: string;
+    type: PostType;
+    timestamp: Date;
+  };
   COMMENT_ADDED: {
-    commentId: string
-    postId: string
-    userId: string
-    timestamp: Date
-  }
+    commentId: string;
+    postId: string;
+    userId: string;
+    timestamp: Date;
+  };
   REACTION_ADDED: {
-    entityId: string
-    entityType: string
-    userId: string
-    type: ReactionType
-    timestamp: Date
-  }
+    entityId: string;
+    entityType: string;
+    userId: string;
+    type: ReactionType;
+    timestamp: Date;
+  };
   CONNECTION_REQUESTED: {
-    connectionId: string
-    requesterId: string
-    receiverId: string
-    timestamp: Date
-  }
+    connectionId: string;
+    requesterId: string;
+    receiverId: string;
+    timestamp: Date;
+  };
   CONNECTION_UPDATED: {
-    connectionId: string
-    status: ConnectionStatus
-    timestamp: Date
-  }
+    connectionId: string;
+    status: ConnectionStatus;
+    timestamp: Date;
+  };
   CONTENT_MODERATED: {
-    entityId: string
-    type: ModerationType
-    status: ModerationStatus
-    timestamp: Date
-  }
-}
+    entityId: string;
+    type: ModerationType;
+    status: ModerationStatus;
+    timestamp: Date;
+  };
+};
 ```
 
 ### Events Consumed
+
 ```typescript
 type ConsumedEvents = {
   USER_CREATED: {
-    userId: string
-    role: string
-  }
+    userId: string;
+    role: string;
+  };
   KYC_VERIFIED: {
-    userId: string
-    documentType: string
-  }
+    userId: string;
+    documentType: string;
+  };
   SCHOOL_VERIFIED: {
-    schoolId: string
-  }
+    schoolId: string;
+  };
   GRADE_RECORDED: {
-    studentId: string
-    grade: number
-  }
+    studentId: string;
+    grade: number;
+  };
   FILE_UPLOADED: {
-    fileId: string
-    type: string
-  }
-}
+    fileId: string;
+    type: string;
+  };
+};
 ```
 
 ## API Endpoints
 
 ### Post Management
+
 ```typescript
 // POST /posts
 type CreatePostRequest = {
-  content: string
-  type: PostType
-  visibility: Visibility
-  attachments?: string[]
-  metadata?: Record<string, unknown>
-}
+  content: string;
+  type: PostType;
+  visibility: Visibility;
+  attachments?: string[];
+  metadata?: Record<string, unknown>;
+};
 
 // GET /posts
 type GetPostsRequest = {
-  type?: PostType
-  visibility?: Visibility
-  userId?: string
-  limit?: number
-  offset?: number
-}
+  type?: PostType;
+  visibility?: Visibility;
+  userId?: string;
+  limit?: number;
+  offset?: number;
+};
 ```
 
 ### Interaction Management
+
 ```typescript
 // POST /posts/:postId/comments
 type AddCommentRequest = {
-  content: string
-  parentId?: string
-  metadata?: Record<string, unknown>
-}
+  content: string;
+  parentId?: string;
+  metadata?: Record<string, unknown>;
+};
 
 // POST /posts/:postId/reactions
 type AddReactionRequest = {
-  type: ReactionType
-}
+  type: ReactionType;
+};
 ```
 
 ### Connection Management
+
 ```typescript
 // POST /connections/request
 type RequestConnectionRequest = {
-  receiverId: string
-  metadata?: Record<string, unknown>
-}
+  receiverId: string;
+  metadata?: Record<string, unknown>;
+};
 
 // PUT /connections/:connectionId
 type UpdateConnectionRequest = {
-  status: ConnectionStatus
-  metadata?: Record<string, unknown>
-}
+  status: ConnectionStatus;
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ## Implementation Plan
 
 ### Phase 1: Core Social Features
+
 1. Post management
 2. Comment system
 3. Reaction system
 4. Content validation
 
 ### Phase 2: Professional Networking
+
 1. Connection system
 2. Professional profiles
 3. B-Hub features
 4. Network analytics
 
 ### Phase 3: Content Moderation
+
 1. Automated moderation
 2. Report handling
 3. Content filtering
 4. User reputation
 
 ### Phase 4: Advanced Features
+
 1. Content recommendation
 2. Trending analysis
 3. Search optimization
@@ -290,35 +303,38 @@ type UpdateConnectionRequest = {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 // Post service tests
 describe('PostService', () => {
-  test('should create posts')
-  test('should handle visibility')
-  test('should manage interactions')
-})
+  test('should create posts');
+  test('should handle visibility');
+  test('should manage interactions');
+});
 
 // Connection service tests
 describe('ConnectionService', () => {
-  test('should handle requests')
-  test('should update status')
-  test('should maintain privacy')
-})
+  test('should handle requests');
+  test('should update status');
+  test('should maintain privacy');
+});
 ```
 
 ### Integration Tests
+
 ```typescript
 describe('Social API', () => {
-  test('should manage posts')
-  test('should handle interactions')
-  test('should process connections')
-  test('should moderate content')
-})
+  test('should manage posts');
+  test('should handle interactions');
+  test('should process connections');
+  test('should moderate content');
+});
 ```
 
 ## Monitoring & Logging
 
 ### Metrics
+
 - Post engagement rate
 - Connection success rate
 - Moderation accuracy
@@ -326,19 +342,21 @@ describe('Social API', () => {
 - User activity
 
 ### Logging
+
 ```typescript
 const logger = createLogger({
   service: 'social-service',
   level: process.env.LOG_LEVEL || 'info',
   metadata: {
-    version: process.env.APP_VERSION
-  }
-})
+    version: process.env.APP_VERSION,
+  },
+});
 ```
 
 ## Security Measures
+
 1. Content validation
 2. Rate limiting
 3. Privacy controls
 4. Spam prevention
-5. User verification 
+5. User verification

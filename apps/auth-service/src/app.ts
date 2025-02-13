@@ -16,24 +16,24 @@ export const createApp = async () => {
       customOptions: {
         removeAdditional: 'all',
         coerceTypes: true,
-        useDefaults: true
-      }
-    }
+        useDefaults: true,
+      },
+    },
   });
 
   // Register plugins
   await app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'your-secret-key'
+    secret: process.env.JWT_SECRET || 'your-secret-key',
   });
 
   await app.register(fastifyRedis, {
-    url: process.env.REDIS_URL || 'redis://localhost:6379'
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
   });
 
   await app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET || 'your-cookie-secret',
     hook: 'onRequest',
-    parseOptions: {}
+    parseOptions: {},
   });
 
   const swaggerOptions: SwaggerOptions = {
@@ -41,22 +41,24 @@ export const createApp = async () => {
       info: {
         title: 'Auth Service API',
         description: 'API documentation for the Auth Service',
-        version: '1.0.0'
+        version: '1.0.0',
       },
-      security: [{
-        bearerAuth: []
-      }],
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
       components: {
         securitySchemes: {
           bearerAuth: {
             type: 'http',
             scheme: 'bearer',
-            bearerFormat: 'JWT'
-          }
-        }
-      }
+            bearerFormat: 'JWT',
+          },
+        },
+      },
     },
-    hideUntagged: false
+    hideUntagged: false,
   };
 
   await app.register(fastifySwagger, swaggerOptions);
@@ -71,7 +73,7 @@ export const createApp = async () => {
     logger.error('Server error', error);
     reply.status(500).send({
       code: 'INTERNAL_SERVER_ERROR',
-      message: errorMessage
+      message: errorMessage,
     });
   });
 

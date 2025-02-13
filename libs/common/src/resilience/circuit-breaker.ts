@@ -20,7 +20,7 @@ export interface CircuitBreakerState {
 const initialState: CircuitBreakerState = {
   failures: 0,
   lastFailure: null,
-  status: 'CLOSED'
+  status: 'CLOSED',
 };
 
 const monitor = (
@@ -33,36 +33,33 @@ const monitor = (
   }
 
   const timeSinceLastFailure = Date.now() - state.lastFailure;
-  
+
   if (timeSinceLastFailure >= options.resetTimeout) {
     logger.info('Circuit breaker state changed to HALF_OPEN', {
       previousStatus: 'OPEN',
-      timeSinceLastFailure
+      timeSinceLastFailure,
     });
-    
+
     return {
       ...state,
       status: 'HALF_OPEN',
-      failures: 0
+      failures: 0,
     };
   }
 
   return state;
 };
 
-const recordSuccess = (
-  state: CircuitBreakerState,
-  logger: Logger
-): CircuitBreakerState => {
+const recordSuccess = (state: CircuitBreakerState, logger: Logger): CircuitBreakerState => {
   if (state.status === 'HALF_OPEN') {
     logger.info('Circuit breaker state changed to CLOSED', {
-      previousStatus: 'HALF_OPEN'
+      previousStatus: 'HALF_OPEN',
     });
-    
+
     return {
       failures: 0,
       lastFailure: null,
-      status: 'CLOSED'
+      status: 'CLOSED',
     };
   }
   return state;
@@ -76,30 +73,27 @@ const recordFailure = (
   const newState = {
     ...state,
     failures: state.failures + 1,
-    lastFailure: Date.now()
+    lastFailure: Date.now(),
   };
 
   if (newState.failures >= options.errorThreshold) {
     logger.warn('Circuit breaker state changed to OPEN', {
       failures: newState.failures,
-      threshold: options.errorThreshold
+      threshold: options.errorThreshold,
     });
-    
+
     return {
       ...newState,
-      status: 'OPEN'
+      status: 'OPEN',
     };
   }
 
   return newState;
 };
 
-export const createCircuitBreaker = (
-  options: CircuitBreakerOptions,
-  logger: Logger
-) => {
+export const createCircuitBreaker = (options: CircuitBreakerOptions, logger: Logger) => {
   let state = initialState;
-  
+
   if (options.monitorInterval) {
     setInterval(() => {
       state = monitor(state, options, logger);
@@ -107,32 +101,29 @@ export const createCircuitBreaker = (
   }
 
   const wrap = <T>(operation: () => Promise<T>): TE.TaskEither<Error, T> =>
-    TE.tryCatch(
-      async () => {
-        if (state.status === 'OPEN') {
-          throw new Error('Circuit breaker is OPEN');
-        }
+    TE.tryCatch(async () => {
+      if (state.status === 'OPEN') {
+        throw new Error('Circuit breaker is OPEN');
+      }
 
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Operation timed out')), options.timeout);
-        });
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Operation timed out')), options.timeout);
+      });
 
-        try {
-          const result = await Promise.race([operation(), timeoutPromise]);
-          state = recordSuccess(state, logger);
-          return result;
-        } catch (error) {
-          state = recordFailure(state, options, logger);
-          throw error;
-        }
-      },
-      E.toError
-    );
+      try {
+        const result = await Promise.race([operation(), timeoutPromise]);
+        state = recordSuccess(state, logger);
+        return result;
+      } catch (error) {
+        state = recordFailure(state, options, logger);
+        throw error;
+      }
+    }, E.toError);
 
   const getState = (): CircuitBreakerState => ({ ...state });
 
   return {
     wrap,
-    getState
+    getState,
   };
-}; 
+};

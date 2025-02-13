@@ -2,11 +2,11 @@
  * High-level error categories for better organization
  */
 export type ErrorCategory =
-  | 'AUTH'        // Authentication & Authorization errors
-  | 'RESOURCE'    // Resource-related errors
-  | 'VALIDATION'  // Input validation errors
-  | 'FILE'        // File operation errors
-  | 'SYSTEM';     // System-level errors
+  | 'AUTH' // Authentication & Authorization errors
+  | 'RESOURCE' // Resource-related errors
+  | 'VALIDATION' // Input validation errors
+  | 'FILE' // File operation errors
+  | 'SYSTEM'; // System-level errors
 
 /**
  * Maps categories to their respective error codes
@@ -15,7 +15,12 @@ export type ErrorCodeMap = {
   AUTH: 'AUTH_ERROR' | 'UNAUTHORIZED' | 'FORBIDDEN';
   RESOURCE: 'NOT_FOUND' | 'CONFLICT';
   VALIDATION: 'VALIDATION_ERROR' | 'BAD_REQUEST';
-  FILE: 'FILE_SIZE_ERROR' | 'FILE_TYPE_ERROR' | 'FILE_QUOTA_ERROR' | 'FILE_ACCESS_ERROR' | 'FILE_NOT_FOUND';
+  FILE:
+    | 'FILE_SIZE_ERROR'
+    | 'FILE_TYPE_ERROR'
+    | 'FILE_QUOTA_ERROR'
+    | 'FILE_ACCESS_ERROR'
+    | 'FILE_NOT_FOUND';
   SYSTEM: 'INTERNAL_SERVER_ERROR' | 'SERVICE_UNAVAILABLE';
 };
 
@@ -146,4 +151,4 @@ export type AppError = {
  */
 export type ErrorResponse = {
   error: AppError;
-}; 
+};

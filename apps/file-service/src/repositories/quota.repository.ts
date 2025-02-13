@@ -35,7 +35,7 @@ export class QuotaRepository {
         () =>
           this.prisma.fileQuota.update({
             where: { fileId },
-            data
+            data,
           }),
         (error) => createError('Failed to update quota', 'QUOTA_ERROR', 500, error)
       )

@@ -13,13 +13,7 @@ type RedisClientConfig = {
 export const createRedisClient = (): TE.TaskEither<BaseError, RedisClientConfig> => {
   if (!process.env.REDIS_URL) {
     return TE.fromEither(
-      E.left(
-        createError(
-          'REDIS_URL environment variable is not set',
-          'REDIS_CONFIG_ERROR',
-          500
-        )
-      )
+      E.left(createError('REDIS_URL environment variable is not set', 'REDIS_CONFIG_ERROR', 500))
     );
   }
 
@@ -45,25 +39,19 @@ export const createRedisClient = (): TE.TaskEither<BaseError, RedisClientConfig>
           async () => {
             await client.quit();
           },
-          (error) => createError('Failed to disconnect from Redis', 'REDIS_DISCONNECT_ERROR', 500, error)
+          (error) =>
+            createError('Failed to disconnect from Redis', 'REDIS_DISCONNECT_ERROR', 500, error)
         )
       );
 
     return TE.right({
       client,
       connect,
-      disconnect
+      disconnect,
     });
   } catch (error) {
     return TE.fromEither(
-      E.left(
-        createError(
-          'Failed to initialize Redis client',
-          'REDIS_INIT_ERROR',
-          500,
-          error
-        )
-      )
+      E.left(createError('Failed to initialize Redis client', 'REDIS_INIT_ERROR', 500, error))
     );
   }
 };

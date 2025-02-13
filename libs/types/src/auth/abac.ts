@@ -120,6 +120,7 @@ export interface UserAttributes {
     lockedUntil?: Date;
   };
   context: UserContext;
+  subscriptions?: Subscription[];
 }
 
 /** Conditions that must be met for access */
@@ -219,4 +220,9 @@ export interface VerificationConditions {
 export interface CustomEvaluator {
   evaluator: (attributes: UserAttributes, conditions: PolicyConditions) => boolean;
   errorMessage: string;
-} 
+}
+
+export interface Subscription {
+  schoolId: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+}

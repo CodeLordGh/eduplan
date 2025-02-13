@@ -4,18 +4,18 @@ import { PrismaClient } from '@eduflow/prisma';
 
 describe('Event Service', () => {
   const mockRedis = {
-    publish: jest.fn().mockResolvedValue(1)
+    publish: jest.fn().mockResolvedValue(1),
   } as unknown as Redis;
-  
+
   const mockPrisma = {
     user: {
-      update: jest.fn().mockResolvedValue({})
-    }
+      update: jest.fn().mockResolvedValue({}),
+    },
   } as unknown as PrismaClient;
 
   const deps = {
     redis: mockRedis,
-    prisma: mockPrisma
+    prisma: mockPrisma,
   };
 
   const eventService = createEventService(deps);
@@ -29,7 +29,7 @@ describe('Event Service', () => {
       const event = {
         userId: '123',
         status: 'VERIFIED',
-        type: 'IDENTITY'
+        type: 'IDENTITY',
       };
 
       await eventService.handleKYCVerified(event);
@@ -43,7 +43,7 @@ describe('Event Service', () => {
       const event = {
         userId: '123',
         status: 'REJECTED',
-        type: 'IDENTITY'
+        type: 'IDENTITY',
       };
 
       await eventService.handleKYCRejected(event);
@@ -51,4 +51,4 @@ describe('Event Service', () => {
       expect(mockPrisma.user.update).toHaveBeenCalled();
     });
   });
-}); 
+});

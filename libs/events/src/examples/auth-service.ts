@@ -1,16 +1,20 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import * as E from 'fp-ts/Either';
-import { Event } from '../types';
+import { Event } from '@eduflow/types';
 import { EventBusOperations } from '../factory';
-import { UserCreatedEvent, KYCVerifiedEvent, EmploymentEligibilityUpdatedEvent } from '@eduflow/types';
+import {
+  UserCreatedEvent,
+  KYCVerifiedEvent,
+  EmploymentEligibilityUpdatedEvent,
+} from '@eduflow/types';
 import { Role } from '@eduflow/prisma';
 import { UserStatus } from '@eduflow/types';
 import { createLogger, LogContext } from '@eduflow/logger';
 
 const logger = createLogger({
   service: 'auth-service',
-  environment: process.env.NODE_ENV || 'development'
+  environment: process.env.NODE_ENV || 'development',
 });
 
 // Event handlers
@@ -27,7 +31,7 @@ const handleKYCVerification = (
           userId: event.data.userId,
           documentType: event.data.documentType,
           verificationId: event.data.verificationId,
-          correlationId: event.metadata.correlationId
+          correlationId: event.metadata.correlationId,
         };
 
         logger.info('Processing KYC verification event', context);
@@ -37,7 +41,7 @@ const handleKYCVerification = (
 
         logger.info('KYC verification processed successfully', context);
       },
-      error => {
+      (error) => {
         const context = {
           service: 'auth-service',
           environment: process.env.NODE_ENV || 'development',
@@ -45,7 +49,7 @@ const handleKYCVerification = (
           userId: event.data.userId,
           correlationId: event.metadata.correlationId,
           error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
+          stack: error instanceof Error ? error.stack : undefined,
         };
         logger.error('Failed to process KYC verification', context);
         return new Error(`Failed to handle KYC verification: ${error}`);
@@ -65,7 +69,7 @@ const handleEmploymentEligibilityUpdate = (
           timestamp: new Date().toISOString(),
           userId: event.data.userId,
           status: event.data.status,
-          correlationId: event.metadata.correlationId
+          correlationId: event.metadata.correlationId,
         };
 
         logger.info('Processing employment eligibility update', context);
@@ -75,7 +79,7 @@ const handleEmploymentEligibilityUpdate = (
 
         logger.info('Employment eligibility updated successfully', context);
       },
-      error => {
+      (error) => {
         const context = {
           service: 'auth-service',
           environment: process.env.NODE_ENV || 'development',
@@ -83,7 +87,7 @@ const handleEmploymentEligibilityUpdate = (
           userId: event.data.userId,
           correlationId: event.metadata.correlationId,
           error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
+          stack: error instanceof Error ? error.stack : undefined,
         };
         logger.error('Failed to process employment eligibility update', context);
         return new Error(`Failed to handle employment eligibility update: ${error}`);
@@ -106,7 +110,7 @@ export const publishUserCreated = (
     userId,
     email,
     role,
-    correlationId
+    correlationId,
   };
 
   logger.info('Creating user event', context);
@@ -118,15 +122,15 @@ export const publishUserCreated = (
       email,
       role,
       status: UserStatus.ACTIVE,
-      createdAt: new Date()
+      createdAt: new Date(),
     },
     metadata: {
       correlationId,
       timestamp: new Date().toISOString(),
       source: 'auth-service',
       version: '1.0.0',
-      schemaVersion: '1.0'
-    }
+      schemaVersion: '1.0',
+    },
   };
 
   return pipe(
@@ -134,11 +138,11 @@ export const publishUserCreated = (
     TE.map(() => {
       logger.info('User created event published successfully', context);
     }),
-    TE.mapLeft(error => {
+    TE.mapLeft((error) => {
       logger.error('Failed to publish user created event', {
         ...context,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
       return error;
     })
@@ -146,24 +150,22 @@ export const publishUserCreated = (
 };
 
 // Event subscriptions
-export const setupAuthEventHandlers = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
+export const setupAuthEventHandlers = (eventBus: EventBusOperations): TE.TaskEither<Error, void> =>
   pipe(
     TE.Do,
     TE.chain(() => {
       logger.info('Setting up KYC verification handler');
       return eventBus.subscribe<KYCVerifiedEvent['data']>(
         'KYC_VERIFIED',
-        async event => {
+        async (event) => {
           const result = await handleKYCVerification(event)();
           if (E.isLeft(result)) throw result.left;
         },
         {
           useCache: true,
-        //   pattern: 'kyc.*',
-        //   queue: 'auth.kyc-verification',
-          durable: true
+          //   pattern: 'kyc.*',
+          //   queue: 'auth.kyc-verification',
+          durable: true,
         }
       );
     }),
@@ -171,40 +173,31 @@ export const setupAuthEventHandlers = (
       logger.info('Setting up employment eligibility handler');
       return eventBus.subscribe<EmploymentEligibilityUpdatedEvent['data']>(
         'EMPLOYMENT_ELIGIBILITY_UPDATED',
-        async event => {
+        async (event) => {
           const result = await handleEmploymentEligibilityUpdate(event)();
           if (E.isLeft(result)) throw result.left;
         },
         {
           useCache: false,
-          durable: true
+          durable: true,
         }
       );
     }),
     TE.map(() => {
       logger.info('Auth event handlers setup completed successfully');
     }),
-    TE.mapLeft(error => {
+    TE.mapLeft((error) => {
       logger.error('Failed to setup auth event handlers', {
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
       return error;
     })
   );
 
 // Example usage
-export const createAuthService = (
-  eventBus: EventBusOperations
-): TE.TaskEither<Error, void> =>
+export const createAuthService = (eventBus: EventBusOperations): TE.TaskEither<Error, void> =>
   pipe(
     setupAuthEventHandlers(eventBus),
-    TE.chain(() =>
-      publishUserCreated(
-        eventBus,
-        'user123',
-        'user@example.com',
-        Role.TEACHER
-      )
-    )
-  ); 
+    TE.chain(() => publishUserCreated(eventBus, 'user123', 'user@example.com', Role.TEACHER))
+  );

@@ -18,19 +18,14 @@ export interface VersionManager {
 }
 
 export const createVersionManager = (config: VersionConfig): VersionManager => {
-  const {
-    defaultVersion,
-    supportedVersions,
-    deprecatedVersions,
-    versionExtractor
-  } = config;
+  const { defaultVersion, supportedVersions, deprecatedVersions, versionExtractor } = config;
 
   const isSupported = (version: string) => supportedVersions.includes(version);
   const isDeprecated = (version: string) => deprecatedVersions.includes(version);
 
   const middleware = async (request: FastifyRequest, reply: FastifyReply) => {
     const version = versionExtractor(request);
-    
+
     // Attach version to request for handlers
     request.apiVersion = version || defaultVersion;
 
@@ -42,12 +37,12 @@ export const createVersionManager = (config: VersionConfig): VersionManager => {
     if (isDeprecated(version)) {
       reply.header('api-deprecated', 'true');
       reply.header('sunset', '2024-12-31'); // Configure based on your deprecation policy
-      
+
       logger.warn('Deprecated API version used', {
         version,
         path: request.url,
         method: request.method,
-        requestId: request.id
+        requestId: request.id,
       });
     }
 
@@ -57,13 +52,13 @@ export const createVersionManager = (config: VersionConfig): VersionManager => {
         version,
         path: request.url,
         method: request.method,
-        requestId: request.id
+        requestId: request.id,
       });
 
       reply.code(400).send({
         error: 'Unsupported API version',
         supportedVersions,
-        requestedVersion: version
+        requestedVersion: version,
       });
       return;
     }
@@ -75,6 +70,6 @@ export const createVersionManager = (config: VersionConfig): VersionManager => {
     isDeprecated,
     getCurrentVersion: () => defaultVersion,
     getSupportedVersions: () => supportedVersions,
-    getDeprecatedVersions: () => deprecatedVersions
+    getDeprecatedVersions: () => deprecatedVersions,
   };
-}; 
+};

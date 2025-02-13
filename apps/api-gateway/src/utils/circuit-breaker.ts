@@ -17,7 +17,7 @@ const createInitialState = (): CircuitBreakerState => ({
   failures: 0,
   lastFailure: null,
   state: 'closed',
-  nextAttempt: null
+  nextAttempt: null,
 });
 
 const isOpen = (state: CircuitBreakerState): boolean => {
@@ -28,7 +28,7 @@ const isOpen = (state: CircuitBreakerState): boolean => {
   return false;
 };
 
-const handleSuccess = (state: CircuitBreakerState): CircuitBreakerState => 
+const handleSuccess = (state: CircuitBreakerState): CircuitBreakerState =>
   state.state === 'half-open' ? createInitialState() : state;
 
 const handleFailure = (
@@ -39,39 +39,43 @@ const handleFailure = (
   const newState = {
     ...state,
     failures: state.failures + 1,
-    lastFailure: new Date()
+    lastFailure: new Date(),
   };
 
-  const finalState = newState.failures >= options.failureThreshold
-    ? {
-        ...newState,
-        state: 'open' as const,
-        nextAttempt: new Date(Date.now() + options.resetTimeout)
-      }
-    : newState;
+  const finalState =
+    newState.failures >= options.failureThreshold
+      ? {
+          ...newState,
+          state: 'open' as const,
+          nextAttempt: new Date(Date.now() + options.resetTimeout),
+        }
+      : newState;
 
   logCircuitBreakerStateChange({
     serviceName: options.serviceName,
     state: finalState.state,
     failureCount: finalState.failures,
     lastFailureReason: error instanceof Error ? error.message : 'Unknown error',
-    nextAttempt: finalState.nextAttempt || undefined
+    nextAttempt: finalState.nextAttempt || undefined,
   });
 
   return finalState;
 };
 
-const transitionToHalfOpen = (state: CircuitBreakerState, options: CircuitBreakerOptions): CircuitBreakerState => {
+const transitionToHalfOpen = (
+  state: CircuitBreakerState,
+  options: CircuitBreakerOptions
+): CircuitBreakerState => {
   const newState = {
     ...state,
-    state: 'half-open' as const
+    state: 'half-open' as const,
   };
 
   logCircuitBreakerStateChange({
     serviceName: options.serviceName,
     state: 'half-open',
     failureCount: state.failures,
-    nextAttempt: undefined
+    nextAttempt: undefined,
   });
 
   return newState;
@@ -103,6 +107,6 @@ export const createCircuitBreaker = (options: CircuitBreakerOptions) => {
 
   return {
     execute,
-    getState
+    getState,
   };
-}; 
+};

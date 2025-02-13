@@ -20,9 +20,7 @@ export const extractToken = (request: FastifyRequest): string => {
   return token;
 };
 
-export const verifyAndAttachUser = async (
-  request: FastifyRequest
-): Promise<RequestWithUser> => {
+export const verifyAndAttachUser = async (request: FastifyRequest): Promise<RequestWithUser> => {
   try {
     const user = await request.jwtVerify();
     return Object.assign(request, { user }) as RequestWithUser;
@@ -34,15 +32,19 @@ export const verifyAndAttachUser = async (
 export const authenticate = async (request: FastifyRequest): Promise<RequestWithUser> =>
   verifyAndAttachUser(request);
 
-export const checkRole = (allowedRoles: UserRole[]) => (user: AuthenticatedUser): void => {
-  if (!allowedRoles.includes(user.role)) {
-    throw createUnauthorizedError(
-      `User role ${user.role} is not authorized to access this resource`
-    );
-  }
-};
+export const checkRole =
+  (allowedRoles: UserRole[]) =>
+  (user: AuthenticatedUser): void => {
+    if (!allowedRoles.includes(user.role)) {
+      throw createUnauthorizedError(
+        `User role ${user.role} is not authorized to access this resource`
+      );
+    }
+  };
 
-export const authorize = (roles: UserRole[]) => async (request: FastifyRequest): Promise<void> => {
-  const authenticatedRequest = await authenticate(request);
-  checkRole(roles)(authenticatedRequest.user);
-}; 
+export const authorize =
+  (roles: UserRole[]) =>
+  async (request: FastifyRequest): Promise<void> => {
+    const authenticatedRequest = await authenticate(request);
+    checkRole(roles)(authenticatedRequest.user);
+  };

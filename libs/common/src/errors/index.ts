@@ -1,8 +1,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { AppError, Logger } from '@eduflow/types';
-import { Logger as PinoLogger } from 'pino';
-import { createAppError, createErrorResponse } from './base.error';
 import { createErrorLogger } from '@eduflow/logger';
+import { createAppError, createErrorResponse } from './base.error';
 
 // Export error types and utilities
 export * from './base.error';
@@ -24,7 +23,7 @@ export const createError = (
   message,
   code,
   statusCode,
-  stack: originalError instanceof Error ? originalError.stack : undefined
+  stack: originalError instanceof Error ? originalError.stack : undefined,
 });
 
 // Export error handler
@@ -34,7 +33,7 @@ export const errorHandler = (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const errorLogger = createErrorLogger(logger as unknown as PinoLogger);
+  const errorLogger = createErrorLogger(logger);
 
   if ((error as AppError).code) {
     const appError = error as AppError;
@@ -42,19 +41,17 @@ export const errorHandler = (
     errorLogger.logError(appError, {
       requestId: request.id,
       path: request.url,
-      method: request.method
+      method: request.method,
     });
-    
-    return reply.status(appError.statusCode).send(
-      createErrorResponse(appError)
-    );
+
+    return reply.status(appError.statusCode).send(createErrorResponse(appError));
   }
 
   // Handle unknown errors
   const appError = createAppError({
     code: 'INTERNAL_SERVER_ERROR',
     message: error.message || 'An unexpected error occurred',
-    cause: error
+    cause: error,
   });
 
   // Log the unknown error
@@ -62,7 +59,7 @@ export const errorHandler = (
     requestId: request.id,
     path: request.url,
     method: request.method,
-    originalError: error
+    originalError: error,
   });
 
   return reply.status(appError.statusCode).send(createErrorResponse(appError));

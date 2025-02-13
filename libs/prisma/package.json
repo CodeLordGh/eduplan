@@ -14,11 +14,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev"
   },
-  "dependencies": {
-    "@prisma/client": "^5.7.1"
-  },
   "devDependencies": {
-    "prisma": "^5.7.1",
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0",
     "typescript": "^5.0.0"
   }
 }

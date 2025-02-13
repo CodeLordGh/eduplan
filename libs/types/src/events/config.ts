@@ -24,4 +24,4 @@ export interface SubscribeOptions {
   queueName?: string;
   durable?: boolean;
   useCache?: boolean;
-} 
+}

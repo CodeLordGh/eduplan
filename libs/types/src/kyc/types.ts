@@ -42,4 +42,4 @@ export interface KYCVerificationEvent {
   type: DocumentType;
   verifiedBy?: string;
   timestamp: Date;
-} 
+}

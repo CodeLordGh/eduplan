@@ -10,4 +10,4 @@ export interface Event<T = unknown> {
   };
 }
 
-export type EventHandler<T = unknown> = (event: Event<T>) => Promise<void>; 
+export type EventHandler<T = unknown> = (event: Event<T>) => Promise<void>;

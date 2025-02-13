@@ -16,22 +16,23 @@ const validateCreateUserInput = (input: CreateUserInput): TaskEither<AppError, C
       if (!validateEmail(input.email)) {
         throw createAppError({
           code: 'VALIDATION_ERROR',
-          message: 'Invalid email format'
+          message: 'Invalid email format',
         });
       }
       if (!validatePassword(input.password)) {
         throw createAppError({
           code: 'VALIDATION_ERROR',
-          message: 'Invalid password format'
+          message: 'Invalid password format',
         });
       }
       return input;
     },
-    error => createAppError({
-      code: 'VALIDATION_ERROR',
-      message: 'Validation failed',
-      cause: error
-    })
+    (error) =>
+      createAppError({
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        cause: error,
+      })
   );
 
 const validateUpdateUserInput = (input: UpdateUserInput): TaskEither<AppError, UpdateUserInput> =>
@@ -40,22 +41,23 @@ const validateUpdateUserInput = (input: UpdateUserInput): TaskEither<AppError, U
       if (input.email && !validateEmail(input.email)) {
         throw createAppError({
           code: 'VALIDATION_ERROR',
-          message: 'Invalid email format'
+          message: 'Invalid email format',
         });
       }
       if (input.password && !validatePassword(input.password)) {
         throw createAppError({
           code: 'VALIDATION_ERROR',
-          message: 'Invalid password format'
+          message: 'Invalid password format',
         });
       }
       return input;
     },
-    error => createAppError({
-      code: 'VALIDATION_ERROR',
-      message: 'Validation failed',
-      cause: error
-    })
+    (error) =>
+      createAppError({
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        cause: error,
+      })
   );
 
 // User service factory
@@ -63,21 +65,23 @@ export const createUserService = (repository: UserRepository) => {
   const findByEmail = (email: string): TaskEither<AppError, Option<User>> =>
     TE.tryCatch(
       async () => O.fromNullable(await repository.findByEmail(email)),
-      error => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Database error',
-        cause: error
-      })
+      (error) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database error',
+          cause: error,
+        })
     );
 
   const findById = (id: string): TaskEither<AppError, Option<User>> =>
     TE.tryCatch(
       async () => O.fromNullable(await repository.findById(id)),
-      error => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Database error',
-        cause: error
-      })
+      (error) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database error',
+          cause: error,
+        })
     );
 
   const create = (input: CreateUserInput): TaskEither<AppError, User> =>
@@ -87,10 +91,12 @@ export const createUserService = (repository: UserRepository) => {
       TE.chain(() => findByEmail(input.email)),
       TE.chain((existingUser: Option<User>) => {
         if (existingUser._tag === 'Some') {
-          return TE.left(createAppError({
-            code: 'CONFLICT',
-            message: `User with email ${input.email} already exists`
-          }));
+          return TE.left(
+            createAppError({
+              code: 'CONFLICT',
+              message: `User with email ${input.email} already exists`,
+            })
+          );
         }
         return TE.right(input);
       }),
@@ -100,14 +106,15 @@ export const createUserService = (repository: UserRepository) => {
             const hashedPassword = await hashPassword(validInput.password);
             return repository.create({
               ...validInput,
-              password: hashedPassword
+              password: hashedPassword,
             });
           },
-          error => createAppError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to create user',
-            cause: error
-          })
+          (error) =>
+            createAppError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to create user',
+              cause: error,
+            })
         )
       )
     );
@@ -119,10 +126,12 @@ export const createUserService = (repository: UserRepository) => {
       TE.chain(() => findById(id)),
       TE.chain((existingUser: Option<User>) => {
         if (existingUser._tag === 'None') {
-          return TE.left(createAppError({
-            code: 'NOT_FOUND',
-            message: 'User not found'
-          }));
+          return TE.left(
+            createAppError({
+              code: 'NOT_FOUND',
+              message: 'User not found',
+            })
+          );
         }
         return TE.right({ existingUser: existingUser.value, input });
       }),
@@ -135,11 +144,12 @@ export const createUserService = (repository: UserRepository) => {
             }
             return repository.update(id, updates);
           },
-          error => createAppError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to update user',
-            cause: error
-          })
+          (error) =>
+            createAppError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to update user',
+              cause: error,
+            })
         )
       )
     );
@@ -149,21 +159,24 @@ export const createUserService = (repository: UserRepository) => {
       findById(id),
       TE.chain((existingUser: Option<User>) => {
         if (existingUser._tag === 'None') {
-          return TE.left(createAppError({
-            code: 'NOT_FOUND',
-            message: 'User not found'
-          }));
+          return TE.left(
+            createAppError({
+              code: 'NOT_FOUND',
+              message: 'User not found',
+            })
+          );
         }
         return TE.right(id);
       }),
       TE.chain((userId: string) =>
         TE.tryCatch(
           () => repository.delete(userId),
-          error => createAppError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to delete user',
-            cause: error
-          })
+          (error) =>
+            createAppError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to delete user',
+              cause: error,
+            })
         )
       )
     );
@@ -182,11 +195,12 @@ export const createUserService = (repository: UserRepository) => {
               const isValid = await verifyPassword(user.password, password);
               return isValid ? userOption : O.fromNullable(null);
             },
-            error => createAppError({
-              code: 'UNAUTHORIZED',
-              message: 'Authentication failed',
-              cause: error
-            })
+            (error) =>
+              createAppError({
+                code: 'UNAUTHORIZED',
+                message: 'Authentication failed',
+                cause: error,
+              })
           )
         );
       })
@@ -198,8 +212,8 @@ export const createUserService = (repository: UserRepository) => {
     create,
     update,
     remove,
-    authenticate
+    authenticate,
   };
 };
 
-export * from './types'; 
+export * from './types';

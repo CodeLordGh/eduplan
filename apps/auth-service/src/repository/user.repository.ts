@@ -1,4 +1,10 @@
-import { PrismaClient, Role, UserStatus, VerificationStatus, User as PrismaUser } from '@eduflow/prisma';
+import {
+  PrismaClient,
+  Role,
+  UserStatus,
+  VerificationStatus,
+  User as PrismaUser,
+} from '@eduflow/prisma';
 import * as TE from 'fp-ts/TaskEither';
 import { CreateUserInput, UpdateUserInput } from '../domain/user';
 import { AuthErrors, createDatabaseError } from '../errors/auth';
@@ -19,13 +25,13 @@ export const createUser = (input: CreateUserInput): TE.TaskEither<AuthErrors, Us
       const user = await prisma.user.create({
         data: {
           ...input,
-          status: 'PENDING'
-        }
+          status: 'PENDING',
+        },
       });
       return {
         ...user,
         role: user.role as Role,
-        status: user.status as UserStatus
+        status: user.status as UserStatus,
       };
     },
     (error: unknown) => createDatabaseError(error as Error)
@@ -36,12 +42,12 @@ export const updateUser = (id: string, input: UpdateUserInput): TE.TaskEither<Au
     async () => {
       const user = await prisma.user.update({
         where: { id },
-        data: input
+        data: input,
       });
       return {
         ...user,
         role: user.role as Role,
-        status: user.status as UserStatus
+        status: user.status as UserStatus,
       };
     },
     (error: unknown) => createDatabaseError(error as Error)
@@ -55,7 +61,7 @@ export const findUserById = (id: string): TE.TaskEither<AuthErrors, User | null>
       return {
         ...user,
         role: user.role as Role,
-        status: user.status as UserStatus
+        status: user.status as UserStatus,
       };
     },
     (error: unknown) => createDatabaseError(error as Error)
@@ -68,7 +74,7 @@ export const deleteUser = (id: string): TE.TaskEither<AuthErrors, User> =>
       return {
         ...user,
         role: user.role as Role,
-        status: user.status as UserStatus
+        status: user.status as UserStatus,
       };
     },
     (error: unknown) => createDatabaseError(error as Error)

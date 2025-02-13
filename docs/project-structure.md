@@ -1,6 +1,7 @@
 # EduFlow Project Structure
 
 ## Root Directory Structure
+
 ```
 eduflow/
 ├── apps/                    # Service applications
@@ -24,6 +25,7 @@ eduflow/
 ```
 
 ## Core Configuration Files
+
 ```
 eduflow/
 ├── .npmrc                  # pnpm configuration
@@ -35,7 +37,9 @@ eduflow/
 ```
 
 ## Shared Library Structure (libs/)
+
 Each shared library follows a consistent structure:
+
 ```
 libs/[library-name]/
 ├── src/
@@ -47,7 +51,9 @@ libs/[library-name]/
 ```
 
 ## Service Structure (apps/)
+
 Each service follows a consistent structure:
+
 ```
 apps/[service-name]/
 ├── src/
@@ -70,6 +76,7 @@ apps/[service-name]/
 ## Development Rules & Standards
 
 ### Code Organization
+
 - Maximum 200 lines per file
 - Functional programming only
 - Pure functions preferred
@@ -77,6 +84,7 @@ apps/[service-name]/
 - No classes (use functional composition)
 
 ### TypeScript Configuration
+
 ```json
 {
   "strict": true,
@@ -89,17 +97,20 @@ apps/[service-name]/
 ```
 
 ### Testing Requirements
+
 - Unit tests for all pure functions
 - Integration tests for API endpoints
 - E2E tests for critical flows
 - Minimum 80% coverage
 
 ### Code Style
+
 - Prettier for formatting
 - ESLint for linting
 - Conventional commits
 
 ### Documentation
+
 - TSDoc for all functions
 - OpenAPI/Swagger for APIs
 - Event documentation
@@ -108,6 +119,7 @@ apps/[service-name]/
 ## Shared Packages
 
 ### @eduflow/common
+
 - Error handling
 - Logging
 - Date utilities
@@ -115,17 +127,20 @@ apps/[service-name]/
 - Security utilities
 
 ### @eduflow/types
+
 - Domain types
 - DTO types
 - Event types
 - Enum types
 
 ### @eduflow/validators
+
 - Input validation
 - Schema validation
 - Business rule validation
 
 ### @eduflow/middleware
+
 - Authentication
 - Authorization
 - Request validation
@@ -134,6 +149,7 @@ apps/[service-name]/
 - Rate limiting
 
 ### @eduflow/constants
+
 - Error codes
 - Status codes
 - Configuration constants
@@ -142,18 +158,21 @@ apps/[service-name]/
 ## Development Tools
 
 ### Code Generators
+
 - Service scaffolding
 - Event handler generation
 - Test file generation
 - API endpoint generation
 
 ### Build Scripts
+
 - Build configuration
 - Development environment setup
 - Production deployment
 - Database migration
 
 ## Getting Started
+
 1. Install pnpm: `npm install -g pnpm`
 2. Clone repository
 3. Run: `pnpm install`
@@ -161,8 +180,9 @@ apps/[service-name]/
 5. Run: `pnpm dev`
 
 ## Development Workflow
+
 1. Create feature branch
 2. Implement changes
 3. Run tests: `pnpm test`
 4. Run linting: `pnpm lint`
-5. Submit PR 
+5. Submit PR

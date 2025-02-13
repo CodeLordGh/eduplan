@@ -1,10 +1,11 @@
 export * from './auth';
 export * from './kyc/types';
-export * from './academic/report-card'
-export * from './database'
-export * from './file/types'
-export * from './errors'
+export * from './academic/report-card';
+export * from './database';
+export * from './file/types';
+export * from './errors';
 export * from './errors/types';
+export * from './user/types';
 
 // Logger types exports
 export {
@@ -19,7 +20,7 @@ export {
   ErrorContext,
   OperationContext,
   ServiceContext,
-  RequestContext
+  RequestContext,
 } from './logger/types';
 
 // Event system exports
@@ -28,7 +29,7 @@ export * from './events/state';
 export * from './events/handlers';
 export * from './events/constants';
 export * from './events/academic';
-export * from './events';
+// export * from './events';
 
 // Explicitly re-export auth types
 export type {
@@ -43,19 +44,18 @@ export type {
   UserEmployment,
   TimeRestrictions,
   UserAccess,
-  UserContext
+  UserContext,
 } from './auth/abac';
 
-export type {
-  Role,
-  Permission
-} from './auth/roles';
+export type { Role, Permission } from './auth/roles';
 
 export {
   KYCStatus,
   EmploymentEligibilityStatus,
   UserStatus,
   OTPStatus,
-  OTPPurpose
+  OTPPurpose,
 } from './auth/status';
 
+// Export validation utilities
+export * as validation from './validation';

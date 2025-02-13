@@ -3,6 +3,7 @@
 ## Authentication & Verification Workflows
 
 ### User Registration
+
 ```mermaid
 graph TD
     A[User Starts Registration] --> B[Enter Basic Info]
@@ -15,6 +16,7 @@ graph TD
 ```
 
 ### Parent Verification
+
 ```mermaid
 graph TD
     A[Parent Account Created] --> B[Submit ID Documents]
@@ -30,6 +32,7 @@ graph TD
 ## Payment Workflows
 
 ### School Fee Payment
+
 ```mermaid
 graph TD
     A[Parent Initiates Payment] --> B[Choose Payment Method]
@@ -44,6 +47,7 @@ graph TD
 ```
 
 ### Wallet Management
+
 ```mermaid
 graph TD
     A[Parent Funds Wallet] --> B[Choose Mobile Money Provider]
@@ -54,6 +58,7 @@ graph TD
 ```
 
 ### Quiz Payment
+
 ```mermaid
 graph TD
     A[Student Selects Quiz] --> B[Check Parent Settings]
@@ -69,6 +74,7 @@ graph TD
 ## Academic Workflows
 
 ### Quiz Creation & Management
+
 ```mermaid
 graph TD
     A[Teacher Creates Quiz] --> B[Set Questions & Answers]
@@ -80,6 +86,7 @@ graph TD
 ```
 
 ### Home Tutoring
+
 ```mermaid
 graph TD
     A[Teacher Sets Availability] --> B[Update Teaching Profile]
@@ -93,6 +100,7 @@ graph TD
 ## Communication Workflows
 
 ### School Head Communications
+
 ```mermaid
 graph TD
     A[School Head Initiates Message] --> B[Select Audience Type]
@@ -106,6 +114,7 @@ graph TD
 ```
 
 ### Fee Payment Reminders
+
 ```mermaid
 graph TD
     A[System Checks Due Dates] --> B[Identify Pending Payments]
@@ -119,6 +128,7 @@ graph TD
 ## Administrative Workflows
 
 ### School Setup
+
 ```mermaid
 graph TD
     A[System Admin Initiates School Creation] --> B[Collect School Documentation]
@@ -133,6 +143,7 @@ graph TD
 ```
 
 ### Staff Management
+
 ```mermaid
 graph TD
     A[Add New Staff] --> B[Verify Credentials]
@@ -145,6 +156,7 @@ graph TD
 ## Parent Control Workflows
 
 ### Quiz Authorization
+
 ```mermaid
 graph TD
     A[Set Quiz Preferences] --> B[Configure Auto-approval]
@@ -154,6 +166,7 @@ graph TD
 ```
 
 ### Payment Preferences
+
 ```mermaid
 graph TD
     A[Configure Payment Settings] --> B[Set Default Method]
@@ -165,6 +178,7 @@ graph TD
 ## System Integration Workflows
 
 ### Mobile Money Integration
+
 ```mermaid
 graph TD
     A[Payment Initiated] --> B[Select Provider]
@@ -176,6 +190,7 @@ graph TD
 ```
 
 ### Document Verification
+
 ```mermaid
 graph TD
     A[Document Uploaded] --> B[Initial Validation]
@@ -189,6 +204,7 @@ graph TD
 ## Revenue Sharing Workflows
 
 ### Quiz Revenue Distribution
+
 ```mermaid
 graph TD
     A[Quiz Completed] --> B[Calculate Total Revenue]
@@ -199,6 +215,7 @@ graph TD
 ```
 
 ### Tutor Payment Processing
+
 ```mermaid
 graph TD
     A[Session Completed] --> B[Calculate Payment]
@@ -206,4 +223,4 @@ graph TD
     C --> D[Process Tutor Payment]
     D --> E[Update Records]
     E --> F[Send Notifications]
-``` 
+```

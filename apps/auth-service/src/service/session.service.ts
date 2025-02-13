@@ -41,7 +41,7 @@ export const createSession = (
           permissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS],
           lastActivity: Date.now(),
           ipAddress,
-          userAgent
+          userAgent,
         };
 
         await redis.set(
@@ -70,15 +70,10 @@ export const getSession = (
         }
 
         const session = JSON.parse(data) as SessionData;
-        
+
         // Update last activity
         session.lastActivity = Date.now();
-        await redis.set(
-          createSessionKey(userId),
-          JSON.stringify(session),
-          'EX',
-          SESSION_EXPIRY
-        );
+        await redis.set(createSessionKey(userId), JSON.stringify(session), 'EX', SESSION_EXPIRY);
 
         return session;
       },
@@ -103,7 +98,7 @@ export const updateSession = (
         const updatedSession = {
           ...session,
           ...updates,
-          lastActivity: Date.now()
+          lastActivity: Date.now(),
         };
 
         await redis.set(
@@ -147,15 +142,13 @@ export const validateSession = (
         }
 
         const session = JSON.parse(data) as SessionData;
-        
+
         if (!requiredPermissions || requiredPermissions.length === 0) {
           return true;
         }
 
-        return requiredPermissions.every((permission) =>
-          session.permissions.includes(permission)
-        );
+        return requiredPermissions.every((permission) => session.permissions.includes(permission));
       },
       (error: unknown) => createDatabaseError(error as Error)
     )
-  ); 
+  );

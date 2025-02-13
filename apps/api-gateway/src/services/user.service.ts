@@ -1,16 +1,8 @@
 import { PrismaClient, Prisma } from '@eduflow/prisma';
 import { createAppError } from '@eduflow/common';
 import { transformToUserAttributes, UserWithIncludes, RequestContext } from '@eduflow/common';
-import type { 
-  UserAttributes, 
-  AppError, 
-  UserContext,
-} from '@eduflow/types';
-import { 
-  KYCStatus, 
-  EmploymentEligibilityStatus, 
-  Role 
-} from '@eduflow/types';
+import type { UserAttributes, AppError, UserContext } from '@eduflow/types';
+import { KYCStatus, EmploymentEligibilityStatus, Role } from '@eduflow/types';
 import { redis } from '../config/redis';
 import { pipe } from 'fp-ts/function';
 import { TaskEither } from 'fp-ts/TaskEither';
@@ -77,27 +69,30 @@ const transformKYCAttributes = (user: UserWithIncludes): KYCAttributes => ({
   status: (user.kycStatus || KYCStatus.NOT_STARTED) as KYCStatus,
   verifiedAt: user.kycVerifiedAt || undefined,
   documentIds: user.kycDocumentIds || [],
-  officerStatus: user.roles.includes('KYC_OFFICER') ? {
-    permissions: {
-      canVerifyIdentity: true,
-      canVerifyDocuments: true,
-      canApproveKYC: user.roles.includes('SYSTEM_ADMIN')
-    }
-  } : undefined
+  officerStatus: user.roles.includes('KYC_OFFICER')
+    ? {
+        permissions: {
+          canVerifyIdentity: true,
+          canVerifyDocuments: true,
+          canApproveKYC: user.roles.includes('SYSTEM_ADMIN'),
+        },
+      }
+    : undefined,
 });
 
 const transformEmploymentAttributes = (user: UserWithIncludes): EmploymentAttributes => ({
-  status: (user.employmentStatus || EmploymentEligibilityStatus.UNVERIFIED) as EmploymentEligibilityStatus,
+  status: (user.employmentStatus ||
+    EmploymentEligibilityStatus.UNVERIFIED) as EmploymentEligibilityStatus,
   verifiedAt: user.employmentVerifiedAt || undefined,
   verifiedBy: user.verifications?.[0]?.id,
   documentIds: user.employmentDocumentIds || [],
-  currentSchools: [] // Will be populated by school service
+  currentSchools: [], // Will be populated by school service
 });
 
 const transformAccessAttributes = async (userId: string): Promise<AccessAttributes> => {
   // Get access data from auth service
   const accessData = await getAccessFromAuthService(userId);
-  
+
   return {
     failedAttempts: accessData.failedAttempts || 0,
     lastLogin: accessData.lastLogin,
@@ -106,8 +101,8 @@ const transformAccessAttributes = async (userId: string): Promise<AccessAttribut
     restrictions: {
       ipWhitelist: accessData.ipWhitelist,
       allowedCountries: accessData.allowedCountries,
-      timeRestrictions: accessData.timeRestrictions
-    }
+      timeRestrictions: accessData.timeRestrictions,
+    },
   };
 };
 
@@ -117,12 +112,14 @@ const transformContextAttributes = async (
 ): Promise<UserContext> => ({
   currentSchoolId: await getCurrentSchoolId(user.id),
   location: requestContext?.location,
-  deviceInfo: requestContext?.deviceInfo ? {
-    id: requestContext.deviceInfo.id,
-    type: requestContext.deviceInfo.type,
-    trustScore: requestContext.deviceInfo.trustScore || 0,
-    lastVerified: requestContext.deviceInfo.lastVerified || new Date()
-  } : undefined
+  deviceInfo: requestContext?.deviceInfo
+    ? {
+        id: requestContext.deviceInfo.id,
+        type: requestContext.deviceInfo.type,
+        trustScore: requestContext.deviceInfo.trustScore || 0,
+        lastVerified: requestContext.deviceInfo.lastVerified || new Date(),
+      }
+    : undefined,
 });
 
 // Helper functions for external service calls
@@ -149,18 +146,17 @@ export const getUserAttributes = async (
   const result = await pipe(
     TE.tryCatch(
       () => redis.get(`${CACHE_PREFIX}${userId}`),
-      (error: unknown) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get cached user attributes',
-        cause: error
-      })
+      (error: unknown) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to get cached user attributes',
+          cause: error,
+        })
     ),
-    TE.chain((cached: string | null) => 
-      cached 
-        ? TE.right(JSON.parse(cached))
-        : getUserFromDatabase(userId, requestContext)
+    TE.chain((cached: string | null) =>
+      cached ? TE.right(JSON.parse(cached)) : getUserFromDatabase(userId, requestContext)
     ),
-    TE.chain((attributes: UserAttributes) => 
+    TE.chain((attributes: UserAttributes) =>
       pipe(
         cacheUserAttributes(userId, attributes),
         TE.map(() => attributes)
@@ -171,7 +167,7 @@ export const getUserAttributes = async (
   if (result._tag === 'Left') {
     throw result.left;
   }
-  
+
   return result.right;
 };
 
@@ -182,59 +178,64 @@ const getUserFromDatabase = (
 ): TaskEither<AppError, UserAttributes> =>
   pipe(
     TE.tryCatch(
-      () => prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          profile: true,
-          documents: true,
-          verifications: true,
-        }
-      }).then(async user => {
-        if (!user) return null;
-        const userWithRoles = {
-          ...user,
-          roles: user.roles || [],
-          permissions: user.permissions || []
-        };
-        return transformToUserAttributes(userWithRoles, {
-          requestContext,
-          getAccessData: getAccessFromAuthService,
-          getCurrentSchoolId,
-          getSchoolRoles
-        });
-      }),
-      (error: unknown) => createAppError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Database query failed',
-        cause: error
-      })
+      () =>
+        prisma.user
+          .findUnique({
+            where: { id: userId },
+            include: {
+              profile: true,
+              documents: true,
+              verifications: true,
+            },
+          })
+          .then(async (user) => {
+            if (!user) return null;
+            const userWithRoles = {
+              ...user,
+              roles: user.roles || [],
+              permissions: user.permissions || [],
+            };
+            return transformToUserAttributes(userWithRoles, {
+              requestContext,
+              getAccessData: getAccessFromAuthService,
+              getCurrentSchoolId,
+              getSchoolRoles,
+            });
+          }),
+      (error: unknown) =>
+        createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database query failed',
+          cause: error,
+        })
     ),
-    TE.chain((user: UserAttributes | null) => 
-      user 
+    TE.chain((user: UserAttributes | null) =>
+      user
         ? TE.right(user)
-        : TE.left(createAppError({
-            code: 'NOT_FOUND',
-            message: 'User not found',
-            metadata: { userId }
-          }))
+        : TE.left(
+            createAppError({
+              code: 'NOT_FOUND',
+              message: 'User not found',
+              metadata: { userId },
+            })
+          )
     )
   );
 
-const cacheUserAttributes = (userId: string, attributes: UserAttributes): TaskEither<AppError, void> =>
+const cacheUserAttributes = (
+  userId: string,
+  attributes: UserAttributes
+): TaskEither<AppError, void> =>
   TE.tryCatch(
     async () => {
-      await redis.set(
-        `${CACHE_PREFIX}${userId}`,
-        JSON.stringify(attributes),
-        'EX',
-        CACHE_TTL
-      );
+      await redis.set(`${CACHE_PREFIX}${userId}`, JSON.stringify(attributes), 'EX', CACHE_TTL);
     },
-    (error: unknown) => createAppError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to cache user attributes',
-      cause: error
-    })
+    (error: unknown) =>
+      createAppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to cache user attributes',
+        cause: error,
+      })
   );
 
 // Clear user attributes cache
@@ -243,23 +244,24 @@ export const clearUserAttributesCache = (userId: string): TaskEither<AppError, v
     async () => {
       await redis.del(`${CACHE_PREFIX}${userId}`);
     },
-    (error: unknown) => createAppError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to clear user attributes cache',
-      cause: error,
-      metadata: { userId }
-    })
+    (error: unknown) =>
+      createAppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to clear user attributes cache',
+        cause: error,
+        metadata: { userId },
+      })
   );
 
 // Subscribe to user-related events to invalidate cache
 const subscribeToEvents = async (): Promise<void> => {
   const subscriber = redis.duplicate();
-  
+
   await subscriber.subscribe('user_events', 'kyc_events', 'school_events');
-  
+
   subscriber.on('message', async (channel, message) => {
     const event = JSON.parse(message);
-    
+
     if (event.userId) {
       await clearUserAttributesCache(event.userId)();
     }
@@ -267,6 +269,8 @@ const subscribeToEvents = async (): Promise<void> => {
 };
 
 // Initialize event subscription
-subscribeToEvents().catch(error => {
-  logger.error('Failed to subscribe to events:', { error: error instanceof Error ? error.stack : error });
-}); 
+subscribeToEvents().catch((error) => {
+  logger.error('Failed to subscribe to events:', {
+    error: error instanceof Error ? error.stack : error,
+  });
+});

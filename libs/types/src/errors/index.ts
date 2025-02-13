@@ -9,7 +9,7 @@ export type {
   ErrorMetadata,
   ErrorDetails,
   AppError,
-  ErrorResponse
+  ErrorResponse,
 } from './types';
 
-export { errorUtils, HTTP_STATUS_CODES } from './utils'; 
+export { errorUtils, HTTP_STATUS_CODES } from './utils';

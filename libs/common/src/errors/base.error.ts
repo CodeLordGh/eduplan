@@ -19,7 +19,7 @@ const HTTP_STATUS_CODES: Record<ErrorCode, number> = {
 
 export const createAppError = (details: ErrorDetails): AppError => {
   const statusCode = HTTP_STATUS_CODES[details.code];
-  
+
   return {
     name: details.code,
     message: details.message,
@@ -36,4 +36,4 @@ export const throwError = (details: ErrorDetails): never => {
 
 export const createErrorResponse = (error: AppError): ErrorResponse => ({
   error,
-}); 
+});
