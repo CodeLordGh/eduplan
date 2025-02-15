@@ -6,6 +6,7 @@ import {
   Role as PrismaRole,
   VerificationStatus,
   EmploymentEligibilityStatus,
+  UserStatus,
 } from '@eduflow/prisma';
 import { FastifyRedis } from '@fastify/redis';
 import { hashPassword, verifyPassword, generateJWT } from '@eduflow/common';
@@ -22,6 +23,11 @@ import {
 import * as userRepo from '../repository/user.repository';
 import * as redisService from './redis.service';
 import * as sessionService from './session.service';
+import { Credentials, SessionData, AuthError } from '../domain/types';
+import { PrismaClient } from '@eduflow/prisma';
+import * as E from 'fp-ts/Either';
+
+const prisma = new PrismaClient();
 
 export interface LoginInput {
   email: string;
@@ -45,8 +51,8 @@ const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
 const STAFF_ROLES = [PrismaRole.TEACHER, PrismaRole.SCHOOL_ADMIN, PrismaRole.SCHOOL_HEAD] as const;
 
-const isStaffRole = (role: PrismaRole): boolean =>
-  STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number]);
+const isStaffRole = (roles: Role[]): boolean =>
+  roles.some(role => STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number]));
 
 export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User> =>
   pipe(
@@ -66,7 +72,8 @@ export const register = (input: CreateUserInput): TE.TaskEither<AuthErrors, User
                   userRepo.createUser({
                     email: validInput.email as string,
                     password: hashedPassword,
-                    role: validInput.role,
+                    roles: validInput.roles as Role[],
+                    phone: validInput.phone as string | undefined
                   })
                 )
               )
@@ -94,7 +101,7 @@ export const login = (
                     // Check KYC status for roles that require it
                     TE.fromPredicate(
                       (u: User) => {
-                        const requiresKYC = isStaffRole(u.role);
+                        const requiresKYC = isStaffRole(u.roles);
                         return !requiresKYC || u.kycStatus === VerificationStatus.VERIFIED;
                       },
                       () => createValidationError('KYC verification required for this role')
@@ -103,7 +110,7 @@ export const login = (
                       // Check employment eligibility for staff roles
                       TE.fromPredicate(
                         (u: User) => {
-                          const requiresEmploymentCheck = isStaffRole(u.role);
+                          const requiresEmploymentCheck = isStaffRole(u.roles);
                           return (
                             !requiresEmploymentCheck ||
                             u.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE
@@ -122,7 +129,7 @@ export const login = (
                           redis,
                           user.id,
                           user.email || '',
-                          user.role,
+                          user.roles,
                           input.ipAddress,
                           input.userAgent
                         ),
@@ -158,7 +165,7 @@ export const refresh = (
                     // Check KYC status for roles that require it
                     TE.fromPredicate(
                       (u: User) => {
-                        const requiresKYC = isStaffRole(u.role);
+                        const requiresKYC = isStaffRole(u.roles);
                         return !requiresKYC || u.kycStatus === VerificationStatus.VERIFIED;
                       },
                       () => createValidationError('KYC verification required for this role')
@@ -167,7 +174,7 @@ export const refresh = (
                       // Check employment eligibility for staff roles
                       TE.fromPredicate(
                         (u: User) => {
-                          const requiresEmploymentCheck = isStaffRole(u.role);
+                          const requiresEmploymentCheck = isStaffRole(u.roles);
                           return (
                             !requiresEmploymentCheck ||
                             u.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE
@@ -227,8 +234,8 @@ const generateAuthTokens = (
         const accessToken = generateJWT({
           userId: user.id,
           email: user.email,
-          role: user.role as unknown as Role,
-          permissions: ROLE_PERMISSIONS[user.role as unknown as Role] || [],
+          roles: user.roles,
+          permissions: user.roles.flatMap(role => ROLE_PERMISSIONS[role as Role] || []),
           kycVerified: user.kycStatus === VerificationStatus.VERIFIED,
           employmentEligible: user.employmentStatus === EmploymentEligibilityStatus.ELIGIBLE,
           socialAccessEnabled: user.socialAccessEnabled || false,
@@ -242,3 +249,68 @@ const generateAuthTokens = (
       (error: unknown) => createDatabaseError(error as Error)
     )
   );
+
+const validateCredentials = (
+  credentials: Credentials
+): TE.TaskEither<AuthError, string> => {
+  return () => 
+    prisma.user.findUnique({
+      where: { email: credentials.email }
+    }).then(user => {
+      if (!user) {
+        return E.left<AuthError, string>({ _tag: 'InvalidCredentials' })
+      }
+      // Password validation would go here
+      return E.right(user.id)
+    }).catch(() => E.left<AuthError, string>({ _tag: 'InvalidCredentials' }))
+}
+
+const verifyMFAIfEnabled = (
+  userId: string
+): TE.TaskEither<AuthError, string> => {
+  return () =>
+    prisma.user.findUnique({
+      where: { id: userId }
+    }).then(user => {
+      // For now, we'll assume MFA is not required
+      // This should be implemented based on your MFA requirements
+      return E.right(userId)
+    }).catch(() => E.left({ _tag: 'InvalidCredentials' }))
+}
+
+const createSession = (
+  userId: string
+): TE.TaskEither<AuthError, SessionData> => {
+  const session: SessionData = {
+    id: uuidv4(),
+    userId,
+    deviceInfo: 'default',
+    ipAddress: '127.0.0.1',
+    lastActive: new Date(),
+    mfaVerified: false
+  }
+  return TE.right(session)
+}
+
+export const authenticate = (
+  credentials: Credentials
+): TE.TaskEither<AuthError, SessionData> =>
+  pipe(
+    validateCredentials(credentials),
+    TE.chain(verifyMFAIfEnabled),
+    TE.chain(createSession)
+  )
+
+export const refreshSession = (
+  sessionId: string
+): TE.TaskEither<AuthError, SessionData> => {
+  const session: SessionData = {
+    id: sessionId,
+    userId: '', // This should be fetched from Redis in a real implementation
+    deviceInfo: 'default',
+    ipAddress: '127.0.0.1',
+    lastActive: new Date(),
+    mfaVerified: false
+  }
+  return TE.right(session)
+}

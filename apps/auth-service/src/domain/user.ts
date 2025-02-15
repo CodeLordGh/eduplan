@@ -35,7 +35,7 @@ export type User = PrismaUser;
 export type CreateUserInput = Omit<Prisma.UserCreateInput, 'status'> & {
   email: string;
   password: string;
-  role: Role;
+  roles: Role[];
   phone?: string;
 };
 

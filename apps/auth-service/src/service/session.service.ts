@@ -11,7 +11,7 @@ const logger = createLogger('session-service');
 export interface SessionData {
   userId: string;
   email: string;
-  role: Role;
+  roles: Role[];
   permissions: Permission[];
   lastActivity: number;
   ipAddress: string;
@@ -27,7 +27,7 @@ export const createSession = (
   redis: FastifyRedis,
   userId: string,
   email: string,
-  role: Role,
+  roles: Role[],
   ipAddress: string,
   userAgent: string
 ): TE.TaskEither<AuthErrors, void> =>
@@ -37,8 +37,8 @@ export const createSession = (
         const sessionData: SessionData = {
           userId,
           email,
-          role,
-          permissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS],
+          roles,
+          permissions: roles.flatMap(role => ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS]),
           lastActivity: Date.now(),
           ipAddress,
           userAgent,
