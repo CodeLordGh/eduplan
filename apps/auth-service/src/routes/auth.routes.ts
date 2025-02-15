@@ -4,6 +4,9 @@ import * as TE from 'fp-ts/TaskEither';
 import { Role } from '@eduflow/types';
 import { createRateLimiter } from '@eduflow/middleware';
 import * as authService from '../service/auth.service';
+import { ROLES } from '@eduflow/constants';
+import { FastifyInstance } from 'fastify';
+import { CreateUserInput } from '../domain/user';
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
   // Rate limiters
@@ -25,13 +28,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     keyPrefix: 'refresh:',
   });
 
-  fastify.post<{
-    Body: {
-      email: string;
-      password: string;
-      role: Role;
-    };
-  }>('/register', {
+  fastify.post('/register', {
     schema: {
       body: {
         type: 'object',
@@ -39,29 +36,20 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         properties: {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 8 },
-          role: { type: 'string', enum: Object.values(Role) },
+          role: { type: 'string', enum: Object.values(ROLES) },
+          phone: { type: 'string', nullable: true },
         },
       },
     },
-    preHandler: registerLimiter,
     handler: async (request, reply) => {
-      const result = await pipe(
-        authService.register(request.body),
-        TE.match(
-          (error) => {
-            switch (error.code) {
-              case 'DUPLICATE_EMAIL':
-                return reply.code(409).send(error);
-              case 'VALIDATION_ERROR':
-                return reply.code(400).send(error);
-              default:
-                return reply.code(500).send(error);
-            }
-          },
-          (user) => reply.code(201).send({ user })
-        )
-      )();
-      return result;
+      const { email, password, role, phone } = request.body;
+      const user = await authService.register({
+        email,
+        password,
+        roles: [role],
+        phone,
+      });
+      return reply.code(201).send(user);
     },
   });
 

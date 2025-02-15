@@ -3,7 +3,7 @@ import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
 import { Role } from '@eduflow/prisma';
 import { Permission, ROLE_PERMISSIONS } from '@eduflow/types';
-import { createLogger } from '@eduflow/common';
+import { createLogger } from '@eduflow/logger';
 import { AuthErrors, createDatabaseError, createValidationError } from '../errors/auth';
 
 const logger = createLogger('session-service');

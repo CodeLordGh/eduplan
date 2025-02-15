@@ -1,27 +1,44 @@
 import { pipe } from 'fp-ts/function';
 import * as E from 'fp-ts/Either';
-import { Role, User } from '@eduflow/prisma';
+import { Role, User, PrismaClient, UserStatus } from '@eduflow/prisma';
 import * as userRepo from '../repository/user.repository';
 import { AuthErrors } from '../errors/auth';
 import { CreateUserInput } from '../domain/user';
 import Redis from 'ioredis';
 import { FastifyInstance } from 'fastify';
+import { hashPassword } from '@eduflow/common';
 
 export const createTestUser = async (
-  email: string = 'test@example.com',
-  role: Role = Role.STUDENT
-): Promise<User> => {
-  const input: CreateUserInput = {
-    email,
-    password: 'Password123!',
+  prisma: PrismaClient,
+  {
+    email = 'test@example.com',
+    password = 'password123',
     role,
-  };
+    phone = null,
+  }: {
+    email?: string;
+    password?: string;
+    role?: Role;
+    phone?: string | null;
+  } = {}
+) => {
+  const hashedPassword = await hashPassword(password);
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      phone,
+      roles: role ? [role] : [Role.USER],
+      status: UserStatus.ACTIVE,
+    },
+  });
 
-  const result = await userRepo.createUser(input)();
-  if (E.isLeft(result)) {
-    throw new Error('Failed to create test user');
-  }
-  return result.right;
+  return {
+    id: user.id,
+    email: user.email,
+    roles: user.roles,
+    phone: user.phone,
+  };
 };
 
 export const clearRedis = async (redis: Redis): Promise<void> => {

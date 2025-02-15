@@ -1,7 +1,7 @@
 import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
 import nodemailer from 'nodemailer';
-import { createLogger } from '@eduflow/common';
+import { createLogger } from '@eduflow/logger';
 import { AuthErrors, createEmailError } from '../errors/auth';
 
 const logger = createLogger('email-service');

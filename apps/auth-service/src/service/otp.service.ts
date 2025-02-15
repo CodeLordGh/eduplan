@@ -5,7 +5,7 @@ import { pipe } from 'fp-ts/function';
 import { createOTPManager } from '@eduflow/middleware';
 import { AuthErrors, createDatabaseError, createValidationError } from '../errors/auth';
 import { sendOTPEmail } from './email.service';
-import { createLogger } from '@eduflow/common';
+import { createLogger } from '@eduflow/logger';
 import * as E from 'fp-ts/Either';
 import { OTPData, OTPPurpose } from '../domain/types';
 import { PrismaClient, OTPStatus } from '@eduflow/prisma';

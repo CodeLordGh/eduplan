@@ -3,7 +3,7 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyRedis from '@fastify/redis';
 import fastifySwagger, { SwaggerOptions } from '@fastify/swagger';
 import fastifyCookie from '@fastify/cookie';
-import { createLogger } from '@eduflow/common';
+import { createLogger } from '@eduflow/logger';
 import authRoutes from './routes/auth.routes';
 import otpRoutes from './routes/otp.routes';
 
