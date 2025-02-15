@@ -2,7 +2,7 @@
 
 ## System Overview
 
-The system implements a comprehensive authentication and authorization infrastructure using Attribute-Based Access Control (ABAC). It provides fine-grained access control based on user attributes, roles, environmental conditions, and custom policies.
+The system implements a comprehensive authentication and authorization infrastructure using Attribute-Based Access Control (ABAC). It provides fine-grained access control based on user attributes, roles, environmental conditions, and custom policies, with built-in caching for policy evaluations.
 
 ## Package Dependencies
 
@@ -10,99 +10,258 @@ The system implements a comprehensive authentication and authorization infrastru
 - `@eduflow/types`: Shared type definitions for auth and ABAC
 - `@eduflow/common`: Error handling and utilities
 - `@eduflow/constants`: Security constants and enums
+- `@eduflow/prisma`: Database models and role definitions
 
 ### External Dependencies
 - `fp-ts`: Functional programming utilities for error handling
-- `fastify`: HTTP middleware integration
+- `fastify`: HTTP middleware integration and request/response handling
+- `jsonwebtoken`: JWT token validation and handling
+
+## Core Components
+
+### 1. ABAC Engine (`abac.ts`)
+- Policy evaluation using functional programming patterns
+- Validation functions for roles, verification, school context, and environment
+- Error creation with specific error codes and metadata
+- Policy composition utilities
+
+### 2. Security Middleware (`middleware.ts`)
+- FastifyRequest augmentation with user attributes
+- Policy evaluation caching mechanism
+- Basic auth validation with JWT support
+- Policy factories for common use cases (admin, school staff)
+
+### 3. Error Handling
+Specific error types with codes:
+- `INSUFFICIENT_ROLES`: Role validation failures
+- `VERIFICATION_REQUIRED`: KYC/verification issues
+- `INVALID_SCHOOL_CONTEXT`: School context validation errors
+- `ENVIRONMENT_RESTRICTION`: Environmental condition failures
+- `NO_TOKEN`: Missing authentication token
+
+### 4. Policy Cache System
+```typescript
+const policyCache = new Map<string, PolicyEvaluation>();
+
+interface PolicyEvaluation {
+  success: boolean;
+  error?: SecurityError;
+  timestamp?: Date;
+}
+```
 
 ## Sequence Diagrams
 
-### Authentication Flow
+### Authentication and Policy Evaluation Flow
 ```mermaid
 sequenceDiagram
     participant Client
-    participant Auth
-    participant RoleValidator
-    participant PermissionChecker
-    participant ErrorHandler
+    participant SecurityMiddleware
+    participant Cache
+    participant ABACEngine
+    participant JWT
     
-    Client->>Auth: authenticate(credentials)
-    Auth->>RoleValidator: validateRole(user, requiredRole)
-    RoleValidator->>PermissionChecker: checkPermissions(user, requiredPermissions)
+    Client->>SecurityMiddleware: Request with JWT
+    SecurityMiddleware->>JWT: verifyJWT(token)
     
-    alt Valid Access
-        PermissionChecker-->>Client: grantAccess()
-    else Invalid Access
-        PermissionChecker->>ErrorHandler: createForbiddenError()
-        ErrorHandler-->>Client: returnError()
+    alt Token Valid
+        JWT-->>SecurityMiddleware: decoded payload
+        SecurityMiddleware->>Cache: checkPolicyCache(user, policy)
+        
+        alt Cache Hit
+            Cache-->>SecurityMiddleware: cached evaluation
+        else Cache Miss
+            SecurityMiddleware->>ABACEngine: validateAccess(user, policy)
+            ABACEngine-->>Cache: store evaluation
+            Cache-->>SecurityMiddleware: evaluation result
+        end
+        
+        alt Policy Passes
+            SecurityMiddleware-->>Client: Allow Request
+        else Policy Fails
+            SecurityMiddleware-->>Client: Return Error
+        end
+    else Invalid Token
+        JWT-->>SecurityMiddleware: throw UnauthorizedError
+        SecurityMiddleware-->>Client: 401 Unauthorized
     end
 ```
 
-### ABAC Policy Evaluation Flow
-```mermaid
-sequenceDiagram
-    participant Request
-    participant ABACMiddleware
-    participant PolicyEvaluator
-    participant Validators
-    participant ErrorHandler
-    
-    Request->>ABACMiddleware: accessResource()
-    ABACMiddleware->>PolicyEvaluator: evaluatePolicy(user, policy)
-    
-    par Parallel Validation
-        PolicyEvaluator->>Validators: validateRoles()
-        PolicyEvaluator->>Validators: validateVerification()
-        PolicyEvaluator->>Validators: validateSchoolContext()
-        PolicyEvaluator->>Validators: validateEnvironment()
-        PolicyEvaluator->>Validators: validateCustomConditions()
-    end
-    
-    alt All Validations Pass
-        Validators-->>Request: allowAccess()
-    else Any Validation Fails
-        Validators->>ErrorHandler: createSpecificError()
-        ErrorHandler-->>Request: denyAccess()
-    end
+## Policy Validation Pipeline
+
+1. **Basic Authentication**
+   ```typescript
+   const validateBasicAuth = async (
+     request: FastifyRequest,
+     config?: SecurityLayer['authentication']['basicAuth']
+   ): Promise<PolicyEvaluation>
+   ```
+
+2. **Role Validation**
+   ```typescript
+   const validateRoles = (
+     user: UserAttributes,
+     conditions: PolicyConditions
+   ): E.Either<AppError, true>
+   ```
+
+3. **Verification Status**
+   ```typescript
+   const validateVerification = (
+     user: UserAttributes,
+     conditions: PolicyConditions
+   ): E.Either<AppError, true>
+   ```
+
+4. **School Context**
+   ```typescript
+   const validateSchoolContext = (
+     user: UserAttributes,
+     conditions: PolicyConditions
+   ): E.Either<AppError, true>
+   ```
+
+5. **Environmental Conditions**
+   ```typescript
+   const validateEnvironment = (
+     user: UserAttributes,
+     conditions: PolicyConditions
+   ): E.Either<AppError, true>
+   ```
+
+## Policy Factory Functions
+
+1. **Resource Policy Creation**
+   ```typescript
+   export const createResourcePolicy = (
+     resource: string,
+     action: ResourceAction,
+     basicAuth: SecurityLayer['authentication']['basicAuth'],
+     conditions?: PolicyConditions
+   ): SecurityLayer
+   ```
+
+2. **Admin Policy Creation**
+   ```typescript
+   export const createAdminOnlyPolicy = (
+     resource: string
+   ): SecurityLayer
+   ```
+
+3. **School Staff Policy Creation**
+   ```typescript
+   export const createSchoolStaffPolicy = (
+     resource: string,
+     action: ResourceAction
+   ): SecurityLayer
+   ```
+
+## Error Handling System
+
+### Error Categories
+1. **Authentication Errors**
+   - Token missing or invalid
+   - JWT verification failures
+   
+2. **Authorization Errors**
+   - Insufficient roles
+   - Failed verification requirements
+   - Invalid school context
+   
+3. **Environmental Errors**
+   - Time restrictions
+   - IP restrictions
+   - Custom condition failures
+
+### Error Format
+```typescript
+interface SecurityError {
+  code: string;
+  message: string;
+  metadata: Record<string, any>;
+  status: number;
+}
 ```
 
-## Files Involved
+## Integration Examples
 
-### Core Security Files (`libs/common/src/security/`)
-1. `abac.ts`
-   - ABAC policy evaluation
-   - Validation functions
-   - Error handling
-   - Middleware creation
+### 1. Protected Route with School Staff Policy
+```typescript
+app.get('/school/settings',
+  createSecurityMiddleware(
+    createSchoolStaffPolicy('school-settings', 'READ')
+  ),
+  async (req, reply) => {
+    // Route handler
+  }
+);
+```
 
-2. `auth.ts`
-   - Basic authentication utilities
-   - Role validation
-   - Permission checking
-   - Security headers
+### 2. Admin-Only Resource
+```typescript
+app.post('/system/config',
+  createSecurityMiddleware(
+    createAdminOnlyPolicy('system-config')
+  ),
+  async (req, reply) => {
+    // Route handler
+  }
+);
+```
 
-3. `policies.ts`
-   - Policy definitions
-   - Policy factories
-   - Custom conditions
-   - Domain-specific policies
+### 3. Custom Policy with Verification
+```typescript
+app.put('/kyc/documents',
+  createSecurityMiddleware({
+    authentication: {
+      basicAuth: {
+        roles: ['KYC_OFFICER'],
+      }
+    },
+    policies: {
+      resource: 'kyc-documents',
+      action: 'UPDATE',
+      conditions: {
+        verification: {
+          requireKYC: true,
+          kycStatus: [KYCStatus.VERIFIED],
+        },
+        environment: {
+          timeRestrictions: {
+            allowedDays: ['1', '2', '3', '4', '5'],
+            allowedHours: ['09', '17']
+          }
+        }
+      }
+    }
+  }),
+  async (req, reply) => {
+    // Route handler
+  }
+);
+```
 
-4. `index.ts`
-   - Main entry point
-   - Type re-exports
-   - Utility exports
+## Best Practices
 
-### Type Definitions (`libs/types/src/`)
-5. `auth/roles.ts`
-   - Role definitions
-   - Permission types
-   - Role hierarchies
+1. **Policy Caching**
+   - Use caching for frequently accessed policies
+   - Implement cache invalidation strategies
+   - Monitor cache hit rates
 
-6. `auth/ABAC.ts`
-   - ABAC type definitions
-   - Policy types
-   - Condition types
-   - Validation types
+2. **Error Handling**
+   - Always return specific error codes
+   - Include helpful metadata
+   - Maintain security through obscurity
+
+3. **Performance**
+   - Parallel validation when possible
+   - Early termination on failures
+   - Efficient policy evaluation
+
+4. **Security**
+   - JWT best practices
+   - Role hierarchy enforcement
+   - Principle of least privilege
 
 ## Policy Categories
 

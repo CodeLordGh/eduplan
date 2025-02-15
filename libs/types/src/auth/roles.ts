@@ -92,3 +92,31 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 };
 
 export type UserRole = Role;
+
+// Extended role system for academic context
+export interface AcademicContext {
+  subjects?: string[];
+  grades?: string[];
+  departments?: string[];
+  programs?: string[];
+}
+
+export interface ContextualPermissions extends AcademicContext {
+  customPermissions?: string[];
+}
+
+export interface ExtendedRole {
+  baseRole: Role;
+  academicRoles?: string[];
+  contextualPermissions?: ContextualPermissions;
+  assignedAt: Date;
+  assignedBy: string;
+  validUntil?: Date;
+}
+
+// Map of base roles to their default academic roles
+export const DEFAULT_ACADEMIC_ROLES: Partial<Record<Role, string[]>> = {
+  TEACHER: ['CLASS_TEACHER', 'SUBJECT_TEACHER'],
+  SCHOOL_HEAD: ['PRINCIPAL', 'PROGRAM_COORDINATOR'],
+  SCHOOL_ADMIN: ['DEPARTMENT_HEAD', 'GRADE_HEAD'],
+};

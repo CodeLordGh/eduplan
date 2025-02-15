@@ -108,7 +108,7 @@ const isTeacherOfStudent = (user: UserAttributes, context: PolicyConditions): bo
   if (!studentSchoolId) return false;
 
   // Check if user is a teacher in the student's school
-  return user.schoolRoles[studentSchoolId]?.includes('TEACHER') || false;
+  return user.schoolRoles[studentSchoolId]?.baseRole === 'TEACHER' || false;
 };
 
 const isParentOfStudent = (user: UserAttributes, context: PolicyConditions): boolean => {
@@ -116,7 +116,7 @@ const isParentOfStudent = (user: UserAttributes, context: PolicyConditions): boo
   if (!studentSchoolId) return false;
 
   // Check if user is a parent in the student's school
-  return user.schoolRoles[studentSchoolId]?.includes('PARENT') || false;
+  return user.schoolRoles[studentSchoolId]?.baseRole === 'PARENT' || false;
 };
 
 export const createKYCPolicy = (action: AccessPolicy['action']): AccessPolicy => ({
@@ -174,11 +174,11 @@ const createStudentPolicy = (action: AccessPolicy['action']): AccessPolicy => ({
 
           if (user.globalRoles.includes('TEACHER')) {
             const schoolRoles = user.schoolRoles[currentSchoolId];
-            return schoolRoles ? schoolRoles.includes('TEACHER') : false;
+            return schoolRoles ? schoolRoles.baseRole === 'TEACHER' : false;
           }
           if (user.globalRoles.includes('PARENT')) {
             const schoolRoles = user.schoolRoles[currentSchoolId];
-            return schoolRoles ? schoolRoles.includes('PARENT') : false;
+            return schoolRoles ? schoolRoles.baseRole === 'PARENT' : false;
           }
           return false;
         },

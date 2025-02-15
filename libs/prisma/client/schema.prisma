@@ -129,6 +129,7 @@ model User {
   id                    String                      @id @default(uuid())
   email                 String?                     @unique // Optional for students and young learners
   password              String
+  phone                 String?                     @unique @db.VarChar(15) // International format with country code
   roles                 Role[]                      @default([])
   permissions           String[]                    @default([])
   status                UserStatus                  @default(PENDING)

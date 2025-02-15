@@ -5,9 +5,10 @@
 
 import { Role, Permission } from './roles';
 import { KYCStatus, EmploymentEligibilityStatus } from './status';
+import { ExtendedRole, AcademicContext } from './roles';
 
 /** Allowed actions on resources */
-export type ResourceAction = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
+export type ResourceAction = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'PROCESS';
 
 /** School-specific role configuration */
 export interface SchoolRole {
@@ -22,14 +23,12 @@ export interface SchoolRole {
 export interface KYCOfficerStatus {
   isOfficer: boolean;
   permissions: {
-    teacherDocuments: boolean;
-    parentDocuments: boolean;
-    schoolOwnerDocuments: boolean;
-    approvalAuthority: boolean;
-    gracePeriodManagement: boolean;
+    canVerifyIdentity: boolean;
+    canVerifyDocuments: boolean;
+    canVerifyEmployment: boolean;
   };
-  specializations: string[];
-  workload: number;
+  assignedBy: string;
+  assignedAt: Date;
 }
 
 /** User's KYC verification status and details */
@@ -58,21 +57,17 @@ export interface TimeRestrictions {
 /** User's access configuration and restrictions */
 export interface UserAccess {
   socialEnabled: boolean;
-  hubAccess: {
-    type: 'HUB' | 'B_HUB';
-    permissions: string[];
+  mfaEnabled: boolean;
+  mfaVerified: boolean;
+  lastPasswordChange?: Date;
+  passwordExpiresAt?: Date;
+  ipRestrictions?: {
+    allowlist?: string[];
+    denylist?: string[];
   };
-  restrictions: {
-    ipWhitelist?: string[];
-    allowedCountries?: string[];
+  deviceRestrictions?: {
     allowedDevices?: string[];
-    timeRestrictions?: TimeRestrictions;
-  };
-  gracePeriod?: {
-    type: string;
-    startDate: Date;
-    endDate: Date;
-    status: string;
+    trustedDevices?: string[];
   };
 }
 
@@ -92,21 +87,24 @@ export interface UserContext {
   };
 }
 
-/** Complete set of user attributes for access decisions */
+/** User's attributes and permissions */
 export interface UserAttributes {
   id: string;
   email: string;
   status: string;
   globalRoles: Role[];
-  schoolRoles: Record<string, Role[]>;
+  schoolRoles: Record<string, ExtendedRole>;
+  academicProfile?: AcademicContext;
   kyc: {
     status: KYCStatus;
     officerStatus?: {
       permissions: {
         canVerifyIdentity: boolean;
         canVerifyDocuments: boolean;
-        canApproveKYC: boolean;
+        canVerifyEmployment: boolean;
       };
+      assignedBy: string;
+      assignedAt: Date;
     };
   };
   employment: {
@@ -118,6 +116,8 @@ export interface UserAttributes {
     lastLogin?: Date;
     failedAttempts: number;
     lockedUntil?: Date;
+    mfaEnabled: boolean;
+    mfaVerified: boolean;
   };
   context: UserContext;
   subscriptions?: Subscription[];
@@ -138,6 +138,9 @@ export interface PolicyConditions {
     mustBeOwner?: boolean;
     mustBeCurrentSchool?: boolean;
     allowedRoles?: Role[];
+  };
+  academic?: AcademicContext & {
+    requiredRoles?: string[];
   };
   environment?: {
     ipRestrictions?: {

@@ -3525,6 +3525,7 @@ export namespace Prisma {
     id: string | null
     email: string | null
     password: string | null
+    phone: string | null
     status: $Enums.UserStatus | null
     kycStatus: $Enums.VerificationStatus | null
     kycVerifiedAt: Date | null
@@ -3540,6 +3541,7 @@ export namespace Prisma {
     id: string | null
     email: string | null
     password: string | null
+    phone: string | null
     status: $Enums.UserStatus | null
     kycStatus: $Enums.VerificationStatus | null
     kycVerifiedAt: Date | null
@@ -3555,6 +3557,7 @@ export namespace Prisma {
     id: number
     email: number
     password: number
+    phone: number
     roles: number
     permissions: number
     status: number
@@ -3576,6 +3579,7 @@ export namespace Prisma {
     id?: true
     email?: true
     password?: true
+    phone?: true
     status?: true
     kycStatus?: true
     kycVerifiedAt?: true
@@ -3591,6 +3595,7 @@ export namespace Prisma {
     id?: true
     email?: true
     password?: true
+    phone?: true
     status?: true
     kycStatus?: true
     kycVerifiedAt?: true
@@ -3606,6 +3611,7 @@ export namespace Prisma {
     id?: true
     email?: true
     password?: true
+    phone?: true
     roles?: true
     permissions?: true
     status?: true
@@ -3698,6 +3704,7 @@ export namespace Prisma {
     id: string
     email: string | null
     password: string
+    phone: string | null
     roles: $Enums.Role[]
     permissions: string[]
     status: $Enums.UserStatus
@@ -3734,6 +3741,7 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     password?: boolean
+    phone?: boolean
     roles?: boolean
     permissions?: boolean
     status?: boolean
@@ -3757,6 +3765,7 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     password?: boolean
+    phone?: boolean
     roles?: boolean
     permissions?: boolean
     status?: boolean
@@ -3776,6 +3785,7 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     password?: boolean
+    phone?: boolean
     roles?: boolean
     permissions?: boolean
     status?: boolean
@@ -3810,6 +3820,7 @@ export namespace Prisma {
       id: string
       email: string | null
       password: string
+      phone: string | null
       roles: $Enums.Role[]
       permissions: string[]
       status: $Enums.UserStatus
@@ -4222,6 +4233,7 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
     readonly password: FieldRef<"User", 'String'>
+    readonly phone: FieldRef<"User", 'String'>
     readonly roles: FieldRef<"User", 'Role[]'>
     readonly permissions: FieldRef<"User", 'String[]'>
     readonly status: FieldRef<"User", 'UserStatus'>
@@ -29807,6 +29819,7 @@ export namespace Prisma {
     id: 'id',
     email: 'email',
     password: 'password',
+    phone: 'phone',
     roles: 'roles',
     permissions: 'permissions',
     status: 'status',
@@ -30603,6 +30616,7 @@ export namespace Prisma {
     id?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
     password?: StringFilter<"User"> | string
+    phone?: StringNullableFilter<"User"> | string | null
     roles?: EnumRoleNullableListFilter<"User">
     permissions?: StringNullableListFilter<"User">
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
@@ -30625,6 +30639,7 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrderInput | SortOrder
     password?: SortOrder
+    phone?: SortOrderInput | SortOrder
     roles?: SortOrder
     permissions?: SortOrder
     status?: SortOrder
@@ -30646,6 +30661,7 @@ export namespace Prisma {
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     email?: string
+    phone?: string
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
@@ -30666,12 +30682,13 @@ export namespace Prisma {
     profile?: XOR<ProfileNullableRelationFilter, ProfileWhereInput> | null
     documents?: KYCDocumentListRelationFilter
     verifications?: VerificationHistoryListRelationFilter
-  }, "id" | "email">
+  }, "id" | "email" | "phone">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     email?: SortOrderInput | SortOrder
     password?: SortOrder
+    phone?: SortOrderInput | SortOrder
     roles?: SortOrder
     permissions?: SortOrder
     status?: SortOrder
@@ -30697,6 +30714,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"User"> | string
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
     password?: StringWithAggregatesFilter<"User"> | string
+    phone?: StringNullableWithAggregatesFilter<"User"> | string | null
     roles?: EnumRoleNullableListFilter<"User">
     permissions?: StringNullableListFilter<"User">
     status?: EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
@@ -33053,6 +33071,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -33075,6 +33094,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -33097,6 +33117,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -33119,6 +33140,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -33141,6 +33163,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -33160,6 +33183,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -33179,6 +33203,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -35990,6 +36015,7 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    phone?: SortOrder
     roles?: SortOrder
     permissions?: SortOrder
     status?: SortOrder
@@ -36009,6 +36035,7 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    phone?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrder
     kycVerifiedAt?: SortOrder
@@ -36024,6 +36051,7 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    phone?: SortOrder
     status?: SortOrder
     kycStatus?: SortOrder
     kycVerifiedAt?: SortOrder
@@ -40667,6 +40695,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -40688,6 +40717,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -40725,6 +40755,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -40746,6 +40777,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -40767,6 +40799,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -40788,6 +40821,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -40825,6 +40859,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -40846,6 +40881,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -40867,6 +40903,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -40888,6 +40925,7 @@ export namespace Prisma {
     id?: string
     email?: string | null
     password: string
+    phone?: string | null
     roles?: UserCreaterolesInput | $Enums.Role[]
     permissions?: UserCreatepermissionsInput | string[]
     status?: $Enums.UserStatus
@@ -41091,6 +41129,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
@@ -41112,6 +41151,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     password?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
     roles?: UserUpdaterolesInput | $Enums.Role[]
     permissions?: UserUpdatepermissionsInput | string[]
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus

@@ -4,1051 +4,573 @@ This document provides a comprehensive overview of all types and interfaces expo
 
 ## Table of Contents
 
-- [Event System Types](#event-system-types)
-  - [Core Event Types](#core-event-types)
-  - [Event Bus Configuration](#event-bus-configuration)
-  - [Event Bus State](#event-bus-state)
-  - [Academic Events](#academic-events)
 - [Authentication Types](#authentication-types)
-  - [ABAC (Attribute Based Access Control)](#abac-attribute-based-access-control)
-  - [Roles and Permissions](#roles-and-permissions)
-  - [Status Types](#status-types)
-- [Academic Types](#academic-types)
-  - [Report Cards](#report-cards)
-  - [Grades](#grades)
-- [Error Types](#error-types)
-- [Other Types](#other-types)
-- [Logger Types](#logger-types)
-- [File Types](#file-types)
 - [KYC Types](#kyc-types)
+- [Academic Types](#academic-types)
 - [Database Types](#database-types)
+- [File Types](#file-types)
+- [Error Types](#error-types)
+- [User Types](#user-types)
+- [Logger Types](#logger-types)
+- [Event System Types](#event-system-types)
 - [Validation Types](#validation-types)
-- [Resilience Types](#resilience-types)
-  - [Circuit Breaker Types](#circuit-breaker-types)
-  - [Redis Pool Types](#redis-pool-types)
-  - [Batch Processing Types](#batch-processing-types)
-
-## Event System Types
-
-Located in `src/events/`, these types define the event system's core functionality.
-
-### Core Event Types
-
-Located in `src/events/handlers.ts`:
-
-- `Event<T>`
-
-  ```typescript
-  {
-    type: string;
-    data: T;
-    metadata: {
-      version: string;
-      source: string;
-      correlationId: string;
-      timestamp: string;
-      schemaVersion: string;
-    }
-  }
-  ```
-
-- `EventHandler<T>`
-  ```typescript
-  type EventHandler<T> = (event: Event<T>) => Promise<void>;
-  ```
-
-### Event Bus Configuration
-
-Located in `src/events/config.ts`:
-
-- `EventBusConfig`
-
-  ```typescript
-  {
-    serviceName: string;
-    rabbitmq: {
-      url: string;
-      exchange: string;
-      deadLetterExchange: string;
-      retryCount: number;
-      retryDelay: number;
-    }
-    redis: {
-      url: string;
-      keyPrefix: string;
-      eventTTL: number;
-    }
-  }
-  ```
-
-- `PublishOptions`
-
-  ```typescript
-  {
-    persistent?: boolean;
-    priority?: number;
-    cache?: boolean;
-  }
-  ```
-
-- `SubscribeOptions`
-  ```typescript
-  {
-    queueName?: string;
-    durable?: boolean;
-    useCache?: boolean;
-  }
-  ```
-
-### Event Bus State
-
-Located in `src/events/state.ts`:
-
-- `EventBusState`
-
-  ```typescript
-  {
-    config: EventBusConfig;
-    handlers: Map<string, EventHandler>;
-  }
-  ```
-
-- `EventBus`
-  ```typescript
-  {
-    publish: <T>(event: Event<T>, options?: PublishOptions) => Promise<void>;
-    subscribe: <T>(eventType: string, handler: EventHandler<T>, options?: SubscribeOptions) =>
-      Promise<void>;
-    close: () => Promise<void>;
-  }
-  ```
-
-### Domain Events
-
-Located in `src/events/index.ts`:
-
-#### Auth Events
-
-- `UserCreatedEvent`
-
-  ```typescript
-  {
-    type: 'USER_CREATED';
-    data: {
-      userId: string;
-      email: string;
-      role: Role;
-      status: UserStatus;
-      createdAt: Date;
-    }
-  }
-  ```
-
-- `UserUpdatedEvent`
-
-  ```typescript
-  {
-    type: 'USER_UPDATED';
-    data: {
-      userId: string;
-      updates: Partial<User>;
-      updatedAt: Date;
-    }
-  }
-  ```
-
-- `UserDeletedEvent`
-
-  ```typescript
-  {
-    type: 'USER_DELETED';
-    data: {
-      userId: string;
-      deletedAt: Date;
-    }
-  }
-  ```
-
-- `LoginAttemptedEvent`
-
-  ```typescript
-  {
-    type: 'LOGIN_ATTEMPTED';
-    data: {
-      userId: string;
-      success: boolean;
-      ip: string;
-      userAgent: string;
-      timestamp: Date;
-    }
-  }
-  ```
-
-- `OTPGeneratedEvent`
-  ```typescript
-  {
-    type: 'OTP_GENERATED';
-    data: {
-      userId: string;
-      otpId: string;
-      purpose: string;
-      expiresAt: Date;
-      generatedAt: Date;
-    }
-  }
-  ```
-
-#### KYC Events
-
-- `KYCVerifiedEvent`
-
-  ```typescript
-  {
-    type: 'KYC_VERIFIED';
-    data: {
-      userId: string;
-      documentType: string;
-      verificationId: string;
-      verifiedAt: Date;
-    }
-  }
-  ```
-
-- `KYCRejectedEvent`
-
-  ```typescript
-  {
-    type: 'KYC_REJECTED';
-    data: {
-      userId: string;
-      reason: string;
-      rejectedAt: Date;
-    }
-  }
-  ```
-
-- `EmploymentEligibilityUpdatedEvent`
-  ```typescript
-  {
-    type: 'EMPLOYMENT_ELIGIBILITY_UPDATED';
-    data: {
-      userId: string;
-      status: 'ELIGIBLE' | 'INELIGIBLE';
-      reason?: string;
-      updatedAt: Date;
-    };
-  }
-  ```
-
-#### Event Type Unions
-
-- `AuthEvent`: Union of all authentication-related events
-
-  ```typescript
-  type AuthEvent =
-    | UserCreatedEvent
-    | UserUpdatedEvent
-    | UserDeletedEvent
-    | LoginAttemptedEvent
-    | OTPGeneratedEvent;
-  ```
-
-- `ConsumedAuthEvent`: Union of events consumed from other services
-  ```typescript
-  type ConsumedAuthEvent = KYCVerifiedEvent | KYCRejectedEvent | EmploymentEligibilityUpdatedEvent;
-  ```
-
-### Academic Events
-
-Located in `src/events/academic.ts`:
-
-#### Academic Year Events
-
-- `ACADEMIC_YEAR_CREATED`
-
-  ```typescript
-  {
-    schoolId: string;
-    academicYearId: string;
-    name: string;
-    timestamp: Date;
-  }
-  ```
-
-- `TERM_STARTED`
-  ```typescript
-  {
-    schoolId: string;
-    termId: string;
-    academicYearId: string;
-    timestamp: Date;
-  }
-  ```
-
-#### Grade Events
-
-- `GRADE_RECORDED`
-
-  ```typescript
-  {
-    schoolId: string;
-    studentId: string;
-    subjectId: string;
-    teacherId: string;
-    termId: string;
-    grade: number;
-    status: GradeStatus;
-    timestamp: Date;
-  }
-  ```
-
-- `MISSING_GRADES_ALERT`
-  ```typescript
-  {
-    schoolId: string;
-    termId: string;
-    studentId: string;
-    missingSubjects: Array<{
-      subjectId: string;
-      subjectName: string;
-      teacherId: string;
-      teacherName: string;
-    }>;
-    timestamp: Date;
-  }
-  ```
-
-#### Report Card Events
-
-- `REPORT_CARD_STATUS_UPDATED`
-
-  ```typescript
-  {
-    schoolId: string;
-    reportCardId: string;
-    studentId: string;
-    termId: string;
-    previousStatus: ReportCardStatus;
-    newStatus: ReportCardStatus;
-    updatedBy: string;
-    timestamp: Date;
-  }
-  ```
-
-- `REPORT_CARD_PUBLISHED`
-
-  ```typescript
-  {
-    schoolId: string;
-    reportCardId: string;
-    studentId: string;
-    termId: string;
-    publishedBy: string; // Headmaster ID
-    availableAt: Date; // 72 hours after publishing
-    timestamp: Date;
-  }
-  ```
-
-- `REPORT_CARD_AVAILABLE`
-
-  ```typescript
-  {
-    schoolId: string;
-    reportCardId: string;
-    studentId: string;
-    termId: string;
-    parentId: string;
-    timestamp: Date;
-  }
-  ```
-
-- `REPORT_CARD_ACCESSED`
-  ```typescript
-  {
-    schoolId: string;
-    reportCardId: string;
-    studentId: string;
-    accessedBy: string; // Parent ID
-    accessType: 'VIEW' | 'DOWNLOAD';
-    timestamp: Date;
-  }
-  ```
-
-### Event Constants
-
-Located in `src/events/constants.ts`:
-
-- `EVENT_TYPES`: Constant object containing all possible event type strings
-
-  ```typescript
-  {
-    // Auth Events
-    USER_CREATED: 'USER_CREATED',
-    USER_UPDATED: 'USER_UPDATED',
-    USER_DELETED: 'USER_DELETED',
-    LOGIN_ATTEMPTED: 'LOGIN_ATTEMPTED',
-    OTP_GENERATED: 'OTP_GENERATED',
-
-    // KYC Events
-    KYC_SUBMITTED: 'KYC_SUBMITTED',
-    KYC_VERIFIED: 'KYC_VERIFIED',
-    KYC_REJECTED: 'KYC_REJECTED',
-    SCHOOL_VERIFIED: 'SCHOOL_VERIFIED',
-    EMPLOYMENT_ELIGIBILITY_UPDATED: 'EMPLOYMENT_ELIGIBILITY_UPDATED',
-
-    // School Events
-    SCHOOL_CREATED: 'SCHOOL_CREATED',
-    SCHOOL_UPDATED: 'SCHOOL_UPDATED',
-    CLASS_CREATED: 'CLASS_CREATED',
-    STAFF_ASSIGNED: 'STAFF_ASSIGNED',
-
-    // Academic Events
-    GRADE_RECORDED: 'GRADE_RECORDED',
-    ASSIGNMENT_CREATED: 'ASSIGNMENT_CREATED',
-    PERFORMANCE_UPDATED: 'PERFORMANCE_UPDATED',
-
-    // Payment Events
-    PAYMENT_PROCESSED: 'PAYMENT_PROCESSED',
-    PAYMENT_FAILED: 'PAYMENT_FAILED',
-    INVOICE_GENERATED: 'INVOICE_GENERATED',
-
-    // Notification Events
-    NOTIFICATION_SENT: 'NOTIFICATION_SENT',
-    NOTIFICATION_FAILED: 'NOTIFICATION_FAILED',
-
-    // Social Events
-    POST_CREATED: 'POST_CREATED',
-    COMMENT_ADDED: 'COMMENT_ADDED',
-    REACTION_ADDED: 'REACTION_ADDED',
-    CONNECTION_REQUESTED: 'CONNECTION_REQUESTED',
-    CONNECTION_UPDATED: 'CONNECTION_UPDATED',
-
-    // Chat Events
-    MESSAGE_SENT: 'MESSAGE_SENT',
-    MESSAGE_DELIVERED: 'MESSAGE_DELIVERED',
-    MESSAGE_READ: 'MESSAGE_READ',
-    CHAT_CREATED: 'CHAT_CREATED',
-    PARTICIPANT_ADDED: 'PARTICIPANT_ADDED',
-
-    // AI Events
-    AI_PREDICTION_GENERATED: 'AI_PREDICTION_GENERATED',
-    LEARNING_PATH_CREATED: 'LEARNING_PATH_CREATED',
-
-    // File Events
-    FILE_UPLOADED: 'FILE_UPLOADED',
-    FILE_DELETED: 'FILE_DELETED'
-  }
-  ```
-
-- `EventType`: Type representing all possible event type strings
-  ```typescript
-  type EventType = keyof typeof EVENT_TYPES;
-  ```
 
 ## Authentication Types
 
 ### ABAC (Attribute Based Access Control)
 
-Located in `src/auth/abac.ts`, these types define the attribute-based access control system.
-
-#### Core Types
-
-- `ResourceAction`: `'CREATE' | 'READ' | 'UPDATE' | 'DELETE'`
-
-- `SchoolRole`
-
-  ```typescript
-  {
-    roles: Role[];
-    permissions: Permission[];
-    communicationPermissions: string[];
-    assignedBy: string;
-    createdAt: Date;
-  }
-  ```
-
-- `KYCOfficerStatus`
-  ```typescript
-  {
-    isOfficer: boolean;
-    permissions: {
-      teacherDocuments: boolean;
-      parentDocuments: boolean;
-      schoolOwnerDocuments: boolean;
-      approvalAuthority: boolean;
-      gracePeriodManagement: boolean;
-    };
-    specializations: string[];
-    workload: number;
-  }
-  ```
-
-#### User Types
-
-- `UserKYC`
-
-  ```typescript
-  {
+```typescript
+export interface UserAttributes {
+  id: string;
+  email: string;
+  status: string;
+  globalRoles: Role[];
+  schoolRoles: Record<string, ExtendedRole>;
+  academicProfile?: AcademicContext;
+  kyc: {
     status: KYCStatus;
-    verifiedAt?: Date;
-    documentIds: string[];
-    officerStatus?: KYCOfficerStatus;
-  }
-  ```
-
-- `UserEmployment`
-
-  ```typescript
-  {
+    officerStatus?: {
+      permissions: {
+        canVerifyIdentity: boolean;
+        canVerifyDocuments: boolean;
+        canVerifyEmployment: boolean;
+      };
+      assignedBy: string;
+      assignedAt: Date;
+    };
+  };
+  employment: {
     status: EmploymentEligibilityStatus;
     verifiedAt?: Date;
-    documentIds: string[];
-    currentSchools: string[];
-  }
-  ```
+    verifiedBy?: string;
+  };
+  access: {
+    lastLogin?: Date;
+    failedAttempts: number;
+    lockedUntil?: Date;
+    mfaEnabled: boolean;
+    mfaVerified: boolean;
+  };
+  context: UserContext;
+  subscriptions?: Subscription[];
+}
 
-- `UserAccess`
-  ```typescript
-  {
-    socialEnabled: boolean;
-    hubAccess: {
-      type: 'HUB' | 'B_HUB';
-      permissions: string[];
-    };
-    restrictions: {
-      ipWhitelist?: string[];
-      allowedCountries?: string[];
-      allowedDevices?: string[];
-      timeRestrictions?: TimeRestrictions;
-    };
-    gracePeriod?: {
-      type: string;
-      startDate: Date;
-      endDate: Date;
-      status: string;
-    };
-  }
-  ```
+export interface AccessPolicy {
+  resource: string;
+  action: ResourceAction;
+  conditions: PolicyConditions;
+}
 
-#### Policy Types
+export interface ValidationResult {
+  granted: boolean;
+  reason?: string;
+}
 
-- `PolicyConditions`
+export interface PolicyConditions {
+  anyOf?: {
+    roles?: Role[];
+    permissions?: Permission[];
+  };
+  allOf?: {
+    roles?: Role[];
+    permissions?: Permission[];
+  };
+  school?: SchoolConditions;
+  environment?: EnvironmentConditions;
+  verification?: VerificationConditions;
+  custom?: CustomEvaluator[];
+}
 
-  ```typescript
-  {
-    anyOf?: {
-      roles?: Role[];
-      permissions?: Permission[];
-    };
-    allOf?: {
-      roles?: Role[];
-      permissions?: Permission[];
-    };
-    school?: SchoolConditions;
-    environment?: EnvironmentConditions;
-    verification?: VerificationConditions;
-    custom?: CustomEvaluator[];
-  }
-  ```
+export type ResourceAction = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'PROCESS';
 
-- `AccessPolicy`
+export interface SchoolRole {
+  roles: Role[];
+  permissions: Permission[];
+  communicationPermissions: string[];
+  assignedBy: string;
+  createdAt: Date;
+}
 
-  ```typescript
-  {
-    resource: string;
-    action: ResourceAction;
-    conditions: PolicyConditions;
-  }
-  ```
+export interface KYCOfficerStatus {
+  isOfficer: boolean;
+  permissions: {
+    teacherDocuments: boolean;
+    parentDocuments: boolean;
+    schoolOwnerDocuments: boolean;
+    approvalAuthority: boolean;
+    gracePeriodManagement: boolean;
+  };
+  specializations: string[];
+  workload: number;
+}
 
-- `ValidationResult`
-  ```typescript
-  {
-    granted: boolean;
-    reason?: string;
-  }
-  ```
+export interface UserKYC {
+  status: KYCStatus;
+  verifiedAt?: Date;
+  documentIds: string[];
+  officerStatus?: KYCOfficerStatus;
+}
 
-### Status Types
+export interface UserEmployment {
+  status: EmploymentEligibilityStatus;
+  verifiedAt?: Date;
+  documentIds: string[];
+  currentSchools: string[];
+}
 
-Located in `src/auth/status.ts`:
+export interface TimeRestrictions {
+  allowedDays: string[];
+  allowedHours: string[];
+  timezone: string;
+}
 
-- `KYCStatus`: Status of KYC verification
-- `EmploymentEligibilityStatus`: Employment verification status
-- `UserStatus`: General user status
-- `OTPStatus`: OTP verification status
-- `OTPPurpose`: Purpose of OTP generation
+export interface UserAccess {
+  socialEnabled: boolean;
+  hubAccess: {
+    type: 'HUB' | 'B_HUB';
+    permissions: string[];
+  };
+  restrictions: {
+    ipWhitelist?: string[];
+    allowedCountries?: string[];
+    allowedDevices?: string[];
+    timeRestrictions?: TimeRestrictions;
+  };
+  gracePeriod?: {
+    type: string;
+    startDate: Date;
+    endDate: Date;
+    status: string;
+  };
+}
 
-## Academic Types
+export interface UserContext {
+  currentSchoolId?: string;
+  currentRole?: Role;
+  sessionId?: string;
+  deviceId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+```
 
-Located in `src/academic/`, these types define academic-related structures.
+### Roles and Status
 
-### Report Cards
+```typescript
+export enum Role {
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
+  SCHOOL_OWNER = 'SCHOOL_OWNER',
+  SCHOOL_HEAD = 'SCHOOL_HEAD',
+  SCHOOL_ADMIN = 'SCHOOL_ADMIN',
+  TEACHER = 'TEACHER',
+  ACCOUNTANT = 'ACCOUNTANT',
+  PARENT = 'PARENT',
+  STUDENT = 'STUDENT',
+  CHEF = 'CHEF',
+  SECURITY = 'SECURITY',
+  TRANSPORT_OFFICER = 'TRANSPORT_OFFICER',
+  KYC_OFFICER = 'KYC_OFFICER',
+  OTHER = 'OTHER'
+}
 
-- `ReportCardStatus`
+export enum Permission {
+  MANAGE_SYSTEM = 'MANAGE_SYSTEM',
+  VIEW_SYSTEM_LOGS = 'VIEW_SYSTEM_LOGS',
+  CREATE_SCHOOL = 'CREATE_SCHOOL',
+  MANAGE_SCHOOL = 'MANAGE_SCHOOL',
+  VIEW_SCHOOL = 'VIEW_SCHOOL',
+  CREATE_USER = 'CREATE_USER',
+  MANAGE_USER = 'MANAGE_USER',
+  VIEW_USER = 'VIEW_USER',
+  MANAGE_CLASSES = 'MANAGE_CLASSES',
+  MANAGE_GRADES = 'MANAGE_GRADES',
+  VIEW_GRADES = 'VIEW_GRADES',
+  MANAGE_PAYMENTS = 'MANAGE_PAYMENTS',
+  VIEW_PAYMENTS = 'VIEW_PAYMENTS',
+  SEND_NOTIFICATIONS = 'SEND_NOTIFICATIONS',
+  MANAGE_COMMUNICATIONS = 'MANAGE_COMMUNICATIONS'
+}
 
-  ```typescript
-  enum {
-    DRAFT
-    PENDING_APPROVAL
-    APPROVED
-    PUBLISHED
-    AVAILABLE
-  }
-  ```
+export enum KYCStatus {
+  PENDING = 'PENDING',
+  IN_REVIEW = 'IN_REVIEW',
+  VERIFIED = 'VERIFIED',
+  REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED'
+}
 
-- `ReportCard`
-  ```typescript
-  {
-    id: string;
-    schoolId: string;
-    studentId: string;
-    termId: string;
-    academicYearId: string;
-    grades: Grade[];
-    attendance: Attendance;
-    remarks: ReportCardRemarks;
-    status: ReportCardStatus;
-    publishedAt?: Date;
-    availableAt?: Date;
-    metadata?: Record<string, unknown>;
-    createdAt: Date;
-    updatedAt: Date;
-  }
-  ```
+export enum EmploymentEligibilityStatus {
+  ELIGIBLE = 'ELIGIBLE',
+  INELIGIBLE = 'INELIGIBLE',
+  PENDING = 'PENDING',
+  SUSPENDED = 'SUSPENDED'
+}
 
-### Grades
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  PENDING = 'PENDING'
+}
 
-- `GradeStatus`
+export enum OTPStatus {
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  EXPIRED = 'EXPIRED'
+}
 
-  ```typescript
-  enum {
-    DRAFT
-    SUBMITTED
-    APPROVED
-  }
-  ```
-
-- `Grade`
-  ```typescript
-  {
-    subjectId: string;
-    subjectName: string;
-    teacherId: string;
-    teacherName: string;
-    grade: number;
-    remarks?: string;
-    status: GradeStatus;
-  }
-  ```
-
-## Error Types
-
-Located in `src/errors/`, these types define the error handling system.
-
-### Core Types
-
-- `ErrorCategory`: `'AUTH' | 'RESOURCE' | 'VALIDATION' | 'FILE' | 'SYSTEM'`
-
-- `ErrorCode`: Union of all possible error codes
-
-- `AppError`
-  ```typescript
-  {
-    name: string;
-    message: string;
-    statusCode: number;
-    code: ErrorCode;
-    cause?: unknown;
-    metadata?: ErrorMetadata;
-  }
-  ```
-
-### Error Metadata Types
-
-- `ValidationErrorMetadata`
-
-  ```typescript
-  {
-    field: string;
-    value: unknown;
-    constraint: string;
-    additionalFields?: Record<string, unknown>;
-  }
-  ```
-
-- `FileErrorMetadata`
-
-  ```typescript
-  {
-    filename: string;
-    size?: number;
-    type?: string;
-    path?: string;
-    quota?: {
-      used: number;
-      limit: number;
-    };
-  }
-  ```
-
-- `AuthErrorMetadata`
-  ```typescript
-  {
-    userId?: string;
-    requiredRoles?: string[];
-    actualRoles?: string[];
-    tokenExpiry?: Date;
-  }
-  ```
-
-## Usage Notes
-
-1. All types are designed to be used with TypeScript for maximum type safety
-2. ABAC types form the foundation of the permission system
-3. Error types provide a consistent error handling structure across the application
-4. Academic types support the core educational features of the system
+export enum OTPPurpose {
+  LOGIN = 'LOGIN',
+  RESET_PASSWORD = 'RESET_PASSWORD',
+  VERIFY_EMAIL = 'VERIFY_EMAIL',
+  VERIFY_PHONE = 'VERIFY_PHONE'
+}
+```
 
 ## Logger Types
 
-Located in `src/logger/types.ts`:
+```typescript
+export const LOG_LEVELS = {
+  TRACE: 'trace',
+  DEBUG: 'debug',
+  INFO: 'info',
+  WARN: 'warn',
+  ERROR: 'error',
+  FATAL: 'fatal'
+} as const;
 
-### Core Types
+export type LogLevel = typeof LOG_LEVELS[keyof typeof LOG_LEVELS];
 
-- `Logger`: Core logging interface
+export interface Logger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  fatal: LogFn;
+  child: (context: Partial<LogContext>) => Logger;
+}
 
-  ```typescript
-  interface Logger {
-    trace: LogFn;
-    debug: LogFn;
-    info: LogFn;
-    warn: LogFn;
-    error: LogFn;
-    fatal: LogFn;
-    child: (context: Partial<LogContext>) => Logger;
-  }
-  ```
+export interface LoggerOptions {
+  service: string;
+  environment?: string;
+  minLevel?: LogLevel;
+  redactPaths?: string[];
+}
 
-- `LogFn`: Log function signature
-  ```typescript
-  type LogFn = (message: string, context?: Partial<LogContext>) => void;
-  ```
+export interface LogContext extends BaseContext {
+  [key: string]: unknown;
+}
 
-### Context Types
+export type LogFn = (message: string, context?: Partial<LogContext>) => void;
 
-- `BaseContext`: Base logging context
+export interface BaseContext {
+  service: string;
+  environment: string;
+  timestamp: string;
+  correlationId?: string;
+}
 
-  ```typescript
-  interface BaseContext {
-    service: string;
-    environment: string;
-    timestamp: string;
-    correlationId?: string;
-  }
-  ```
+export interface RequestLogger extends Logger {
+  request: (req: unknown, context?: Partial<RequestContext>) => void;
+  response: (res: unknown, context?: Partial<RequestContext>) => void;
+}
 
-- `LogContext`: Extended logging context
+export interface ErrorContext extends BaseContext {
+  error: Error;
+  stack?: string;
+  code?: string;
+}
 
-  ```typescript
-  type LogContext = BaseContext & {
-    [key: string]: unknown;
+export interface OperationContext extends BaseContext {
+  operation: string;
+  duration: number;
+  result: string;
+}
+
+export interface ServiceContext extends BaseContext {
+  service: string;
+  method: string;
+  params?: unknown;
+}
+
+export interface RequestContext extends BaseContext {
+  method: string;
+  url: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  query?: Record<string, string>;
+  params?: Record<string, string>;
+  duration?: number;
+  statusCode?: number;
+}
+```
+
+## Event System Types
+
+```typescript
+// Event Configuration Types
+export interface EventBusConfig {
+  serviceName: string;
+  rabbitmq: {
+    url: string;
+    exchange: string;
+    deadLetterExchange: string;
+    retryCount: number;
+    retryDelay: number;
   };
-  ```
+  redis: {
+    url: string;
+    keyPrefix: string;
+    eventTTL: number;
+  };
+}
 
-- `LoggerOptions`: Logger configuration options
-  ```typescript
-  interface LoggerOptions {
-    service: string;
-    environment?: string;
-    minLevel?: LogLevel;
-    redactPaths?: string[];
-  }
-  ```
+// Event State Types
+export interface EventBusState {
+  config: EventBusConfig;
+  handlers: Map<string, EventHandler>;
+}
 
-### Log Levels
+// Event Handler Types
+export interface Event<T> {
+  type: string;
+  data: T;
+  metadata: {
+    version: string;
+    source: string;
+    correlationId: string;
+    timestamp: string;
+    schemaVersion: string;
+  };
+}
 
-- `LOG_LEVELS`: Available log levels
+export type EventHandler<T> = (event: Event<T>) => Promise<void>;
 
-  ```typescript
-  const LOG_LEVELS = {
-    TRACE: 'trace',
-    DEBUG: 'debug',
-    INFO: 'info',
-    WARN: 'warn',
-    ERROR: 'error',
-    FATAL: 'fatal',
-  } as const;
-  ```
+// Event Constants
+export const EVENT_TYPES = {
+  // Auth Events
+  USER_CREATED: 'USER_CREATED',
+  USER_UPDATED: 'USER_UPDATED',
+  USER_DELETED: 'USER_DELETED',
+  LOGIN_ATTEMPTED: 'LOGIN_ATTEMPTED',
+  OTP_GENERATED: 'OTP_GENERATED',
+  // ... other event types
+} as const;
 
-- `LogLevel`: Log level type
-  ```typescript
-  type LogLevel = (typeof LOG_LEVELS)[keyof typeof LOG_LEVELS];
-  ```
+export type EventType = keyof typeof EVENT_TYPES;
+```
 
-## File Types
+## Academic Types
 
-Located in `src/file/types.ts`:
+```typescript
+export interface ReportCard {
+  id: string;
+  schoolId: string;
+  studentId: string;
+  termId: string;
+  academicYearId: string;
+  grades: Grade[];
+  attendance: Attendance;
+  remarks: ReportCardRemarks;
+  status: ReportCardStatus;
+  publishedAt?: Date;
+  availableAt?: Date;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-### Core Types
+export enum ReportCardStatus {
+  DRAFT = 'DRAFT',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  PUBLISHED = 'PUBLISHED',
+  AVAILABLE = 'AVAILABLE'
+}
 
-- Re-exported from `@eduflow/prisma`:
-  ```typescript
-  export { FileType, FileCategory, FileAccessLevel, StorageProvider } from '@eduflow/prisma';
-  ```
+export interface Grade {
+  subjectId: string;
+  subjectName: string;
+  teacherId: string;
+  teacherName: string;
+  grade: number;
+  remarks?: string;
+  status: GradeStatus;
+}
 
-### File Metadata Types
+export enum GradeStatus {
+  DRAFT = 'DRAFT',
+  SUBMITTED = 'SUBMITTED',
+  APPROVED = 'APPROVED'
+}
 
-- `FileMetadata`
-  ```typescript
-  {
-    filename: string;
-    size: number;
-    mimeType: string;
-    hash: string;
-    category: FileCategory;
-    accessLevel: FileAccessLevel;
-    provider: StorageProvider;
-  }
-  ```
+### Academic Context and Extended Roles
 
-## KYC Types
+```typescript
+export interface AcademicContext {
+  subjects?: string[];
+  grades?: string[];
+  departments?: string[];
+  programs?: string[];
+}
 
-Located in `src/kyc/types.ts`:
+export interface ContextualPermissions extends AcademicContext {
+  customPermissions?: string[];
+}
 
-### Core Types
+export interface ExtendedRole {
+  baseRole: Role;
+  academicRoles?: string[];
+  contextualPermissions?: ContextualPermissions;
+  assignedAt: Date;
+  assignedBy: string;
+  validUntil?: Date;
+}
 
-- `KYCDocumentType`
+export const ROLE_HIERARCHY: Record<Role, readonly Role[]> = {
+  SYSTEM_ADMIN: [], // Top level, no superiors
+  SCHOOL_OWNER: ['SYSTEM_ADMIN'],
+  SCHOOL_HEAD: ['SYSTEM_ADMIN', 'SCHOOL_OWNER'],
+  SCHOOL_ADMIN: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD'],
+  TEACHER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  ACCOUNTANT: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  PARENT: ['SYSTEM_ADMIN'],
+  STUDENT: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN', 'TEACHER'],
+  CHEF: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  SECURITY: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  TRANSPORT_OFFICER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN'],
+  KYC_OFFICER: ['SYSTEM_ADMIN'],
+  OTHER: ['SYSTEM_ADMIN', 'SCHOOL_OWNER', 'SCHOOL_HEAD', 'SCHOOL_ADMIN']
+};
 
-  ```typescript
-  type KYCDocumentType = 'IDENTITY' | 'ADDRESS' | 'EDUCATION' | 'EMPLOYMENT' | 'BACKGROUND_CHECK';
-  ```
-
-- `KYCVerificationStatus`
-  ```typescript
-  type KYCVerificationStatus = 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
-  ```
-
-### Document Types
-
-- `KYCDocument`
-  ```typescript
-  {
-    id: string;
-    type: KYCDocumentType;
-    fileId: string;
-    metadata: Record<string, unknown>;
-    status: KYCVerificationStatus;
-    verifiedAt?: Date;
-    verifiedBy?: string;
-    expiresAt?: Date;
-  }
-  ```
+export const DEFAULT_ACADEMIC_ROLES: Partial<Record<Role, string[]>> = {
+  TEACHER: ['CLASS_TEACHER', 'SUBJECT_TEACHER'],
+  SCHOOL_HEAD: ['PRINCIPAL', 'PROGRAM_COORDINATOR'],
+  SCHOOL_ADMIN: ['DEPARTMENT_HEAD', 'GRADE_HEAD']
+};
+```
 
 ## Database Types
 
-Located in `src/database/types.ts`:
+```typescript
+export type { Prisma, PrismaClient } from '@eduflow/prisma';
 
-### Core Types
+export interface QueryOptions {
+  include?: Record<string, boolean>;
+  select?: Record<string, boolean>;
+  where?: Record<string, unknown>;
+  orderBy?: Record<string, 'asc' | 'desc'>;
+  skip?: number;
+  take?: number;
+}
+```
 
-- Re-exported from `@eduflow/prisma`:
-  ```typescript
-  export type { Prisma, PrismaClient } from '@eduflow/prisma';
-  ```
+## File Types
 
-### Query Types
+```typescript
+export enum FileType {
+  DOCUMENT = 'DOCUMENT',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  AUDIO = 'AUDIO',
+  OTHER = 'OTHER'
+}
 
-- `QueryOptions`
-  ```typescript
-  {
-    include?: Record<string, boolean>;
-    select?: Record<string, boolean>;
-    where?: Record<string, unknown>;
-    orderBy?: Record<string, 'asc' | 'desc'>;
-    skip?: number;
-    take?: number;
-  }
-  ```
+export enum FileCategory {
+  KYC = 'KYC',
+  ACADEMIC = 'ACADEMIC',
+  EMPLOYMENT = 'EMPLOYMENT',
+  PROFILE = 'PROFILE',
+  OTHER = 'OTHER'
+}
+
+export enum FileAccessLevel {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+  RESTRICTED = 'RESTRICTED'
+}
+
+export enum StorageProvider {
+  LOCAL = 'LOCAL',
+  S3 = 'S3',
+  GCS = 'GCS'
+}
+
+export interface FileMetadata {
+  filename: string;
+  size: number;
+  mimeType: string;
+  hash: string;
+  category: FileCategory;
+  accessLevel: FileAccessLevel;
+  provider: StorageProvider;
+}
+```
+
+## Error Types
+
+```typescript
+export type ErrorCategory = 'AUTH' | 'RESOURCE' | 'VALIDATION' | 'FILE' | 'SYSTEM';
+
+export interface AppError extends Error {
+  name: string;
+  message: string;
+  statusCode: number;
+  code: ErrorCode;
+  cause?: unknown;
+  metadata?: ErrorMetadata;
+}
+
+export interface ValidationErrorMetadata {
+  field: string;
+  value: unknown;
+  constraint: string;
+  additionalFields?: Record<string, unknown>;
+}
+
+export interface FileErrorMetadata {
+  filename: string;
+  size?: number;
+  type?: string;
+  path?: string;
+  quota?: {
+    used: number;
+    limit: number;
+  };
+}
+
+export interface AuthErrorMetadata {
+  userId?: string;
+  requiredRoles?: string[];
+  actualRoles?: string[];
+  tokenExpiry?: Date;
+}
+```
 
 ## Validation Types
 
-Located in `src/auth/validation.ts`:
+```typescript
+export interface Email extends String {
+  readonly __brand: unique symbol;
+}
 
-### Authentication Types
+export interface Password extends String {
+  readonly __brand: unique symbol;
+}
 
-- `Email`: Branded type for validated email
-- `Password`: Branded type for validated password
+export interface LoginCredentials {
+  email: Email;
+  password: Password;
+}
 
-- `LoginCredentials`
-
-  ```typescript
-  {
-    email: Email;
-    password: Password;
-  }
-  ```
-
-- `RegistrationData`
-  ```typescript
-  {
-    email: Email;
-    password: Password;
-    firstName: string;
-    lastName: string;
-    role: Role;
-    metadata?: Record<string, unknown>;
-  }
-  ```
-
-## Resilience Types
-
-Located in `src/resilience/`, these types define the resilience patterns used across the system.
-
-### Circuit Breaker Types
-
-Located in `src/resilience/circuit-breaker.ts`:
-
-- `CircuitBreakerOptions`
-
-  ```typescript
-  {
-    timeout: number;        // Operation timeout in ms
-    errorThreshold: number; // Failures before opening
-    resetTimeout: number;   // Time before reset attempt
-    monitorInterval?: number; // Health check interval
-  }
-  ```
-
-- `CircuitBreakerState`
-  ```typescript
-  {
-    failures: number;
-    lastFailure: number | null;
-    status: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
-  }
-  ```
-
-### Redis Pool Types
-
-Located in `src/resilience/redis-pool.ts`:
-
-- `RedisPoolOptions`
-
-  ```typescript
-  {
-    nodes: Array<{
-      host: string;
-      port: number;
-    }>;
-    maxConnections: number;
-    minConnections?: number;
-    acquireTimeout?: number;
-    idleTimeout?: number;
-  }
-  ```
-
-- `RedisPoolMetrics`
-  ```typescript
-  {
-    activeConnections: number;
-    idleConnections: number;
-    waitingRequests: number;
-    totalAcquired: number;
-    totalReleased: number;
-    errors: {
-      connection: number;
-      timeout: number;
-      other: number;
-    }
-  }
-  ```
-
-### Batch Processing Types
-
-Located in `src/resilience/batch-processor.ts`:
-
-- `BatchProcessorOptions`
-
-  ```typescript
-  {
-    batchSize: number;     // Messages per batch
-    flushInterval: number; // Flush interval in ms
-    maxRetries?: number;   // Max retry attempts
-    retryDelay?: number;   // Base retry delay in ms
-  }
-  ```
-
-- `BatchItem<T>`
-
-  ```typescript
-  {
-    exchange: string;
-    routingKey: string;
-    content: T;
-    headers?: Record<string, unknown>;
-  }
-  ```
-
-- `BatchMetrics`
-  ```typescript
-  {
-    currentBatchSize: number;
-    averageBatchSize: number;
-    totalProcessed: number;
-    retries: {
-      total: number;
-      successful: number;
-      failed: number;
-    }
-    latency: {
-      min: number;
-      max: number;
-      average: number;
-    }
-  }
-  ```
-
-### Integration Types
-
-- `ResilienceConfig`
-
-  ```typescript
-  {
-    circuitBreaker?: CircuitBreakerOptions;
-    redisPool?: RedisPoolOptions;
-    batchProcessor?: BatchProcessorOptions;
-  }
-  ```
-
-- `ResilienceMetrics`
-  ```typescript
-  {
-    circuitBreaker?: CircuitBreakerState;
-    redisPool?: RedisPoolMetrics;
-    batchProcessor?: BatchMetrics;
-  }
-  ```
-
-### Usage Notes
-
-1. Circuit Breaker Types:
-
-   - Used to prevent cascading failures
-   - Configurable thresholds and timeouts
-   - State monitoring and metrics
-
-2. Redis Pool Types:
-
-   - Connection pooling configuration
-   - Load balancing across nodes
-   - Performance monitoring
-
-3. Batch Processing Types:
-   - Message batching configuration
-   - Retry policies
-   - Performance metrics
-
-For implementation details, see:
-
-- [Circuit Breaker Implementation](../../common/docs/resilience.md#circuit-breaker)
-- [Redis Pool Implementation](../../common/docs/resilience.md#redis-pool)
-- [Batch Processing Implementation](../../common/docs/resilience.md#batch-processing)
+export interface RegistrationData {
+  email: Email;
+  password: Password;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  metadata?: Record<string, unknown>;
+}
+```
+w
