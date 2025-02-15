@@ -1,5 +1,5 @@
 {
-  "name": "@eduflow-v2/logger",
+  "name": "@eduflow/logger",
   "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -10,15 +10,16 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
-    "@eduflow-v2/types": "workspace:*",
-    "@eduflow-v2/constants": "workspace:*",
-    "@eduflow-v2/shared-packages": "workspace:*",
-    "pino": "8.16.0",
-    "@types/pino": "8.0.0"
+    "@eduflow/types": "workspace:*",
+    "@eduflow/constants": "workspace:*",
+    "pino": "^8.16.2",
+    "pino-pretty": "^10.2.3",
+    "fp-ts": "^2.16.1"
   },
   "devDependencies": {
-    "@eduflow-v2/tsconfig": "workspace:*",
-    "@eduflow-v2/eslint-config": "workspace:*",
+    "@eduflow/tsconfig": "workspace:*",
+    "@eduflow/eslint-config": "workspace:*",
+    "@types/node": "^20.5.7",
     "typescript": "^5.2.2",
     "rimraf": "^5.0.1"
   }

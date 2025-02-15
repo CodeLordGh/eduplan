@@ -3,17 +3,14 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "typeRoots": ["./node_modules/@types", "./src"],
-    "types": ["pino"]
+    "typeRoots": ["../../node_modules/@types", "./node_modules/@types", "./src"],
+    "types": ["node"],
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "references": [
     { "path": "../types" }
-<<<<<<< HEAD
   ],
   "exclude": ["node_modules", "dist"]
 }
-=======
-  ]
-} 
->>>>>>> 00c23a53ebe57640910bd5e8b08c8fcf8e335336

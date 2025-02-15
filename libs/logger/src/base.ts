@@ -1,7 +1,7 @@
 import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import * as R from 'fp-ts/Record';
-import pino from 'pino';
+import pino, { Logger as PinoLogger, LoggerOptions as PinoOptions } from 'pino';
 import { 
   LOG_LEVELS,
   LogLevel, 
@@ -29,31 +29,29 @@ const DEFAULT_OPTIONS: Partial<LoggerOptions> = {
 /**
  * Create a pino logger instance with the given options
  */
-const createPinoLogger = (options: LoggerOptions): pino.Logger => {
+const createPinoLogger = (options: LoggerOptions): PinoLogger => {
   const finalOptions = { ...DEFAULT_OPTIONS, ...options };
+  
+  const pinoInstance = pino as any;
   
   return pino({
     name: finalOptions.service,
     level: finalOptions.minLevel,
     redact: finalOptions.redactPaths,
-    serializers: {
-      err: pino.stdSerializers.err,
-      req: pino.stdSerializers.req,
-      res: pino.stdSerializers.res
-    },
-    timestamp: pino.stdTimeFunctions.isoTime,
+    serializers: pinoInstance.stdSerializers,
+    timestamp: pinoInstance.stdTimeFunctions.isoTime,
     base: {
       service: finalOptions.service,
       environment: finalOptions.environment
     }
-  });
+  } as PinoOptions);
 };
 
 /**
  * Create a log function for a specific level
  */
 const createLogFunction = (
-  pinoLogger: pino.Logger,
+  pinoLogger: PinoLogger,
   baseContext: Partial<LogContext>,
   level: LogLevel
 ): LogFn => {
@@ -113,7 +111,7 @@ export const createLogger = (options: LoggerOptions): Logger => {
     createLogger({
       ...options,
       ...pipe(
-        O.fromNullable(pinoLogger.child(childContext)),
+        O.fromNullable((pinoLogger as any).child(childContext)),
         O.map((childPino) => ({ pinoLogger: childPino })),
         O.getOrElse(() => ({}))
       )
