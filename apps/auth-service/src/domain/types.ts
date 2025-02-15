@@ -29,6 +29,7 @@ export type Credentials = Readonly<{
 }>
 
 export type OTPPurpose =
+  | 'EMAIL_VERIFICATION'
   | 'REGISTRATION'
   | 'PASSWORD_RESET'
   | 'MFA'

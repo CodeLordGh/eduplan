@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { EVENT_TYPES } from '@eduflow/constants';
+import { EVENT_TYPES } from '@eduflow/types';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { AuthError } from '../errors/auth.error';
@@ -10,13 +10,15 @@ type Dependencies = {
   prisma: PrismaClient;
 };
 
+type EventType = keyof typeof EVENT_TYPES;
+
 const publishEvent =
   (deps: Dependencies) =>
-  async (eventType: string, payload: Record<string, unknown>): Promise<void> => {
+  async (eventType: EventType, payload: Record<string, unknown>): Promise<void> => {
     await deps.redis.publish(
       'auth_events',
       JSON.stringify({
-        type: eventType,
+        type: EVENT_TYPES[eventType],
         payload,
         timestamp: new Date(),
       })
@@ -38,7 +40,7 @@ export const handleKYCVerified =
             },
           });
 
-          await publishEvent(deps)(EVENT_TYPES.USER_UPDATED, {
+          await publishEvent(deps)('USER_UPDATED', {
             userId: event.userId,
             kycStatus: VerificationStatus.VERIFIED,
             timestamp: new Date(),
@@ -64,7 +66,7 @@ export const handleKYCRejected =
             },
           });
 
-          await publishEvent(deps)(EVENT_TYPES.USER_UPDATED, {
+          await publishEvent(deps)('USER_UPDATED', {
             userId: event.userId,
             kycStatus: VerificationStatus.REJECTED,
             timestamp: new Date(),

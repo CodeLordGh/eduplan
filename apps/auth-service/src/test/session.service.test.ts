@@ -1,5 +1,5 @@
 import { FastifyRedis } from '@fastify/redis';
-import { Role } from '@eduflow/types';
+import { Role } from '@eduflow/prisma';
 import * as TE from 'fp-ts/TaskEither';
 import {
   createSession,
@@ -15,7 +15,7 @@ describe('SessionService', () => {
   const mockSessionData = {
     userId: '123',
     email: 'test@example.com',
-    role: Role.STUDENT,
+    roles: [Role.STUDENT],
     permissions: [],
     lastActivity: new Date().toISOString(),
     ipAddress: '127.0.0.1',
@@ -40,7 +40,7 @@ describe('SessionService', () => {
         mockRedis,
         mockSessionData.userId,
         mockSessionData.email,
-        mockSessionData.role,
+        mockSessionData.roles,
         mockSessionData.ipAddress,
         mockSessionData.userAgent
       )();

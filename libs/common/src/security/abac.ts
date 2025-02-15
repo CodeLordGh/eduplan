@@ -7,6 +7,7 @@ import type {
   PolicyConditions,
   Role,
   AppError,
+  ExtendedRole,
 } from '@eduflow/types';
 
 // Error creation helpers
@@ -43,7 +44,7 @@ const validateRoles = (
     const hasAnyRole = conditions.anyOf.roles.some(
       (role: Role) =>
         user.globalRoles.includes(role) ||
-        Object.values(user.schoolRoles).some((roles: Role[]) => roles.includes(role))
+        Object.values(user.schoolRoles).some((extendedRole: ExtendedRole) => extendedRole.baseRole === role)
     );
     if (!hasAnyRole) {
       return E.left(
@@ -60,7 +61,7 @@ const validateRoles = (
     const hasAllRoles = conditions.allOf.roles.every(
       (role: Role) =>
         user.globalRoles.includes(role) ||
-        Object.values(user.schoolRoles).some((roles: Role[]) => roles.includes(role))
+        Object.values(user.schoolRoles).some((extendedRole: ExtendedRole) => extendedRole.baseRole === role)
     );
     if (!hasAllRoles) {
       return E.left(
@@ -173,8 +174,8 @@ const validateSchoolContext = (
   }
 
   if (mustBeOwner) {
-    const isOwner = Object.values(user.schoolRoles).some((roles: Role[]) =>
-      roles.includes('SCHOOL_OWNER')
+    const isOwner = Object.values(user.schoolRoles).some((extendedRole: ExtendedRole) =>
+      extendedRole.baseRole === 'SCHOOL_OWNER'
     );
     if (!isOwner) {
       return E.left(
@@ -188,7 +189,7 @@ const validateSchoolContext = (
 
   if (allowedRoles) {
     const hasAllowedRole = allowedRoles.some((role: Role) =>
-      Object.values(user.schoolRoles).some((roles: Role[]) => roles.includes(role))
+      Object.values(user.schoolRoles).some((extendedRole: ExtendedRole) => extendedRole.baseRole === role)
     );
     if (!hasAllowedRole) {
       return E.left(

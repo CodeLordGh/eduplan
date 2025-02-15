@@ -9,7 +9,7 @@ describe('Auth Service', () => {
     const registerInput = {
       email: 'test@example.com',
       password: 'Password123!',
-      role: Role.TEACHER,
+      roles: [Role.TEACHER],
     };
 
     beforeEach(() => {

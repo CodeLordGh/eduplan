@@ -36,20 +36,25 @@ export interface RequestContext {
 }
 
 // Transform functions for each ABAC component
-export const transformKYCAttributes = (user: UserWithIncludes) => ({
-  status: (user.kycStatus || KYCStatus.NOT_STARTED) as KYCStatus,
-  verifiedAt: user.kycVerifiedAt || undefined,
-  documentIds: user.kycDocumentIds || [],
-  officerStatus: user.roles.includes('KYC_OFFICER')
+export const transformKYCAttributes = (user: UserWithIncludes) => {
+  const status = (user.kycStatus || KYCStatus.NOT_STARTED) as KYCStatus;
+  const officerStatus = user.roles.includes('KYC_OFFICER')
     ? {
         permissions: {
           canVerifyIdentity: true,
           canVerifyDocuments: true,
-          canApproveKYC: user.roles.includes('SYSTEM_ADMIN'),
+          canVerifyEmployment: true,
         },
+        assignedBy: 'system',
+        assignedAt: new Date(),
       }
-    : undefined,
-});
+    : undefined;
+
+  return {
+    status,
+    officerStatus,
+  };
+};
 
 export const transformEmploymentAttributes = (user: UserWithIncludes) => ({
   status: (user.employmentStatus ||
@@ -70,12 +75,8 @@ export const transformAccessAttributes = async (
     failedAttempts: accessData.failedAttempts || 0,
     lastLogin: accessData.lastLogin,
     lockedUntil: accessData.lockedUntil,
-    socialEnabled: accessData.socialEnabled || false,
-    restrictions: {
-      ipWhitelist: accessData.ipWhitelist,
-      allowedCountries: accessData.allowedCountries,
-      timeRestrictions: accessData.timeRestrictions,
-    },
+    mfaEnabled: accessData.mfaEnabled || false,
+    mfaVerified: accessData.mfaVerified || false,
   };
 };
 

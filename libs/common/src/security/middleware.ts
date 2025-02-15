@@ -10,6 +10,7 @@ import {
   KYCStatus,
   EmploymentEligibilityStatus,
   UserStatus,
+  ExtendedRole
 } from '@eduflow/types';
 import { Role } from '@eduflow/prisma';
 
@@ -64,6 +65,8 @@ const validateBasicAuth = async (
       },
       access: {
         failedAttempts: 0,
+        mfaEnabled: false,
+        mfaVerified: false,
       },
       context: {},
     };

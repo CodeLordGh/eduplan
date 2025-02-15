@@ -1,5 +1,15 @@
 import { AppError, ErrorCode, ErrorDetails, ErrorResponse } from '@eduflow/types';
 
+export class BaseError extends Error {
+  public cause?: unknown;
+  
+  constructor(name: string, message: string, cause?: unknown) {
+    super(message);
+    this.name = name;
+    this.cause = cause;
+  }
+}
+
 const HTTP_STATUS_CODES: Record<ErrorCode, number> = {
   AUTH_ERROR: 401,
   UNAUTHORIZED: 403,

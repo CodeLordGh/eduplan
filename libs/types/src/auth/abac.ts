@@ -7,6 +7,8 @@ import { Role, Permission } from './roles';
 import { KYCStatus, EmploymentEligibilityStatus } from './status';
 import { ExtendedRole, AcademicContext } from './roles';
 
+export { ExtendedRole };
+
 /** Allowed actions on resources */
 export type ResourceAction = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'PROCESS';
 

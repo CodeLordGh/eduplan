@@ -10,12 +10,13 @@ export * from './validation';
 // Re-export security policies
 export * from './security/policies';
 
-// Export logger
-export * from './logger';
-
 // Export user transforms
 export * from './user/transforms';
 
+// Export error types
+export { BaseError } from './errors/base.error';
+
+// Export auth error creators
 export {
   createAuthenticationError,
   createInvalidCredentialsError,

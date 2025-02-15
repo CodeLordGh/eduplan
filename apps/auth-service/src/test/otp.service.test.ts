@@ -2,6 +2,7 @@ import { Redis } from 'ioredis';
 import { Role } from '@eduflow/prisma';
 import { createApp } from '../app';
 import * as otpService from '../service/otp.service';
+import { OTPPurposeEnum } from '../service/otp.service';
 import { clearRedis, createTestUser } from './helpers';
 
 describe('OTP Service', () => {
@@ -29,7 +30,7 @@ describe('OTP Service', () => {
         redis,
         user.id,
         'test@example.com',
-        otpService.OTPPurpose.EMAIL_VERIFICATION
+        OTPPurposeEnum.EMAIL_VERIFICATION
       )();
 
       expect(result._tag).toBe('Right');
@@ -47,7 +48,7 @@ describe('OTP Service', () => {
         redis,
         user.id,
         'test@example.com',
-        otpService.OTPPurpose.EMAIL_VERIFICATION
+        OTPPurposeEnum.EMAIL_VERIFICATION
       )();
 
       expect(generateResult._tag).toBe('Right');
@@ -56,7 +57,7 @@ describe('OTP Service', () => {
           redis,
           user.id,
           generateResult.right,
-          otpService.OTPPurpose.EMAIL_VERIFICATION
+          OTPPurposeEnum.EMAIL_VERIFICATION
         )();
 
         expect(verifyResult._tag).toBe('Right');
@@ -73,7 +74,7 @@ describe('OTP Service', () => {
         redis,
         user.id,
         'INVALID',
-        otpService.OTPPurpose.EMAIL_VERIFICATION
+        OTPPurposeEnum.EMAIL_VERIFICATION
       )();
 
       expect(verifyResult._tag).toBe('Right');
