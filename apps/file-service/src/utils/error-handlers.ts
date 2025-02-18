@@ -1,26 +1,29 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { BaseError } from '@eduflow/common';
+import { AppError } from '@eduflow/types';
 
-export const errorHandler = (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
+export const errorHandler = (error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
   request.log.error(error);
 
   // If it's already a BaseError, use its status code and name
   if (error instanceof BaseError) {
-    const response = {
-      statusCode: error.statusCode,
+    const appError = error as AppError;
+    const response: any = {
+      statusCode: appError.statusCode || 500,
       error: error.name,
       message: error.message,
     };
 
-    if (error.cause) {
-      Object.assign(response, { cause: error.cause });
+    // Only add cause if it exists and is not undefined
+    if ('cause' in error && error.cause !== undefined) {
+      response.cause = error.cause;
     }
 
-    return reply.status(error.statusCode).send(response);
+    return reply.status(appError.statusCode || 500).send(response);
   }
 
   // Handle validation errors from Fastify
-  if (error.validation) {
+  if ('validation' in error && error.validation) {
     return reply.status(400).send({
       statusCode: 400,
       error: 'Bad Request',

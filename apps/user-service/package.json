@@ -13,6 +13,7 @@
     "@eduflow/common": "workspace:*",
     "@eduflow/types": "workspace:*",
     "@eduflow/middleware": "workspace:*",
+    "@eduflow/logger": "workspace:*",
     "@eduflow/constants": "workspace:*",
     "@eduflow/prisma": "workspace:*",
     "@fastify/cors": "^8.5.0",

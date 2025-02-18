@@ -1,17 +1,26 @@
-export * from './auth.middleware';
-export * from './types';
-
-// Export Redis utilities and middleware
+// Export auth middleware
 export {
-  // Types
-  SessionData,
-  RateLimitConfig,
-  OTPData,
-  CacheConfig,
-} from './redis/types';
+  authenticate,
+  authorize,
+  type AuthenticatedUser,
+  type RequestWithUser,
+} from './auth.middleware';
 
+// Export Redis core functionality
 export {
-  // Utilities
+  createRedisClient,
+  getRedisClient,
+  type RedisConfig,
+} from './redis/client';
+
+// Export Redis middleware
+export { createSessionMiddleware } from './redis/session';
+export { createRateLimiter } from './redis/rate-limit';
+export { createOTPManager } from './redis/otp';
+export { createCacheManager } from './redis/cache';
+
+// Export Redis utilities
+export {
   createSessionKey,
   createRateLimitKey,
   createOTPKey,
@@ -25,34 +34,26 @@ export {
   deleteRedisValue,
 } from './redis/utils';
 
+// Export Redis response handlers
 export {
-  // Response handlers
   sendUnauthorized,
   sendTooManyRequests,
   setRateLimitHeaders,
 } from './redis/response';
 
-export {
-  // Middleware factories
-  createSessionMiddleware,
-} from './redis/session';
+// Export Redis types
+export type {
+  SessionData,
+  RateLimitConfig,
+  OTPData,
+  CacheConfig,
+} from './redis/types';
 
-export {
-  createRateLimiter,
-} from './redis/rate-limit';
-
-export {
-  createOTPManager,
-} from './redis/otp';
-
-export {
-  createCacheManager,
-} from './redis/cache';
-
-// Export auth middleware
-export { authenticate, authorize, AuthenticatedUser, RequestWithUser } from './auth.middleware';
-
-// Export other middleware
+// Export ABAC middleware
 export * from './abac';
 
+// Export common types
+export * from './types';
+
+// Export validation
 export * from './validation';

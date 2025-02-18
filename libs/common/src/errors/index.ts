@@ -1,16 +1,13 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { AppError, Logger } from '@eduflow/types';
 import { createErrorLogger } from '@eduflow/logger';
-import { createAppError, createErrorResponse } from './base.error';
+import { BaseError, createAppError, createErrorResponse, throwError } from './base.error';
 
 // Export error types and utilities
-export * from './base.error';
+export { BaseError, createAppError, createErrorResponse, throwError } from './base.error';
 export * from './auth.error';
 export * from './file.error';
 export * from './utils';
-
-// Export error creation utilities
-export { createAppError, createErrorResponse };
 
 // Create a generic error creator
 export const createError = (

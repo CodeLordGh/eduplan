@@ -8,6 +8,9 @@ import { kycRoutes } from './routes/kyc.routes';
 import { errorHandler } from '@eduflow/common';
 import prisma from './lib/prisma';
 import fastifyRedis from '@fastify/redis';
+import { createLogger } from '@eduflow/logger';
+
+const logger = createLogger('kyc-service');
 
 export async function createApp(): Promise<FastifyInstance> {
   const app = fastify({
@@ -106,7 +109,7 @@ export async function createApp(): Promise<FastifyInstance> {
   });
 
   // Error handler
-  app.setErrorHandler(errorHandler);
+  app.setErrorHandler((error, request, reply) => errorHandler(logger, error, request, reply));
 
   return app;
 }

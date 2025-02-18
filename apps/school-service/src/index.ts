@@ -7,15 +7,18 @@ import { RegistrationEvent, VerificationEvent, EventContext } from './registrati
 import { handleRegistrationEvent, handleVerificationEvent } from './registration/handlers';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
+import { Redis } from 'ioredis';
 
 // Load environment variables
 config();
 
 // Create logger
-const logger = createLogger({
-  service: 'school-service',
+const logger = createLogger('school-service', {
   environment: process.env.NODE_ENV || 'development',
-  minLevel: (process.env.LOG_LEVEL || 'info') as LogLevel,
+  minLevel: process.env.LOG_LEVEL || 'info',
+  metadata: {
+    version: process.env.APP_VERSION || '1.0.0'
+  }
 });
 
 // Initialize event bus
@@ -98,7 +101,7 @@ const initEventBus = async () => {
 };
 
 // Initialize Redis
-const initRedis = async () => {
+const initRedis = async (): Promise<Redis> => {
   const redis = await pipe(
     getRedisClient(),
     TE.getOrElse((error) => {
@@ -108,7 +111,7 @@ const initRedis = async () => {
   )();
 
   logger.info('Redis client initialized');
-  return redis;
+  return redis as Redis;
 };
 
 // Start service
@@ -130,7 +133,9 @@ const shutdown = async () => {
   try {
     // Close Redis connection
     const redis = await initRedis();
-    await redis.quit();
+    if (redis && typeof redis.quit === 'function') {
+      await redis.quit();
+    }
 
     // Close event bus
     const eventBusState = await initEventBus();

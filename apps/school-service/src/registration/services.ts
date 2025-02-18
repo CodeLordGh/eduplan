@@ -120,13 +120,13 @@ export const emitVerificationEvents = (
           },
         };
 
-        const loggerOptions: LoggerOptions = {
-          service: 'school-service',
+        const logger = createLogger('school-service', {
           environment: process.env.NODE_ENV || 'development',
           minLevel: 'info',
-        };
-
-        const logger = createLogger(loggerOptions);
+          metadata: {
+            component: 'verification-events'
+          }
+        });
 
         const state = createEventBusState(config, logger);
 

@@ -1,8 +1,8 @@
 // Re-export security functions at root level
 export { validateAccess, createPolicy, createAbacMiddleware } from './security/abac';
 
-// Re-export other modules
-export * from './errors';
+// Re-export error handling
+export { errorHandler, createError } from './errors';
 export * from './auth';
 export * from './user';
 export * from './validation';
@@ -13,8 +13,13 @@ export * from './security/policies';
 // Export user transforms
 export * from './user/transforms';
 
-// Export error types
-export * from './errors/base.error';
+// Export error types and utilities
+export {
+  BaseError,
+  createAppError,
+  createErrorResponse,
+  throwError,
+} from './errors/base.error';
 
 // Export auth error creators
 export {
@@ -34,3 +39,18 @@ export { hashPassword, verifyPassword, generateJWT } from './auth/utils';
 
 // Export validation functions
 export { validateEmail, validatePassword, emailSchema, passwordSchema } from './validation/user';
+
+// Export file error creators
+export {
+  createFileSizeError,
+  createFileTypeError,
+  createFileQuotaError,
+  createFileAccessError,
+  createFileNotFoundError,
+} from './errors/file.error';
+
+// Export error utilities
+export * from './errors/utils';
+
+// Re-export all error types and creators
+export * from './errors';

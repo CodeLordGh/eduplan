@@ -13,7 +13,6 @@
     { "path": "../../libs/types" },
     { "path": "../../libs/common" },
     { "path": "../../libs/constants" },
-    { "path": "../../libs/validators" },
     { "path": "../../libs/middleware" },
     { "path": "../../libs/prisma" }
   ]

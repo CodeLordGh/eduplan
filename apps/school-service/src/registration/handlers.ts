@@ -1,6 +1,6 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { createLogger, createErrorLogger, Logger } from '@eduflow/logger';
+import { createLogger, createErrorLogger, logger as baseLogger, type Logger } from '@eduflow/logger';
 import { validateAccess } from '@eduflow/common';
 import {
   AppError,
@@ -29,9 +29,12 @@ import {
 } from './services';
 
 // Create shared logger instances
-const logger = createLogger({
-  service: 'school-service',
+const logger = createLogger('school-service', {
+  environment: process.env.NODE_ENV || 'development',
   minLevel: 'info',
+  metadata: {
+    component: 'registration'
+  }
 });
 
 const errorLogger = createErrorLogger(logger);
@@ -105,7 +108,13 @@ export const handleRegistrationEvent = (
         verifiedAt: undefined,
         verifiedBy: undefined,
       },
-      access: { failedAttempts: 0 },
+      access: { 
+        failedAttempts: 0,
+        lastLogin: undefined,
+        lockedUntil: undefined,
+        mfaEnabled: false,
+        mfaVerified: false
+      },
       context: {},
     },
     policy: createSchoolRegistrationPolicy('CREATE'),
@@ -186,7 +195,13 @@ export const handleVerificationEvent = (
         verifiedAt: undefined,
         verifiedBy: undefined,
       },
-      access: { failedAttempts: 0 },
+      access: { 
+        failedAttempts: 0,
+        lastLogin: undefined,
+        lockedUntil: undefined,
+        mfaEnabled: false,
+        mfaVerified: false
+      },
       context: {},
     },
     policy: createSchoolRegistrationPolicy('UPDATE'),

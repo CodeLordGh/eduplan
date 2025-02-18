@@ -11,6 +11,7 @@ import {
   createRateLimitKey,
 } from '@eduflow/middleware';
 import { OperationContext } from './types';
+import { Redis } from 'ioredis';
 
 const DEFAULT_WINDOW = 15 * 60; // 15 minutes in seconds
 const DEFAULT_MAX_REQUESTS = 100;
@@ -31,10 +32,10 @@ export const checkSchoolRegistrationRateLimit = (
 
   return pipe(
     getRedisClient(),
-    TE.chain((client) =>
+    TE.chain((client: Redis) =>
       pipe(
         incrementRedisValue(client)(key),
-        TE.chain((count) =>
+        TE.chain((count: number) =>
           count === 1
             ? pipe(
                 setRedisExpiry(client)(key, window * 1000),
@@ -42,10 +43,15 @@ export const checkSchoolRegistrationRateLimit = (
               )
             : TE.right(count)
         ),
-        TE.chain((count) =>
+        TE.mapLeft((error) => createAppError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Rate limit check failed',
+          cause: error
+        })),
+        TE.chain((count: number) =>
           pipe(
             getRedisTimeToLive(client)(key),
-            TE.chain((ttl) => {
+            TE.chain((ttl: number) => {
               logger.debug('School registration rate limit check', {
                 ip: context.clientInfo.ip,
                 count,

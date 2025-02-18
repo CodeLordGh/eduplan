@@ -1,8 +1,15 @@
 import pino from 'pino';
 import type { Logger as PinoLogger } from 'pino';
-import { Logger, LogContext, LogFn } from '@eduflow/types';
+import type { Logger, LogContext, LogFn } from '@eduflow/types';
 
 export type LogLevel = 'info' | 'error' | 'warn' | 'debug' | 'trace' | 'fatal';
+
+export interface LoggerOptions {
+  service: string;
+  environment?: string;
+  minLevel?: string;
+  metadata?: Record<string, unknown>;
+}
 
 const createBaseLogger = (service: string, options = {}) =>
   pino({
@@ -63,7 +70,6 @@ export const createLogger = (service: string, options = {}): Logger => {
   };
 };
 
-// Legacy exports for backward compatibility
 export const logger = createLogger('default');
 
 export const createErrorLogger = (baseLogger: Logger) => ({
@@ -76,4 +82,11 @@ export const createErrorLogger = (baseLogger: Logger) => ({
   }
 });
 
-export { LogContext } from '@eduflow/types'; 
+// Re-export types
+export type { Logger, LogContext } from '@eduflow/types';
+
+// export type { LogLevel, LogFn } from './types';
+
+// Re-export base types and utilities
+// export * from './types';
+// export * from './utils'; 

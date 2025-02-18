@@ -473,6 +473,9 @@ importers:
       '@eduflow/constants':
         specifier: workspace:*
         version: link:../../libs/constants
+      '@eduflow/logger':
+        specifier: workspace:*
+        version: link:../../libs/logger
       '@eduflow/middleware':
         specifier: workspace:*
         version: link:../../libs/middleware
@@ -818,15 +821,6 @@ importers:
       '@types/ioredis':
         specifier: ^5.0.0
         version: 5.0.0
-
-  packages/constants:
-    devDependencies:
-      rimraf:
-        specifier: ^5.0.0
-        version: 5.0.10
-      typescript:
-        specifier: ^5.0.0
-        version: 5.7.3
 
   packages/eslint-config:
     dependencies:

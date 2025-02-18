@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createLogger } from '@eduflow/common';
+import { createLogger } from '@eduflow/logger';
 import { authenticate, authorize } from '@eduflow/middleware';
 import type { PrismaClient } from '@eduflow/types';
 import * as profileHandlers from './handlers/profile.handler';

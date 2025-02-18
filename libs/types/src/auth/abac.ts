@@ -58,19 +58,17 @@ export interface TimeRestrictions {
 
 /** User's access configuration and restrictions */
 export interface UserAccess {
-  socialEnabled: boolean;
+  lastLogin?: Date;
+  failedAttempts: number;
+  lockedUntil?: Date;
   mfaEnabled: boolean;
   mfaVerified: boolean;
+  socialEnabled?: boolean;
   lastPasswordChange?: Date;
   passwordExpiresAt?: Date;
-  ipRestrictions?: {
-    allowlist?: string[];
-    denylist?: string[];
-  };
-  deviceRestrictions?: {
-    allowedDevices?: string[];
-    trustedDevices?: string[];
-  };
+  ipRestrictions?: IPRestrictions;
+  deviceRestrictions?: DeviceRestrictions;
+  timeRestrictions?: TimeRestrictions;
 }
 
 /** Current user context for access decisions */

@@ -2,7 +2,6 @@ import fastify from 'fastify';
 import multipart from '@fastify/multipart';
 import { pipe } from 'fp-ts/function';
 import pino from 'pino';
-import { createLogger } from '@eduflow/common';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',

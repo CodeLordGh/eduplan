@@ -1,5 +1,5 @@
 import { DocumentType, VerificationStatus, EntityType, PrismaClient } from '@eduflow/prisma';
-import { EVENT_TYPES } from '@eduflow/constants';
+import { EVENT_TYPES, EventType } from '@eduflow/types';
 import { Redis } from 'ioredis';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
@@ -26,10 +26,10 @@ const subscribeToEvents = (deps: Dependencies) => {
       case EVENT_TYPES.SCHOOL_CREATED:
         await handleSchoolCreated(deps)(event.payload);
         break;
-      case EVENT_TYPES.STAFF_ASSIGNED:
+      case EVENT_TYPES.USER_UPDATED:
         await handleStaffAssigned(deps)(event.payload);
         break;
-      case EVENT_TYPES.PROFILE_UPDATED:
+      case EVENT_TYPES.USER_UPDATED:
         await handleProfileUpdated(deps)(event.payload);
         break;
       case EVENT_TYPES.SCHOOL_UPDATED:
