@@ -17,7 +17,7 @@ describe('SessionService', () => {
     email: 'test@example.com',
     roles: [Role.STUDENT],
     permissions: [],
-    lastActivity: new Date().toISOString(),
+    lastActivity: Date.now(), // Changed to use timestamp instead of ISO string
     ipAddress: '127.0.0.1',
     userAgent: 'test-agent',
   };
@@ -52,7 +52,11 @@ describe('SessionService', () => {
 
   describe('getSession', () => {
     it('should retrieve an existing session', async () => {
-      mockRedis.get.mockResolvedValue(JSON.stringify(mockSessionData));
+      const sessionData = {
+        ...mockSessionData,
+        lastActivity: new Date(mockSessionData.lastActivity).getTime() // Convert to timestamp
+      };
+      mockRedis.get.mockResolvedValue(JSON.stringify(sessionData));
 
       const result = await getSession(mockRedis, mockSessionData.userId)();
 
@@ -101,7 +105,7 @@ describe('SessionService', () => {
     it('should validate active session successfully', async () => {
       const activeSession = {
         ...mockSessionData,
-        lastActivity: new Date().toISOString(),
+        lastActivity: new Date().getTime() // Use timestamp instead of ISO string
       };
       mockRedis.get.mockResolvedValue(JSON.stringify(activeSession));
 
@@ -116,7 +120,7 @@ describe('SessionService', () => {
     it('should reject expired session', async () => {
       const expiredSession = {
         ...mockSessionData,
-        lastActivity: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
+        lastActivity: Date.now() - (25 * 60 * 60 * 1000) // Use timestamp for expired date
       };
       mockRedis.get.mockResolvedValue(JSON.stringify(expiredSession));
 

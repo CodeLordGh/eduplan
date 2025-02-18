@@ -3,6 +3,7 @@ import { getErrorMetadata } from './utils';
 import * as O from 'fp-ts/Option';
 import * as E from 'fp-ts/Either';
 import * as TE from 'fp-ts/TaskEither';
+import { expect } from '@jest/globals';
 
 /**
  * Error matcher for testing

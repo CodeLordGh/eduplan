@@ -1,6 +1,6 @@
 import { JWT } from '@fastify/jwt';
 import { AuthenticatedUser } from './auth.middleware';
-import { SessionData } from './redis.middleware';
+import { SessionData } from './redis/types';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {

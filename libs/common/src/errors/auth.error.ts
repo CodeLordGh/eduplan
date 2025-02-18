@@ -69,3 +69,5 @@ export const createOTPExpiredError = (cause?: unknown, metadata?: Record<string,
 
 export const createInvalidOTPError = (cause?: unknown, metadata?: Record<string, unknown>): never =>
   createOTPError('Invalid OTP provided', cause, metadata);
+
+// export const createAppError = createOTPError;  // Alias createOTPError as createAppError

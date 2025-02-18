@@ -2,6 +2,7 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import compress from '@fastify/compress';
+import jwt from '@fastify/jwt';
 import { setupSwagger } from './config/swagger';
 import { setupRedis } from './config/redis';
 import { setupRoutes } from './routes';
@@ -9,7 +10,6 @@ import { setupProxies } from './config/proxy';
 import { errorHandler } from './utils/error-handler';
 import {
   logger,
-  requestLogger,
   createResponseContext,
   createSecurityContext,
   createPerformanceContext,
@@ -36,6 +36,12 @@ async function start() {
     await server.register(cors);
     await server.register(helmet);
     await server.register(compress);
+    await server.register(jwt, {
+      secret: process.env.JWT_SECRET || 'your-secret-key', // Use environment variable in production
+      sign: {
+        expiresIn: '1h' // Token expiration time
+      }
+    });
 
     // Setup version management
     const versionManager = createVersionManager({
@@ -67,7 +73,6 @@ async function start() {
     });
 
     server.addHook('onRequest', versionManager.middleware);
-    server.addHook('onRequest', requestLogger);
 
     // Add response logging with performance metrics
     server.addHook('onResponse', async (request, reply) => {

@@ -1,10 +1,18 @@
+// Core auth types
+// export * from './types'; // Removed because the module does not exist
+
+// Role and permission types
 export * from './roles';
 export * from './status';
-export * from './user';
-// export * from './abac';
 
+// Event types and schemas
+export * from './events';
+
+// Constants and configuration
+export * from './constants';
+
+// Access control types
 export type {
-  UserAttributes,
   AccessPolicy,
   ValidationResult,
   PolicyConditions,
@@ -15,12 +23,12 @@ export type {
   UserEmployment,
   TimeRestrictions,
   UserAccess,
-  UserContext,
+  UserAttributes,
   ExtendedRole,
 } from './abac';
 
-export * from './constants';
-export * from './validation';
+// User management types
+export * from './user';
 
-// Re-export types from validation for backward compatibility
+// Validation types
 export type { Email, Password, LoginCredentials, Registration } from './validation';

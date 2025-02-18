@@ -74,4 +74,6 @@ export const createErrorLogger = (baseLogger: Logger) => ({
       ...context
     });
   }
-}); 
+});
+
+export { LogContext } from '@eduflow/types'; 

@@ -24,7 +24,7 @@ describe('OTP Service', () => {
 
   describe('generateOTP', () => {
     it('should generate and store OTP successfully', async () => {
-      const user = await createTestUser('test@example.com', Role.STUDENT);
+      const user = await createTestUser(app.prisma, { email: 'test@example.com', role: Role.STUDENT });
 
       const result = await otpService.generateOTP(
         redis,
@@ -42,7 +42,7 @@ describe('OTP Service', () => {
 
   describe('verifyOTP', () => {
     it('should verify valid OTP successfully', async () => {
-      const user = await createTestUser('test@example.com', Role.STUDENT);
+      const user = await createTestUser(app.prisma, { email: 'test@example.com', role: Role.STUDENT });
 
       const generateResult = await otpService.generateOTP(
         redis,
@@ -68,7 +68,7 @@ describe('OTP Service', () => {
     });
 
     it('should reject invalid OTP', async () => {
-      const user = await createTestUser('test@example.com', Role.STUDENT);
+      const user = await createTestUser(app.prisma, { email: 'test@example.com', role: Role.STUDENT });
 
       const verifyResult = await otpService.verifyOTP(
         redis,

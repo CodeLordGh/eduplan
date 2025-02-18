@@ -21,10 +21,7 @@ export type EventBusOperations = {
 export const createEventBus = (
   config: EventBusConfig
 ): TE.TaskEither<Error, EventBusOperations> => {
-  const logger = createLogger({
-    service: config.serviceName,
-    environment: process.env.NODE_ENV || 'development',
-  });
+  const logger = createLogger(config.serviceName);
 
   return pipe(
     createEventBusState(config, logger),

@@ -2,11 +2,33 @@ import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { Role } from '@eduflow/types';
-import { createRateLimiter } from '@eduflow/middleware';
+import { createRateLimiter, validateCreateUser } from '@eduflow/middleware';
 import * as authService from '../service/auth.service';
 import { ROLES } from '@eduflow/constants';
 import { FastifyInstance } from 'fastify';
 import { CreateUserInput } from '../domain/user';
+import { z } from 'zod';
+import { emailSchema, passwordSchema } from '@eduflow/common';
+
+const registerBodySchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  role: z.enum(['STUDENT', 'TEACHER', 'ADMIN']),
+  phone: z.string().optional()
+});
+
+const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string(),
+});
+
+const refreshSchema = z.object({
+  refreshToken: z.string(),
+});
+
+type RegisterBody = z.infer<typeof registerBodySchema>;
+type LoginBody = z.infer<typeof loginSchema>;
+type RefreshBody = z.infer<typeof refreshSchema>;
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
   // Rate limiters
@@ -28,7 +50,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     keyPrefix: 'refresh:',
   });
 
-  fastify.post('/register', {
+  fastify.post<{ Body: RegisterBody }>('/register', {
     schema: {
       body: {
         type: 'object',
@@ -36,13 +58,24 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         properties: {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 8 },
-          role: { type: 'string', enum: Object.values(ROLES) },
+          role: { type: 'string', enum: ['STUDENT', 'TEACHER', 'ADMIN'] },
           phone: { type: 'string', nullable: true },
         },
       },
     },
+    preValidation: async (request, reply) => {
+      const result = registerBodySchema.safeParse(request.body);
+      if (!result.success) {
+        reply.code(400).send({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request body',
+          errors: result.error.errors,
+        });
+        return;
+      }
+    },
     handler: async (request, reply) => {
-      const { email, password, role, phone } = request.body;
+      const { email, password, role, phone } = validateCreateUser(request);
       const user = await authService.register({
         email,
         password,
@@ -80,8 +113,8 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         TE.match(
           (error) => {
             switch (error.code) {
-              case 'INVALID_CREDENTIALS':
-              case 'USER_NOT_FOUND':
+              case 'UNAUTHORIZED':
+              case 'NOT_FOUND':
                 return reply.code(401).send(error);
               default:
                 return reply.code(500).send(error);
@@ -132,7 +165,8 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         TE.match(
           (error) => {
             switch (error.code) {
-              case 'USER_NOT_FOUND':
+              case 'NOT_FOUND':
+              case 'UNAUTHORIZED':
                 return reply.code(401).send(error);
               default:
                 return reply.code(500).send(error);

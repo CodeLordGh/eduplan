@@ -1,4 +1,4 @@
-import { createError } from '@eduflow/common';
+import { createAppError } from '@eduflow/common';
 import type { UserContext } from '@eduflow/types';
 import { redis } from '../config/redis';
 
@@ -49,6 +49,10 @@ const fetchLocationFromIP = async (ip: string): Promise<IPLocation> => {
       region: 'Greater Accra',
     };
   } catch (error) {
-    throw createError('Failed to fetch location from IP', 'INTERNAL_SERVER_ERROR', 500, error);
+    throw createAppError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to fetch location from IP',
+      cause: error instanceof Error ? error : undefined
+    });
   }
 };

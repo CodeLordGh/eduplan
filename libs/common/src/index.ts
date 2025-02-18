@@ -14,7 +14,7 @@ export * from './security/policies';
 export * from './user/transforms';
 
 // Export error types
-export { BaseError } from './errors/base.error';
+export * from './errors/base.error';
 
 // Export auth error creators
 export {
@@ -27,11 +27,10 @@ export {
   createOTPError,
   createOTPExpiredError,
   createInvalidOTPError,
-  createAppError,
 } from './errors/auth.error';
 
 // Export auth functions
 export { hashPassword, verifyPassword, generateJWT } from './auth/utils';
 
 // Export validation functions
-export { validateEmail, validatePassword } from './validation/user';
+export { validateEmail, validatePassword, emailSchema, passwordSchema } from './validation/user';

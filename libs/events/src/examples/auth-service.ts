@@ -12,8 +12,7 @@ import { Role } from '@eduflow/prisma';
 import { UserStatus } from '@eduflow/types';
 import { createLogger, LogContext } from '@eduflow/logger';
 
-const logger = createLogger({
-  service: 'auth-service',
+const logger = createLogger('auth-service', {
   environment: process.env.NODE_ENV || 'development',
 });
 

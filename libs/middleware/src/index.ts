@@ -1,38 +1,58 @@
 export * from './auth.middleware';
 export * from './types';
+
+// Export Redis utilities and middleware
 export {
-  getRedisClient,
-  createRedisClient,
-  RedisConfig,
+  // Types
+  SessionData,
+  RateLimitConfig,
+  OTPData,
+  CacheConfig,
+} from './redis/types';
+
+export {
+  // Utilities
+  createSessionKey,
+  createRateLimitKey,
+  createOTPKey,
+  createCacheKey,
+  parseJSON,
   getRedisValue,
   setRedisValue,
   incrementRedisValue,
   setRedisExpiry,
   getRedisTimeToLive,
   deleteRedisValue,
-  createSessionKey,
-  createRateLimitKey,
-  createOTPKey,
-  createCacheKey,
-  parseJSON,
-} from './redis';
+} from './redis/utils';
 
-// Export Redis middleware utilities
-export * from './redis/session';
-export * from './redis/rate-limit';
-export * from './redis/otp';
-export * from './redis/cache';
-export * from './redis/types';
+export {
+  // Response handlers
+  sendUnauthorized,
+  sendTooManyRequests,
+  setRateLimitHeaders,
+} from './redis/response';
 
+export {
+  // Middleware factories
+  createSessionMiddleware,
+} from './redis/session';
+
+export {
+  createRateLimiter,
+} from './redis/rate-limit';
+
+export {
+  createOTPManager,
+} from './redis/otp';
+
+export {
+  createCacheManager,
+} from './redis/cache';
+
+// Export auth middleware
 export { authenticate, authorize, AuthenticatedUser, RequestWithUser } from './auth.middleware';
-
-// Export rate limiter
-export { createRateLimiter, RateLimitConfig } from './rate-limiter';
-
-// Export OTP manager
-export { createOTPManager } from './otp';
 
 // Export other middleware
 export * from './abac';
-export * from './redis';
+
 export * from './validation';

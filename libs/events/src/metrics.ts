@@ -1,8 +1,8 @@
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import * as E from 'fp-ts/Either';
-import { Event } from '@eduflow/types';
-import { Logger } from '@eduflow/logger';
+import { Event, Logger } from '@eduflow/types';
+import { logger } from '@eduflow/logger';
 
 interface MetricsState {
   eventProcessingTimes: Map<string, number[]>;

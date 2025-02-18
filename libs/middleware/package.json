@@ -11,20 +11,21 @@
   },
   "dependencies": {
     "@eduflow/common": "workspace:*",
-    "@eduflow/types": "workspace:*",
     "@eduflow/prisma": "workspace:*",
-    "fastify": "^4.29.0",
+    "@eduflow/types": "workspace:*",
     "@fastify/jwt": "^7.2.4",
+    "fastify": "^4.29.0",
+    "fp-ts": "^2.16.1",
     "ioredis": "^5.3.2",
-    "fp-ts": "^2.16.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eduflow/tsconfig": "workspace:*",
-    "@types/node": "^20.17.12",
     "@types/ioredis": "^5.0.0",
-    "typescript": "^5.7.3",
-    "rimraf": "^5.0.1",
+    "@types/jest": "^29.5.4",
+    "@types/node": "^20.17.12",
     "jest": "^29.6.4",
-    "@types/jest": "^29.5.4"
+    "rimraf": "^5.0.1",
+    "typescript": "^5.7.3"
   }
 }

@@ -13,7 +13,14 @@ const validatePhoneNumber = (phone: string): void => {
   
   // Check if it starts with + for international format
   if (!cleanPhone.startsWith('+')) {
-    throw createValidationError('Phone number must include country code starting with +');
+    throw createValidationError(
+      'Phone number must include country code starting with +',
+      {
+        field: 'phone',
+        value: phone,
+        constraint: 'format'
+      }
+    );
   }
   
   // Remove the plus sign for length check
@@ -21,12 +28,26 @@ const validatePhoneNumber = (phone: string): void => {
   
   // Check if remaining characters are all digits
   if (!/^\d+$/.test(digits)) {
-    throw createValidationError('Phone number must contain only digits after country code');
+    throw createValidationError(
+      'Phone number must contain only digits after country code',
+      {
+        field: 'phone',
+        value: phone,
+        constraint: 'format'
+      }
+    );
   }
   
   // Check length (international numbers can be between 10 and 14 digits)
   if (digits.length < 10 || digits.length > 14) {
-    throw createValidationError('Phone number must be between 10 and 14 digits');
+    throw createValidationError(
+      'Phone number must be between 10 and 14 digits',
+      {
+        field: 'phone',
+        value: phone,
+        constraint: 'length'
+      }
+    );
   }
 };
 
@@ -65,7 +86,14 @@ const checkDuplicatePhone = async (phone: string): Promise<void> => {
     select: { id: true }
   });
   if (existingUser) {
-    throw createValidationError('Phone number already registered');
+    throw createValidationError(
+      'Phone number already registered',
+      {
+        field: 'phone',
+        value: phone,
+        constraint: 'unique'
+      }
+    );
   }
 };
 
@@ -96,7 +124,14 @@ export const validateCreateUserInput = (
       if (error instanceof Error && 'code' in error) {
         return error as AuthErrors;
       }
-      return createValidationError('Invalid input');
+      return createValidationError(
+        'Invalid input',
+        {
+          field: 'input',
+          value: JSON.stringify(input),
+          constraint: 'format'
+        }
+      );
     }
   );
 
@@ -128,6 +163,13 @@ export const validateUpdateUserInput = (
       if (error instanceof Error && 'code' in error) {
         return error as AuthErrors;
       }
-      return createValidationError('Invalid input');
+      return createValidationError(
+        'Invalid input',
+        {
+          field: 'input',
+          value: JSON.stringify(input),
+          constraint: 'format'
+        }
+      );
     }
   );

@@ -77,7 +77,14 @@ export const getSession = (
 
         return session;
       },
-      (error: unknown) => createValidationError('Invalid or expired session')
+      (error: unknown) => createValidationError(
+        'Invalid or expired session',
+        {
+          field: 'session',
+          value: 'expired',
+          constraint: 'validity'
+        }
+      )
     )
   );
 
@@ -132,23 +139,46 @@ export const validateSession = (
   redis: FastifyRedis,
   userId: string,
   requiredPermissions?: Permission[]
-): TE.TaskEither<AuthErrors, boolean> =>
+): TE.TaskEither<AuthErrors, SessionData> => 
   pipe(
     TE.tryCatch(
       async () => {
         const data = await redis.get(createSessionKey(userId));
         if (!data) {
-          return false;
+          throw new Error('Session not found');
         }
 
         const session = JSON.parse(data) as SessionData;
-
-        if (!requiredPermissions || requiredPermissions.length === 0) {
-          return true;
+        const now = Date.now();
+        
+        // Check if session is expired (24 hours)
+        if (now - session.lastActivity > 24 * 60 * 60 * 1000) {
+          throw new Error('Session expired');
         }
 
-        return requiredPermissions.every((permission) => session.permissions.includes(permission));
+        if (requiredPermissions && !requiredPermissions.every((permission) => 
+          session.permissions.includes(permission))) {
+          throw new Error('Insufficient permissions');
+        }
+
+        // Update last activity
+        session.lastActivity = now;
+        await redis.set(
+          createSessionKey(userId),
+          JSON.stringify(session),
+          'EX',
+          SESSION_EXPIRY
+        );
+
+        return session;
       },
-      (error: unknown) => createDatabaseError(error as Error)
+      (error: unknown) => createValidationError(
+        'Invalid or expired session',
+        {
+          field: 'session',
+          value: 'expired',
+          constraint: 'validity'
+        }
+      )
     )
   );

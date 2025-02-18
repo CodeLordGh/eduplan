@@ -8,7 +8,8 @@
     "baseUrl": ".",
     "paths": {
       "@eduflow/*": ["../*/src"]
-    }
+    },
+    "types": []
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"],

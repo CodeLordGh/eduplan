@@ -3,6 +3,7 @@ import httpProxy from 'http-proxy';
 import { ServerResponse } from 'http';
 import { logger, errorLogger, createRequestContext } from './logger';
 import type { VersionManager } from '../services/version.service';
+import { createAppError } from '@eduflow/common';
 
 interface ServiceConfig {
   name: string;
@@ -103,10 +104,22 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
       // Skip auth check for non-auth required endpoints
       if (service.auth) {
         try {
-          await request.jwtVerify();
+          const token = await request.jwtVerify<{ userId: string }>();
+          if (!token) {
+            throw createAppError({
+              code: 'UNAUTHORIZED',
+              message: 'Invalid or missing token'
+            });
+          }
         } catch (err) {
-          reply.code(401).send({ error: 'Unauthorized' });
-          return;
+          if (err && typeof err === 'object' && 'code' in err) {
+            throw err;
+          }
+          throw createAppError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid or missing token',
+            cause: err
+          });
         }
       }
 

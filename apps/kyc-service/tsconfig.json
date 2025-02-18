@@ -5,16 +5,16 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "@eduflow/*": ["../../libss/*/src"]
+      "@eduflow/*": ["../../libs/*/src"]
     }
   },
   "include": ["src/**/*"],
   "references": [
-    { "path": "../../libss/types" },
-    { "path": "../../libss/common" },
-    { "path": "../../libss/constants" },
-    { "path": "../../libss/validators" },
-    { "path": "../../libss/middleware" },
-    { "path": "../../libss/prisma" }
+    { "path": "../../libs/types" },
+    { "path": "../../libs/common" },
+    { "path": "../../libs/constants" },
+    { "path": "../../libs/validators" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/prisma" }
   ]
 } 

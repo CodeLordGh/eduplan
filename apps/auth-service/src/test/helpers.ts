@@ -7,6 +7,7 @@ import { CreateUserInput } from '../domain/user';
 import Redis from 'ioredis';
 import { FastifyInstance } from 'fastify';
 import { hashPassword } from '@eduflow/common';
+import { ROLES } from '@eduflow/constants';
 
 export const createTestUser = async (
   prisma: PrismaClient,
@@ -28,7 +29,7 @@ export const createTestUser = async (
       email,
       password: hashedPassword,
       phone,
-      roles: role ? [role] : [Role.USER],
+      roles: role ? [role] : [ROLES.USER as Role],
       status: UserStatus.ACTIVE,
     },
   });
@@ -49,6 +50,6 @@ export const generateTestToken = (app: FastifyInstance, user: User): string => {
   return app.jwt.sign({
     userId: user.id,
     email: user.email,
-    role: user.role,
+    roles: user.roles,
   });
 };

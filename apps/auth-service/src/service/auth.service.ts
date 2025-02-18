@@ -104,7 +104,11 @@ export const login = (
                         const requiresKYC = isStaffRole(u.roles);
                         return !requiresKYC || u.kycStatus === VerificationStatus.VERIFIED;
                       },
-                      () => createValidationError('KYC verification required for this role')
+                      () => createValidationError('KYC verification required for this role', {
+                        field: 'kyc',
+                        value: 'unverified',
+                        constraint: 'verification'
+                      })
                     )(user),
                     TE.chain(() =>
                       // Check employment eligibility for staff roles
@@ -118,7 +122,12 @@ export const login = (
                         },
                         () =>
                           createValidationError(
-                            'Employment eligibility check required for this role'
+                            'Employment eligibility check required for this role',
+                            {
+                              field: 'employment',
+                              value: 'ineligible',
+                              constraint: 'eligibility'
+                            }
                           )
                       )(user)
                     ),
@@ -143,7 +152,7 @@ export const login = (
                 : TE.left(createInvalidCredentialsError())
             )
           )
-        : TE.left(createUserNotFoundError())
+        : TE.left(createUserNotFoundError(input.email))
     )
   );
 
@@ -168,7 +177,11 @@ export const refresh = (
                         const requiresKYC = isStaffRole(u.roles);
                         return !requiresKYC || u.kycStatus === VerificationStatus.VERIFIED;
                       },
-                      () => createValidationError('KYC verification required for this role')
+                      () => createValidationError('KYC verification required for this role', {
+                        field: 'kyc',
+                        value: 'unverified',
+                        constraint: 'verification'
+                      })
                     )(user),
                     TE.chain(() =>
                       // Check employment eligibility for staff roles
@@ -182,7 +195,12 @@ export const refresh = (
                         },
                         () =>
                           createValidationError(
-                            'Employment eligibility check required for this role'
+                            'Employment eligibility check required for this role',
+                            {
+                              field: 'employment',
+                              value: 'ineligible',
+                              constraint: 'eligibility'
+                            }
                           )
                       )(user)
                     ),
@@ -198,7 +216,7 @@ export const refresh = (
                       )
                     )
                   )
-                : TE.left(createUserNotFoundError())
+                : TE.left(createUserNotFoundError(optionUserId.value))
             )
           )
         : TE.left(createInvalidCredentialsError())

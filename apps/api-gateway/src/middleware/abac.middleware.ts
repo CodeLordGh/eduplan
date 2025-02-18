@@ -36,7 +36,8 @@ export const enrichRequestWithAttributes = async (req: RequestWithAttributes): P
       deviceInfo: {
         id: req.headers['x-device-id'] as string,
         type: req.headers['x-device-type'] as string,
-        lastUsed: new Date(),
+        trustScore: calculateTrustScore(req.headers['x-device-id'] as string, req.headers['x-device-type'] as string),
+        lastVerified: new Date()
       },
       location: await getLocationFromIP(req.ip),
     };
@@ -138,5 +139,21 @@ export async function abacMiddleware(
       message: 'Access denied',
       cause: error,
     });
+  }
+}
+
+function calculateTrustScore(deviceId: string, deviceType: string): number {
+  // Simple trust score calculation based on device type
+  // Mobile devices and desktop apps are considered more trustworthy than web browsers
+  if (!deviceId || !deviceType) return 0;
+  
+  switch (deviceType.toLowerCase()) {
+    case 'mobile_app':
+    case 'desktop_app':
+      return 0.8;
+    case 'web_browser':
+      return 0.5;
+    default:
+      return 0.3;
   }
 }

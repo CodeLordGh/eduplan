@@ -1,12 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fastifyRedis from '@fastify/redis';
 import { Redis, RedisOptions } from 'ioredis';
-import {
-  createRateLimiter,
-  createOTPManager,
-  createSessionMiddleware,
-  createCacheManager,
-} from '@eduflow/middleware';
+import { createRateLimiter, createOTPManager, RateLimitConfig } from '@eduflow/middleware';
+import { createSessionMiddleware, createCacheManager } from '@eduflow/middleware';
 
 // Routes that don't require session validation
 const PUBLIC_ROUTES = [
@@ -53,7 +49,7 @@ export const createRedisClient = (): Redis => new Redis(getRedisConfig());
 export const redis = createRedisClient();
 
 export async function setupRedis(server: FastifyInstance) {
-  const redisClient = new Redis();
+  const redisClient = new Redis(getRedisConfig());
 
   // Register Redis instance with Fastify
   await server.register(fastifyRedis, {
@@ -63,9 +59,10 @@ export async function setupRedis(server: FastifyInstance) {
 
   // Setup Redis-based middleware
   const rateLimiter = createRateLimiter(redisClient, {
+    keyPrefix: 'ratelimit:api:',
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-  });
+    max: 100 // limit each IP to 100 requests per windowMs
+  } as RateLimitConfig);
 
   const sessionMiddleware = createSessionMiddleware(redisClient);
   const otpManager = createOTPManager(redisClient);

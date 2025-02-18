@@ -2,7 +2,7 @@ import { Redis } from 'ioredis';
 import { Option, some, none } from 'fp-ts/Option';
 import { TaskEither, tryCatch } from 'fp-ts/TaskEither';
 import { AppError } from '@eduflow/types';
-import { createAppError } from '@eduflow/common';
+import { createAppError, createOTPError } from '@eduflow/common';
 import { IncomingHttpHeaders } from 'http';
 
 // Pure functions for key generation
@@ -37,17 +37,7 @@ export const getRedisValue =
         const value = await redis.get(key);
         return value ? some(value) : none;
       },
-      (error) =>
-        createAppError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get Redis value',
-          cause: error,
-          metadata: {
-            service: 'redis',
-            operation: 'get',
-            timestamp: new Date(),
-          },
-        })
+      (error) => createOTPError('Failed to get Redis value')
     );
 
 export const setRedisValue =

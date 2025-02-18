@@ -6,18 +6,18 @@
     "types": ["node", "jest"],
     "paths": {
       "fp-ts/*": ["./node_modules/fp-ts/*"],
-      "@eduflow/*": ["../../libss/*/src"]
+      "@eduflow/*": ["../../libs/*/src"]
     },
     "baseUrl": "."
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
   "references": [
-    { "path": "../../libss/common" },
-    { "path": "../../libss/types" },
-    { "path": "../../libss/prisma" },
-    { "path": "../../libss/logger" },
-    { "path": "../../libss/middleware" },
-    { "path": "../../libss/constants" }
+    { "path": "../../libs/common" },
+    { "path": "../../libs/types" },
+    { "path": "../../libs/prisma" },
+    { "path": "../../libs/logger" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/constants" }
   ]
 } 
