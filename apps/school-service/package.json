@@ -17,6 +17,7 @@
     "@eduflow/logger": "workspace:*",
     "@eduflow/middleware": "workspace:*",
     "@eduflow/types": "workspace:*",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.24.0",
     "fp-ts": "^2.16.0"

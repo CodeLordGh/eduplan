@@ -363,6 +363,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^1.9.3
         version: 1.10.2
+      bcrypt:
+        specifier: ^5.1.1
+        version: 5.1.1
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -427,6 +430,9 @@ importers:
       '@eduflow/types':
         specifier: workspace:*
         version: link:../../libs/types
+      bcrypt:
+        specifier: ^5.1.1
+        version: 5.1.1
       dotenv:
         specifier: ^16.0.3
         version: 16.4.7
@@ -577,6 +583,9 @@ importers:
       '@jest/globals':
         specifier: ^29.7.0
         version: 29.7.0
+      '@jest/types':
+        specifier: ^29.6.3
+        version: 29.6.3
       '@types/amqplib':
         specifier: ^0.10.4
         version: 0.10.6
@@ -614,7 +623,7 @@ importers:
         specifier: ^5.0.0
         version: 5.0.10
       ts-jest:
-        specifier: ^29.1.1
+        specifier: ^29.2.5
         version: 29.2.5(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.7.0(@types/node@20.17.12)(ts-node@10.9.2(@types/node@20.17.12)(typescript@5.7.3)))(typescript@5.7.3)
       typescript:
         specifier: ^5.3.3
