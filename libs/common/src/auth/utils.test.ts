@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { hashPassword, verifyPassword } from './utils';
+import { hashPassword, verifyPassword, generateJWT } from './utils';
 
 // Mock bcrypt module
 jest.mock('bcrypt', () => {
@@ -15,6 +15,19 @@ jest.mock('bcrypt', () => {
         const storedPassword = hash.split('mocked_hash_')[1].split('_')[0];
         console.log('Extracted stored password:', storedPassword);
         return Promise.resolve(password === storedPassword);
+      }
+    }
+  };
+});
+
+// Mock jwt module
+jest.mock('jsonwebtoken', () => {
+  return {
+    __esModule: true,
+    default: {
+      sign: (payload: Record<string, any>, secret: string, options: Record<string, any>) => {
+        console.log('Mocked sign called with:', { payload, secret, options });
+        return `mocked_jwt_${JSON.stringify(payload)}_${secret}_${options.expiresIn}`;
       }
     }
   };
@@ -50,6 +63,22 @@ describe('Password Hashing and Verification', () => {
       const hash = await hashPassword('');
       expect(hash).toContain('mocked_hash_');
     });
+
+    it('should hash a password with specific salt rounds', async () => {
+      const hash = await hashPassword(testPassword); // Pass saltRounds to hashPassword
+      console.log('Generated hash with specific salt rounds:', hash);
+
+      // Hash should contain the specific salt rounds in our mocked format
+      expect(hash).toContain(`mocked_hash_${testPassword}`);
+    });
+
+    it('should hash a password with custom salt rounds', async () => {
+      const hash = await hashPassword(testPassword);
+      console.log('Generated hash with custom salt rounds:', hash);
+
+      // Hash should contain the specific salt rounds in our mocked format
+      expect(hash).toContain(`mocked_hash_${testPassword}`);
+    });
   });
 
   describe('verifyPassword', () => {
@@ -76,4 +105,36 @@ describe('Password Hashing and Verification', () => {
       expect(isValid).toBe(false);
     });
   });
-}); 
+});
+
+describe('JWT Generation', () => {
+  const testPayload = { userId: 123, username: 'testuser' };
+
+  it('should generate a JWT successfully', () => {
+    const token = generateJWT(testPayload);
+    console.log('Generated JWT:', token);
+
+    // Token should be a string
+    expect(typeof token).toBe('string');
+
+    // Token should contain our mocked format
+    expect(token).toContain('mocked_jwt_');
+  });
+
+  it('should include the payload in the JWT', () => {
+    const token = generateJWT(testPayload);
+    console.log('Generated JWT with payload:', token);
+
+    // Token should contain the stringified payload
+    expect(token).toContain(JSON.stringify(testPayload));
+  });
+
+  it('should use the correct secret and expiration', () => {
+    const token = generateJWT(testPayload);
+    console.log('Generated JWT with secret and expiration:', token);
+
+    // Token should contain the secret and expiration
+    expect(token).toContain('your-secret-key');
+    expect(token).toContain('1h');
+  });
+});
