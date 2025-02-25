@@ -10,7 +10,7 @@
     },
     "baseUrl": "."
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/config/**/*"],
   "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../../libs/common" },

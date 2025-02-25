@@ -23,3 +23,11 @@ dist/
 *.tsbuildinfo
 ./apps/*/*.tsbuildinfo
 ./libs/*/*.tsbuildinfo
+
+*.tsbuildinfo
+*.tsbuildinfo.json
+
+*.tsbuildinfo.json
+
+*.md
+

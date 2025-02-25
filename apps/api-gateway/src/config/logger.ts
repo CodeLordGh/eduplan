@@ -1,6 +1,6 @@
 import { createLogger, createErrorLogger } from '@eduflow/logger';
 import { FastifyRequest } from 'fastify';
-import { LOG_LEVELS, LogLevel, LoggerOptions } from '@eduflow/types';
+import { LOG_LEVELS, LogLevel } from '@eduflow/types';
 
 export interface LogContext {
   service?: string;
@@ -15,14 +15,14 @@ export interface LogContext {
   version?: string;
   statusCode?: number;
   responseTime?: number;
-  error?: any;
+  error?: Error & { code?: string };
 }
 
 export interface SecurityContext extends LogContext {
   eventType: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   outcome: 'blocked' | 'allowed' | 'flagged';
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface PerformanceContext extends LogContext {
@@ -30,7 +30,7 @@ export interface PerformanceContext extends LogContext {
   value: number;
   unit: string;
   threshold?: number;
-  tags?: Record<string, any>;
+  tags?: Record<string, unknown>;
 }
 
 export interface EventContext extends LogContext {
@@ -38,7 +38,7 @@ export interface EventContext extends LogContext {
   exchange?: string;
   routingKey?: string;
   messageId?: string;
-  payload?: Record<string, any>;
+  payload?: Record<string, unknown>;
 }
 
 export interface CircuitBreakerContext extends LogContext {
@@ -60,19 +60,20 @@ export interface MetricsContext extends LogContext {
   thresholds?: Record<string, number>;
 }
 
-// Validate and get log level from environment
-const getLogLevel = (level: string | undefined): LogLevel => {
-  if (level && Object.values(LOG_LEVELS).includes(level as LogLevel)) {
-    return level as LogLevel;
-  }
-  return LOG_LEVELS.INFO;
-};
-
 // Logger configuration
 const loggerConfig = {
   service: 'api-gateway',
-  level: process.env.LOG_LEVEL || 'info',
-  prettyPrint: process.env.NODE_ENV !== 'production',
+  level: (process.env.LOG_LEVEL as LogLevel) || LOG_LEVELS.INFO,
+  transport: process.env.NODE_ENV !== 'production'
+    ? {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname'
+        }
+      }
+    : undefined
 };
 
 // Create base logger instance with configuration
@@ -112,6 +113,7 @@ export const createErrorContext = (
   error: Error
 ): LogContext & {
   error: {
+    name: string;
     message: string;
     stack?: string;
     code?: string;
@@ -119,9 +121,10 @@ export const createErrorContext = (
 } => ({
   ...createRequestContext(request),
   error: {
+    name: error.name,
     message: error.message,
     stack: error.stack,
-    code: (error as any).code,
+    code: error instanceof Error ? (error as Error & { code?: string }).code : undefined,
   },
 });
 
@@ -131,7 +134,7 @@ export const createSecurityContext = (
   eventType: string,
   severity: SecurityContext['severity'],
   outcome: SecurityContext['outcome'],
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): SecurityContext => ({
   ...createResponseContext(request, 0, 0),
   eventType,
@@ -147,7 +150,7 @@ export const createPerformanceContext = (
   value: number,
   unit: string,
   threshold?: number,
-  tags?: Record<string, any>
+  tags?: Record<string, unknown>
 ): PerformanceContext => ({
   ...createResponseContext(request, 0, 0),
   metricName,
@@ -164,7 +167,7 @@ export const createEventContext = (
   exchange: string,
   routingKey: string,
   messageId: string,
-  payload?: Record<string, any>
+  payload?: Record<string, unknown>
 ): EventContext => ({
   service: 'api-gateway',
   environment: process.env.NODE_ENV || 'development',

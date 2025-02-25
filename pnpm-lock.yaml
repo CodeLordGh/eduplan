@@ -11,9 +11,15 @@ importers:
       '@types/ioredis':
         specifier: ^5.0.0
         version: 5.0.0
+      bcrypt:
+        specifier: ^5.1.1
+        version: 5.1.1
       ioredis:
         specifier: ^5.4.2
         version: 5.4.2
+      pino-pretty:
+        specifier: ^10.2.3
+        version: 10.3.1
     devDependencies:
       '@prisma/client':
         specifier: ^5.22.0
@@ -60,6 +66,9 @@ importers:
       prisma:
         specifier: ^5.22.0
         version: 5.22.0
+      ts-node-dev:
+        specifier: ^2.0.0
+        version: 2.0.0(@types/node@18.19.70)(typescript@5.7.3)
       turbo:
         specifier: ^1.10.13
         version: 1.13.4
