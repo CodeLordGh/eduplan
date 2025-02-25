@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { createLogger } from '@eduflow/logger';
-import { authenticate, authorize } from '@eduflow/middleware';
+// import { authenticate, authorize } from '@eduflow/middleware';
 import type { PrismaClient } from '@eduflow/types';
 import * as profileHandlers from './handlers/profile.handler';
 import { prisma } from '@eduflow/prisma';
@@ -56,7 +56,7 @@ app.get('/profiles', profileHandlers.listProfiles(deps));
 // Start server
 const start = async () => {
   try {
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 3003;
     await app.listen({ port: Number(port), host: '0.0.0.0' });
     logger.info('Server started', { port });
   } catch (err) {

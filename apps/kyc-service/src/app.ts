@@ -53,8 +53,9 @@ export async function createApp(): Promise<FastifyInstance> {
       },
       servers: [
         {
-          url: 'http://localhost:3002',
+          url: 'http://localhost:3004',
           description: 'Development server',
+          
         },
       ],
       tags: [
@@ -120,11 +121,11 @@ if (require.main === module) {
     try {
       const app = await createApp();
       await app.listen({
-        port: parseInt(process.env.PORT || '3002'),
+        port: parseInt(process.env.PORT || '3004'),
         host: '0.0.0.0',
       });
       app.log.info(
-        `Documentation available at http://localhost:${process.env.PORT || '3002'}/documentation`
+        `Documentation available at http://localhost:${process.env.PORT || '3004'}/documentation`
       );
     } catch (err) {
       console.error(err);

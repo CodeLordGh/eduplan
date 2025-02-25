@@ -1,8 +1,17 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "composite": true
   },
-  "include": ["src"]
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../libs/common" },
+    { "path": "../../libs/constants" },
+    { "path": "../../libs/logger" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/prisma" },
+    { "path": "../../libs/types" }
+  ]
 } 

@@ -1,35 +1,17 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["ES2020"],
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
-    "strict": true,
-    "moduleResolution": "node",
-    "baseUrl": "./",
-    "paths": {
-      "@eduflow/*": ["../../libss/*/src"]
-    },
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "outDir": "./dist",
+    "composite": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
   "references": [
-    { "path": "../../libs/types" },
     { "path": "../../libs/common" },
-    { "path": "../../libs/logger" },
     { "path": "../../libs/constants" },
-    { "path": "../../libs/events" },
-    { "path": "../../libs/middleware" }
+    { "path": "../../libs/logger" },
+    { "path": "../../libs/middleware" },
+    { "path": "../../libs/prisma" },
+    { "path": "../../libs/types" }
   ]
 } 

@@ -1,18 +1,10 @@
 import fastify from 'fastify';
-import multipart from '@fastify/multipart';
-import pino from 'pino';
+import { createLogger } from '@eduflow/logger';
 
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label: string) => ({ level: label }),
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  name: 'file-service',
-});
+const logger = createLogger('payment-service');
 
 const app = fastify({
-  logger,
+  logger: true,
   ajv: {
     customOptions: {
       removeAdditional: 'all',
@@ -22,23 +14,13 @@ const app = fastify({
   },
 });
 
-// Register plugins
-app.register(multipart, {
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB
-    files: 5, // Max 5 files per request
-  },
-});
-
 // Register routes
 const start = async () => {
   try {
     // Register route handlers
-    await app.register(import('./routes/upload.routes'), { prefix: '/api/v1/files' });
-    // await app.register(import('./routes/access.routes'), { prefix: '/api/v1/files' });
-    // await app.register(import('./routes/quota.routes'), { prefix: '/api/v1/quotas' });
+    await app.register(import('./routes/payment.routes'), { prefix: '/api/v1/payments' });
 
-    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3008;
+    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3007;
     const host = process.env.HOST || '0.0.0.0';
 
     await app.listen({ port, host });
@@ -62,4 +44,4 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-start();
+start(); 

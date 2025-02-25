@@ -28,43 +28,43 @@ const services: ServiceConfig[] = [
   {
     name: 'kyc',
     prefix: '/api/v1/kyc',
-    target: 'http://localhost:3002',
+    target: 'http://localhost:3004',
     auth: true,
   },
   {
     name: 'school',
     prefix: '/api/v1/schools',
-    target: 'http://localhost:3004',
+    target: 'http://localhost:3005',
     auth: true,
   },
   {
     name: 'academic',
     prefix: '/api/v1/academic',
-    target: 'http://localhost:3005',
+    target: 'http://localhost:3006',
     auth: true,
   },
   {
     name: 'payment',
     prefix: '/api/v1/payments',
-    target: 'http://localhost:3006',
+    target: 'http://localhost:3007',
     auth: true,
   },
   {
     name: 'file',
     prefix: '/api/v1/files',
-    target: 'http://localhost:3007',
+    target: 'http://localhost:3008',
     auth: true,
   },
   {
     name: 'chat',
     prefix: '/api/v1/chat',
-    target: 'http://localhost:3008',
+    target: 'http://localhost:3009',
     auth: true,
   },
   {
     name: 'notification',
     prefix: '/api/v1/notifications',
-    target: 'http://localhost:3009',
+    target: 'http://localhost:3010',
     auth: true,
   },
 ];
@@ -88,8 +88,8 @@ export async function setupProxies(server: FastifyInstance, versionManager?: Ver
       service: service?.name,
       target: service?.target,
       url: req.url,
-      correlationId: (req as any).correlationId,
-      requestId: (req as any).id,
+      correlationId: (req as unknown as { correlationId: string }).correlationId,
+      requestId: (req as unknown as { id: string }).id,
     });
 
     if (res instanceof ServerResponse && !res.headersSent) {

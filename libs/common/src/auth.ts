@@ -1,9 +1,9 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '15m';
-const SALT_ROUNDS = 10;
+// const SALT_ROUNDS = 10;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);

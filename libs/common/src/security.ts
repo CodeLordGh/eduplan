@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 import { Permission, Role } from '@eduflow/types';

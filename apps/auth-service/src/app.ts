@@ -1,4 +1,4 @@
-import fastify, { FastifyBaseLogger } from 'fastify';
+import fastify from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import fastifyRedis from '@fastify/redis';
 import fastifySwagger, { SwaggerOptions } from '@fastify/swagger';
@@ -85,7 +85,7 @@ if (require.main === module) {
   const start = async () => {
     try {
       const app = await createApp();
-      const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+      const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
       const host = process.env.HOST || '0.0.0.0';
 
       await app.listen({ port, host });
