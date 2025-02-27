@@ -6,9 +6,11 @@ import { setRedisValue, getRedisValue } from '@eduflow/middleware';
 
 const testRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   // Test Redis
-  fastify.get('/test/redis', async (_request, reply) => {
-    reply.header('x-bypass-session', 'true');
-    
+  fastify.get('/test/redis', {
+    config: {
+      bypassSession: true
+    }
+  }, async (_request, _reply) => {
     const testKey = 'test:key';
     const testValue = 'test-value';
 
@@ -31,7 +33,12 @@ const testRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify.get('/test/session', async (request, _reply) => {
     return {
       success: true,
-      session: request.session || null,
+      session: {
+        userId: request.session.userId,
+        role: request.session.role,
+        permissions: request.session.permissions,
+        createdAt: request.session.createdAt
+      }
     };
   });
 };
