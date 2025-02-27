@@ -6,7 +6,7 @@ import { passwordSchema } from './validation';
 // Base user schema - the single source of truth for user data structure
 export const userSchema = z.object({
   id: stringSchema.uuid,
-  email: stringSchema.email,
+  email: stringSchema.email.optional(),
   role: z.nativeEnum(Role),
   status: z.nativeEnum(UserStatus),
   firstName: stringSchema.nonEmpty,

@@ -1,23 +1,20 @@
 {
-  "extends": "../../packages/tsconfig/base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node", "jest"],
+    "baseUrl": "./src",
     "paths": {
-      "fp-ts/*": ["./node_modules/fp-ts/*"],
-      "@eduflow/*": ["../../libs/*/src"]
+      "@/*": ["./*"]
     },
-    "baseUrl": "."
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
-  "include": ["src/**/*", "src/config/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "../../libs/common" },
-    { "path": "../../libs/types" },
-    { "path": "../../libs/prisma" },
-    { "path": "../../libs/logger" },
-    { "path": "../../libs/middleware" },
-    { "path": "../../libs/constants" }
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 } 

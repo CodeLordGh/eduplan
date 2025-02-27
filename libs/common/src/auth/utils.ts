@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
@@ -13,5 +13,8 @@ export async function verifyPassword(hash: string, password: string): Promise<bo
 }
 
 export const generateJWT = (payload: Record<string, unknown>): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  const secret = Buffer.from(JWT_SECRET, 'utf-8');
+  return jwt.sign(payload, secret, { 
+    expiresIn: JWT_EXPIRES_IN 
+  } as SignOptions);
 };

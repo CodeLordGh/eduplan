@@ -13,19 +13,19 @@
     "@eduflow/common": "workspace:*",
     "@eduflow/prisma": "workspace:*",
     "@eduflow/types": "workspace:*",
-    "@fastify/jwt": "^7.2.4",
-    "fastify": "^4.29.0",
-    "fp-ts": "^2.16.1",
-    "ioredis": "^5.3.2",
+    "@fastify/jwt": "*",
+    "fastify": "*",
+    "fp-ts": "^2.16.9",
+    "ioredis": "^5.5.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eduflow/tsconfig": "workspace:*",
     "@types/ioredis": "^5.0.0",
-    "@types/jest": "^29.5.4",
-    "@types/node": "^20.17.12",
-    "jest": "^29.6.4",
-    "rimraf": "^5.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.17.19",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.10",
     "typescript": "^5.7.3"
   }
 }

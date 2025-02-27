@@ -3,6 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 import { Permission, Role } from '@eduflow/types';
 import { pipe } from 'fp-ts/function';
+import { SignOptions } from 'jsonwebtoken';
 
 export interface JWTPayload {
   userId: string;
@@ -27,10 +28,12 @@ export const verifyPassword = (hash: string, password: string): Promise<boolean>
   bcrypt.compare(password, hash);
 
 // JWT Handling
-export const generateJWT = (payload: JWTPayload): string =>
-  jwt.sign(payload, getConfig().jwtSecret, {
+export const generateJWT = (payload: JWTPayload): string => {
+  const secret = Buffer.from(getConfig().jwtSecret, 'utf-8');
+  return jwt.sign(payload, secret, {
     expiresIn: getConfig().jwtExpiresIn,
-  });
+  } as SignOptions);
+};
 
 export const generateRefreshToken = (): string => randomBytes(40).toString('hex');
 

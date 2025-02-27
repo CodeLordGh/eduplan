@@ -17,24 +17,24 @@
     "@eduflow/types": "workspace:*",
     "@fastify/cors": "^8.5.0",
     "@fastify/jwt": "^7.2.4",
-    "@fastify/redis": "^6.1.1",
-    "@fastify/swagger": "^8.8.0",
-    "@fastify/swagger-ui": "^1.9.3",
+    "@fastify/redis": "^6.2.0",
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/swagger-ui": "^1.10.2",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.7",
-    "fastify": "^4.29.0",
-    "fp-ts": "^2.16.2",
-    "ioredis": "^5.3.2",
+    "fastify": "^5.2.1",
+    "fp-ts": "^2.16.9",
+    "ioredis": "^5.5.0",
     "pino": "^8.21.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eduflow/eslint-config": "workspace:*",
     "@eduflow/jest-config": "workspace:*",
     "@eduflow/tsconfig": "workspace:*",
     "@types/ioredis": "^5.0.0",
-    "@types/node": "^20.17.12",
-    "prisma": "^5.2.0",
+    "@types/node": "^20.17.19",
+    "prisma": "^5.22.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
   }

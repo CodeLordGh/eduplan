@@ -18,16 +18,13 @@ export const baseEventSchema = z.object({
   metadata: metadataSchema,
 });
 
-// Type-safe validation function type
-type ValidateEventDataFn<T = unknown> = (data: unknown) => ReturnType<typeof validateWithSchema<T>>;
-
 /**
  * Validates an event against its schema
  */
 export const validateEvent = <T extends EventType>(
   event: Event<unknown>
 ): Promise<Event<EventDataMap[T]>> =>
-  new Promise((resolve, reject) => {
+  (async () => {
     try {
       // Validate base event structure
       const baseValidation = validateWithSchema(baseEventSchema, event);
@@ -36,7 +33,7 @@ export const validateEvent = <T extends EventType>(
       }
 
       // Get and validate event-specific schema
-      const schema = getEventSchema(event.type as T);
+      const schema = await getEventSchema(event.type as T);
       if (!schema) {
         throw new Error(`Unknown event type: ${event.type}`);
       }
@@ -47,32 +44,32 @@ export const validateEvent = <T extends EventType>(
       }
 
       // Return the validated event with the correct type
-      resolve({
+      return {
         ...event,
         data: dataValidation.data,
-      } as Event<EventDataMap[T]>);
+      } as Event<EventDataMap[T]>;
     } catch (error) {
-      reject(error instanceof Error ? error : new Error(String(error)));
+      throw error instanceof Error ? error : new Error(String(error));
     }
-  });
+  })();
 
 /**
  * Get the schema for a specific event type
  */
-function getEventSchema<T extends EventType>(type: T): z.ZodType<EventDataMap[T]> | undefined {
+async function getEventSchema<T extends EventType>(type: T): Promise<z.ZodType<EventDataMap[T]> | undefined> {
   // Import schemas lazily to avoid circular dependencies
-  const { authEventSchemas } = require('../auth/events');
-  const { kycEventSchemas } = require('../kyc/events');
+  const [{ authEventSchemas }, { kycEventSchemas }] = await Promise.all([
+    import('../auth/events'),
+    import('../kyc/events')
+  ]);
 
-  if (type in authEventSchemas) {
-    return authEventSchemas[type as keyof typeof authEventSchemas];
-  }
+  const schema = type in authEventSchemas 
+    ? authEventSchemas[type as keyof typeof authEventSchemas]
+    : type in kycEventSchemas
+    ? kycEventSchemas[type as keyof typeof kycEventSchemas]
+    : undefined;
 
-  if (type in kycEventSchemas) {
-    return kycEventSchemas[type as keyof typeof kycEventSchemas];
-  }
-
-  return undefined;
+  return schema as z.ZodType<EventDataMap[T]> | undefined;
 }
 
 // Export only validation-specific types

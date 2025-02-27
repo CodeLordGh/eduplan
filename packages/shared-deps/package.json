@@ -3,30 +3,30 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "fastify": "^4.29.0",
-    "@fastify/jwt": "^7.2.4",
     "@fastify/cors": "^8.5.0",
-    "@fastify/swagger": "^8.8.0",
-    "@fastify/type-provider-typebox": "^3.5.0",
     "@fastify/error": "^3.4.1",
+    "@fastify/jwt": "^7.2.4",
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/type-provider-typebox": "^3.6.0",
+    "@prisma/client": "^5.22.0",
+    "argon2": "^0.31.2",
+    "fastify": "^4.29.0",
+    "fp-ts": "^2.16.9",
+    "io-ts": "^2.2.22",
     "pino": "^8.21.0",
-    "zod": "^3.24.1",
-    "@prisma/client": "^5.2.0",
-    "argon2": "^0.31.0",
-    "fp-ts": "^2.16.2",
-    "io-ts": "^2.2.21"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^20.17.12",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
-    "typescript": "^5.7.3",
-    "prisma": "^5.2.0",
-    "@typescript-eslint/eslint-plugin": "^6.5.0",
-    "@typescript-eslint/parser": "^6.5.0",
-    "eslint": "^8.48.0",
-    "eslint-plugin-functional": "^6.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-boundaries": "^3.1.0",
-    "eslint-plugin-folders": "^1.0.4"
+    "@types/node": "^20.17.19",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-boundaries": "^3.4.1",
+    "eslint-plugin-folders": "^1.0.4",
+    "eslint-plugin-functional": "^6.6.3",
+    "eslint-plugin-import": "^2.31.0",
+    "prisma": "^5.22.0",
+    "typescript": "^5.7.3"
   }
-} 
+}

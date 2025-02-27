@@ -1,9 +1,65 @@
-import { DocumentType, VerificationStatus, EntityType, PrismaClient } from '@eduflow/prisma';
-import { EVENT_TYPES, EventType } from '@eduflow/types';
+import { DocumentType, VerificationStatus, EntityType, PrismaClient, Prisma } from '@eduflow/prisma';
 import { Redis } from 'ioredis';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { KYCError } from '../errors/kyc.error';
+
+// Event type definitions
+const EVENT_TYPES = {
+  USER_CREATED: 'USER_CREATED',
+  SCHOOL_CREATED: 'SCHOOL_CREATED',
+  USER_UPDATED: 'USER_UPDATED',
+  SCHOOL_UPDATED: 'SCHOOL_UPDATED',
+  FILE_UPLOADED: 'FILE_UPLOADED',
+  KYC_SUBMITTED: 'KYC_SUBMITTED',
+  KYC_VERIFIED: 'KYC_VERIFIED',
+  KYC_REJECTED: 'KYC_REJECTED'
+} as const;
+
+interface BaseEventPayload {
+  timestamp?: Date;
+}
+
+interface UserEventPayload extends BaseEventPayload {
+  userId: string;
+  schoolId?: string;
+  role?: string;
+  criticalFieldsChanged?: boolean;
+}
+
+interface SchoolEventPayload extends BaseEventPayload {
+  schoolId: string;
+  criticalFieldsChanged?: boolean;
+}
+
+interface FileEventPayload extends BaseEventPayload {
+  documentId: string;
+  fileUrl: string;
+  context: string;
+}
+
+interface KYCDocument {
+  id: string;
+  userId: string;
+  type: DocumentType;
+  status: VerificationStatus;
+  documentUrls: string[];
+  metadata: Prisma.JsonValue;
+  createdAt: Date;
+  updatedAt: Date;
+  verifiedAt: Date | null;
+}
+
+interface VerificationHistory {
+  id: string;
+  entityId: string;
+  entityType: EntityType;
+  status: VerificationStatus;
+  verifiedBy: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 type Dependencies = {
   prisma: PrismaClient;
@@ -27,10 +83,12 @@ const subscribeToEvents = (deps: Dependencies) => {
         await handleSchoolCreated(deps)(event.payload);
         break;
       case EVENT_TYPES.USER_UPDATED:
-        await handleStaffAssigned(deps)(event.payload);
-        break;
-      case EVENT_TYPES.USER_UPDATED:
-        await handleProfileUpdated(deps)(event.payload);
+        // Handle different types of user updates
+        if (event.payload.role && event.payload.schoolId) {
+          await handleStaffAssigned(deps)(event.payload);
+        } else if (event.payload.criticalFieldsChanged) {
+          await handleProfileUpdated(deps)(event.payload);
+        }
         break;
       case EVENT_TYPES.SCHOOL_UPDATED:
         await handleSchoolUpdated(deps)(event.payload);
@@ -44,7 +102,7 @@ const subscribeToEvents = (deps: Dependencies) => {
 
 const handleUserCreated =
   (deps: Dependencies) =>
-  async (payload: any): Promise<void> => {
+  async (payload: UserEventPayload): Promise<void> => {
     await deps.prisma.user.update({
       where: { id: payload.userId },
       data: {
@@ -56,7 +114,7 @@ const handleUserCreated =
 
 const handleSchoolCreated =
   (deps: Dependencies) =>
-  async (payload: any): Promise<void> => {
+  async (payload: SchoolEventPayload): Promise<void> => {
     await deps.prisma.verificationHistory.create({
       data: {
         entityId: payload.schoolId,
@@ -69,7 +127,8 @@ const handleSchoolCreated =
 
 const handleStaffAssigned =
   (deps: Dependencies) =>
-  async (payload: any): Promise<void> => {
+  async (payload: UserEventPayload): Promise<void> => {
+    if (!payload.schoolId || !payload.role) return;
     await deps.prisma.kYCDocument.updateMany({
       where: { userId: payload.userId },
       data: {
@@ -83,7 +142,7 @@ const handleStaffAssigned =
 
 const handleProfileUpdated =
   (deps: Dependencies) =>
-  async (payload: any): Promise<void> => {
+  async (payload: UserEventPayload): Promise<void> => {
     if (payload.criticalFieldsChanged) {
       await deps.prisma.user.update({
         where: { id: payload.userId },
@@ -97,7 +156,7 @@ const handleProfileUpdated =
 
 const handleSchoolUpdated =
   (deps: Dependencies) =>
-  async (payload: any): Promise<void> => {
+  async (payload: SchoolEventPayload): Promise<void> => {
     if (payload.criticalFieldsChanged) {
       await deps.prisma.verificationHistory.create({
         data: {
@@ -112,7 +171,7 @@ const handleSchoolUpdated =
 
 const handleFileUploaded =
   (deps: Dependencies) =>
-  async (payload: any): Promise<void> => {
+  async (payload: FileEventPayload): Promise<void> => {
     if (payload.context === 'KYC') {
       await deps.prisma.kYCDocument.update({
         where: { id: payload.documentId },
@@ -144,8 +203,8 @@ export const submitDocument =
     userId: string,
     type: DocumentType,
     documentUrls: string[],
-    metadata: Record<string, unknown>
-  ): TE.TaskEither<KYCError, any> =>
+    metadata: Prisma.InputJsonValue
+  ): TE.TaskEither<KYCError, KYCDocument> =>
     pipe(
       TE.tryCatch(
         async () => {
@@ -155,7 +214,7 @@ export const submitDocument =
               type,
               status: VerificationStatus.PENDING,
               documentUrls,
-              metadata: metadata as any,
+              metadata,
             },
           });
 
@@ -180,7 +239,7 @@ export const verifyDocument =
     status: VerificationStatus,
     verifiedBy: string,
     notes?: string
-  ): TE.TaskEither<KYCError, any> =>
+  ): TE.TaskEither<KYCError, KYCDocument> =>
     pipe(
       TE.tryCatch(
         async () => {
@@ -224,7 +283,7 @@ export const verifyDocument =
 
 export const getDocumentsByUser =
   (deps: Dependencies) =>
-  (userId: string): TE.TaskEither<KYCError, any[]> =>
+  (userId: string): TE.TaskEither<KYCError, KYCDocument[]> =>
     pipe(
       TE.tryCatch(
         () =>
@@ -238,7 +297,7 @@ export const getDocumentsByUser =
 
 export const getVerificationHistory =
   (deps: Dependencies) =>
-  (entityId: string): TE.TaskEither<KYCError, any[]> =>
+  (entityId: string): TE.TaskEither<KYCError, VerificationHistory[]> =>
     pipe(
       TE.tryCatch(
         () =>

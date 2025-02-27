@@ -10,17 +10,17 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
-    "@eduflow/types": "workspace:*",
     "@eduflow/constants": "workspace:*",
-    "pino": "^8.16.2",
-    "pino-pretty": "^10.2.3",
-    "fp-ts": "^2.16.1"
+    "@eduflow/types": "workspace:*",
+    "fp-ts": "^2.16.9",
+    "pino": "^8.21.0",
+    "pino-pretty": "^10.3.1"
   },
   "devDependencies": {
-    "@eduflow/tsconfig": "workspace:*",
     "@eduflow/eslint-config": "workspace:*",
-    "@types/node": "^20.5.7",
-    "typescript": "^5.2.2",
-    "rimraf": "^5.0.1"
+    "@eduflow/tsconfig": "workspace:*",
+    "@types/node": "^20.17.19",
+    "rimraf": "^5.0.10",
+    "typescript": "^5.7.3"
   }
-} 
+}

@@ -1,17 +1,14 @@
+export interface RabbitMQConfig {
+  url: string;
+  exchange: string;
+  deadLetterExchange: string;
+  retryCount: number;
+  retryDelay: number;
+}
+
 export interface EventBusConfig {
   serviceName: string;
-  rabbitmq: {
-    url: string;
-    exchange: string;
-    deadLetterExchange: string;
-    retryCount: number;
-    retryDelay: number;
-  };
-  redis: {
-    url: string;
-    keyPrefix: string;
-    eventTTL: number;
-  };
+  rabbitmq: RabbitMQConfig;
 }
 
 export interface PublishOptions {
