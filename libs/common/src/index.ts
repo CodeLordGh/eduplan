@@ -52,5 +52,7 @@ export {
 // Export error utilities
 export * from './errors/utils';
 
+export { createCircuitBreaker } from './resilience/circuit-breaker';
+
 // Re-export all error types and creators
 export * from './errors';

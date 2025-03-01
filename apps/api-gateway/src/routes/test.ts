@@ -1,12 +1,23 @@
-import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import { Server, IncomingMessage, ServerResponse } from 'http';
 import fp from 'fastify-plugin';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { setRedisValue, getRedisValue, authenticate, authorize } from '@eduflow/middleware';
 import { createPolicy, validateAccess } from '@eduflow/common';
-import { KYCStatus, EmploymentEligibilityStatus, UserAttributes, Role } from '@eduflow/types';
+import { KYCStatus, EmploymentEligibilityStatus, UserAttributes } from '@eduflow/types';
 
-const testRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
+interface RequestWithUser extends FastifyRequest {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+const testRoutes = async (
+  fastify: FastifyInstance<Server, IncomingMessage, ServerResponse>
+): Promise<void> => {
   // Test Redis
   fastify.get('/test/redis', {
     config: {
@@ -49,7 +60,7 @@ const testRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   });
 
   // Middleware to bypass authentication
-  const bypassAuth = async (request: FastifyRequest, reply: FastifyReply) => {
+  const bypassAuth = async (request: RequestWithUser, _reply: FastifyReply) => {
     if (request.headers['x-bypass-auth'] === 'true') {
       request.user = {
         id: 'bypass-user',
@@ -62,17 +73,17 @@ const testRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   };
 
   // Protected Endpoint
-  fastify.get('/protected', { preHandler: [bypassAuth] }, async (request, reply) => {
+  fastify.get('/protected', { preHandler: [bypassAuth] }, async (request: RequestWithUser) => {
     return { message: 'Access granted', user: request.user };
   });
 
   // Admin Endpoint
-  fastify.get('/admin', { preHandler: [bypassAuth, authorize(['SYSTEM_ADMIN'])] }, async (request, reply) => {
+  fastify.get('/admin', { preHandler: [bypassAuth, authorize(['SYSTEM_ADMIN'])] }, async (request: RequestWithUser) => {
     return { message: 'Admin endpoint', user: request.user };
   });
 
   // ABAC Endpoint
-  fastify.get('/abac', { preHandler: [bypassAuth] }, async (request, reply) => {
+  fastify.get('/abac', { preHandler: [bypassAuth] }, async (request: RequestWithUser, reply: FastifyReply) => {
     const abacPolicy = createPolicy('resource', 'READ', {
       anyOf: { roles: ['TEACHER', 'SCHOOL_ADMIN'] },
       verification: { requireKYC: true }
@@ -105,8 +116,8 @@ const testRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   });
 };
 
-// @ts-expect-error - Fastify plugin type inference issues
+// @ts-expect-error - Known type issue with fastify-plugin
 export default fp(testRoutes, {
   name: 'test-routes',
-  dependencies: ['redis-plugin', 'session-plugin'],
+  dependencies: ['redis-plugin', 'session-plugin']
 });

@@ -7,6 +7,7 @@ import { loadEnvConfig } from './config/env';
 import securityPlugin from './plugins/security';
 import redisPlugin from './plugins/redis';
 import sessionPlugin from './plugins/session';
+import proxyPlugin from './plugins/proxy';
 import testRoutes from './routes/test';
 
 const logger: Logger = createLogger('api-gateway', {
@@ -37,6 +38,10 @@ const setupServer = async (server: FastifyInstance, port: number): Promise<void>
     logger.info('Registering session plugin...');
     // @ts-expect-error - Fastify plugin type inference issues
     await server.register(sessionPlugin);
+
+    logger.info('Registering proxy plugin...');
+    // @ts-expect-error - Fastify plugin type inference issues
+    await server.register(proxyPlugin);
 
     logger.info('Registering test routes...');
     // @ts-expect-error - Fastify plugin type inference issues
@@ -107,4 +112,4 @@ main().catch((err) => {
     }) }, 'Unhandled error');
   }
   process.exit(1);
-}); 
+});
