@@ -10,21 +10,20 @@ export const initSwagger = (server: FastifyInstance): TE.TaskEither<BaseError, v
         await server.register(require('@fastify/swagger'), {
           swagger: {
             info: {
-              title: 'File Service API',
-              description: 'API documentation for the EduPlan File Service',
+              title: 'API Gateway',
+              description: 'API Gateway for EduFlow platform',
               version: '1.0.0',
             },
             externalDocs: {
-              url: 'https://eduplan.dev/docs',
+              url: 'https://eduflow.dev/docs',
               description: 'Find more info here',
             },
             host: process.env.API_HOST,
             schemes: ['http', 'https'],
-            consumes: ['application/json', 'multipart/form-data'],
+            consumes: ['application/json'],
             produces: ['application/json'],
             tags: [
-              { name: 'files', description: 'File related end-points' },
-              { name: 'quota', description: 'Storage quota related end-points' },
+              { name: 'gateway', description: 'Gateway related end-points' },
             ],
             securityDefinitions: {
               apiKey: {
@@ -37,11 +36,21 @@ export const initSwagger = (server: FastifyInstance): TE.TaskEither<BaseError, v
         });
 
         await server.register(require('@fastify/swagger-ui'), {
-          routePrefix: '/documentation',
+          routePrefix: '/docs',
+          swagger: {
+            info: {
+              title: 'API Gateway',
+              description: 'API Gateway for EduFlow platform',
+              version: '1.0.0',
+            },
+          },
           uiConfig: {
-            docExpansion: 'list',
+            docExpansion: 'full',
             deepLinking: false,
           },
+          staticCSP: true,
+          transformStaticCSP: (header: string) => header,
+          exposeRoute: true,
         });
       },
       (error) => createError('Failed to initialize Swagger', 'SWAGGER_ERROR', 500, error)

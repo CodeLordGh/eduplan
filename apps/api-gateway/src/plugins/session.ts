@@ -16,6 +16,17 @@ const sessionPlugin: FastifyPluginAsync = async (fastify): Promise<void> => {
   const sessionMiddleware = createSessionMiddleware(fastify.redis);
   
   fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
+    // Bypass session check for Swagger documentation routes
+    if (request.url.startsWith('/documentation')) {
+      request.session = {
+        userId: '',
+        role: '',
+        permissions: [],
+        createdAt: Date.now()
+      };
+      return;
+    }
+
     try {
       if (request.headers[BYPASS_SESSION_HEADER] === 'true') {
         // Initialize an empty session for bypassed requests
@@ -48,4 +59,4 @@ const sessionPlugin: FastifyPluginAsync = async (fastify): Promise<void> => {
 export default fp(sessionPlugin, {
   name: 'session-plugin',
   dependencies: ['redis-plugin'],
-}); 
+});

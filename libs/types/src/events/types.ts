@@ -19,6 +19,11 @@ export const EventType = {
   SCHOOL_VERIFIED: 'SCHOOL_VERIFIED',
   EMPLOYMENT_ELIGIBILITY_UPDATED: 'EMPLOYMENT_ELIGIBILITY_UPDATED',
 
+  // Gateway Events
+  SERVICE_REGISTERED: 'SERVICE_REGISTERED',
+  SERVICE_HEALTH_CHANGED: 'SERVICE_HEALTH_CHANGED',
+  CIRCUIT_BREAKER_STATE_CHANGED: 'CIRCUIT_BREAKER_STATE_CHANGED',
+
   // School Events
   SCHOOL_CREATED: 'SCHOOL_CREATED',
   SCHOOL_UPDATED: 'SCHOOL_UPDATED',
@@ -121,12 +126,30 @@ export interface KYCEventData {
   // ... other KYC event data types
 }
 
+// Include gateway event data types
+export interface GatewayEventData {
+  SERVICE_REGISTERED: {
+    serviceName: string;
+    endpoints: string[];
+  };
+  SERVICE_HEALTH_CHANGED: {
+    serviceName: string;
+    status: 'up' | 'down';
+  };
+  CIRCUIT_BREAKER_STATE_CHANGED: {
+    serviceName: string;
+    status: 'open' | 'closed' | 'half-open';
+  };
+}
+
 // Combined event data map type with proper index signature
 export type EventDataMap = {
   [K in EventType]: K extends keyof AuthEventData 
     ? AuthEventData[K] 
     : K extends keyof KYCEventData 
     ? KYCEventData[K] 
+    : K extends keyof GatewayEventData
+    ? GatewayEventData[K]
     : never;
 };
 

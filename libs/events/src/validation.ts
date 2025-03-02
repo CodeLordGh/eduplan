@@ -78,6 +78,22 @@ const employmentEligibilityUpdatedSchema = z.object({
   updatedAt: z.date(),
 });
 
+// Gateway event schemas
+export const serviceRegistrationSchema = z.object({
+  serviceName: z.string(),
+  endpoints: z.array(z.string())
+});
+
+export const serviceHealthSchema = z.object({
+  serviceName: z.string(),
+  status: z.enum(['up', 'down'])
+});
+
+export const circuitBreakerSchema = z.object({
+  serviceName: z.string(),
+  status: z.enum(['open', 'closed', 'half-open'])
+});
+
 // Event type definitions
 export const EventType = {
   USER_CREATED: 'USER_CREATED',
@@ -88,6 +104,9 @@ export const EventType = {
   KYC_VERIFIED: 'KYC_VERIFIED',
   KYC_REJECTED: 'KYC_REJECTED',
   EMPLOYMENT_ELIGIBILITY_UPDATED: 'EMPLOYMENT_ELIGIBILITY_UPDATED',
+  SERVICE_REGISTERED: 'SERVICE_REGISTERED',
+  SERVICE_HEALTH_CHANGED: 'SERVICE_HEALTH_CHANGED',
+  CIRCUIT_BREAKER_STATE_CHANGED: 'CIRCUIT_BREAKER_STATE_CHANGED',
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];
@@ -102,6 +121,9 @@ export type EventDataSchemaMap = {
   [EventType.KYC_VERIFIED]: typeof kycVerifiedSchema;
   [EventType.KYC_REJECTED]: typeof kycRejectedSchema;
   [EventType.EMPLOYMENT_ELIGIBILITY_UPDATED]: typeof employmentEligibilityUpdatedSchema;
+  [EventType.SERVICE_REGISTERED]: typeof serviceRegistrationSchema;
+  [EventType.SERVICE_HEALTH_CHANGED]: typeof serviceHealthSchema;
+  [EventType.CIRCUIT_BREAKER_STATE_CHANGED]: typeof circuitBreakerSchema;
 };
 
 // Map event types to their data types
@@ -119,6 +141,9 @@ const eventSchemas: EventDataSchemaMap = {
   [EventType.KYC_VERIFIED]: kycVerifiedSchema,
   [EventType.KYC_REJECTED]: kycRejectedSchema,
   [EventType.EMPLOYMENT_ELIGIBILITY_UPDATED]: employmentEligibilityUpdatedSchema,
+  [EventType.SERVICE_REGISTERED]: serviceRegistrationSchema,
+  [EventType.SERVICE_HEALTH_CHANGED]: serviceHealthSchema,
+  [EventType.CIRCUIT_BREAKER_STATE_CHANGED]: circuitBreakerSchema,
 };
 
 /**
@@ -134,6 +159,9 @@ export const validateEventData = {
   [EventType.KYC_REJECTED]: (data: unknown) => validateWithSchema(kycRejectedSchema, data),
   [EventType.EMPLOYMENT_ELIGIBILITY_UPDATED]: (data: unknown) =>
     validateWithSchema(employmentEligibilityUpdatedSchema, data),
+  [EventType.SERVICE_REGISTERED]: (data: unknown) => validateWithSchema(serviceRegistrationSchema, data),
+  [EventType.SERVICE_HEALTH_CHANGED]: (data: unknown) => validateWithSchema(serviceHealthSchema, data),
+  [EventType.CIRCUIT_BREAKER_STATE_CHANGED]: (data: unknown) => validateWithSchema(circuitBreakerSchema, data),
 };
 
 /**

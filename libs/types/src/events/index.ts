@@ -96,41 +96,10 @@ export type ConsumedAuthEvent =
   | KYCRejectedEvent
   | EmploymentEligibilityUpdatedEvent;
 
-// Export all event types and utilities from the consolidated source
-export {
-  EventType,
-  Event,
-  EventHandler,
-  EventMetadata,
-  EventDataMap,
-  TypedEvent,
-  // Domain-specific types
-  AuthEventData,
-  KYCEventData
-} from './types';
+// Re-export all event types and interfaces - removing redundant gateway export
+export * from './types';
+export * from './validation';
 
-// Export validation utilities
-export {
-  validateEvent,
-  baseEventSchema
-} from './validation';
-
-// Export configuration types
-export {
-  EventBusConfig,
-  PublishOptions,
-  SubscribeOptions
-} from './config';
-
-// Export state types
-export {
-  EventBusState,
-  EventBus
-} from './state';
-
-// Export academic events
-export * from './academic';
-
-// Re-export domain-specific types from their original locations
+// Export domain-specific event types
 export * from '../auth/events';
 export * from '../kyc/events';

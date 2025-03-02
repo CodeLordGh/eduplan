@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { stringSchema, validateWithSchema } from '../validation';
-import { Event, EventType, EventDataMap } from './types';
+import { Event, EventType, EventDataMap, EventMetadata } from './types';
 
 // Base metadata schema
 export const metadataSchema = z.object({
@@ -71,6 +71,3 @@ async function getEventSchema<T extends EventType>(type: T): Promise<z.ZodType<E
 
   return schema as z.ZodType<EventDataMap[T]> | undefined;
 }
-
-// Export only validation-specific types
-export type EventMetadata = z.infer<typeof metadataSchema>;

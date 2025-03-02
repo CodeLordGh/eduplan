@@ -4,6 +4,7 @@ import * as E from 'fp-ts/Either';
 import { createLogger, Logger } from '@eduflow/logger';
 import { createAppError } from '@eduflow/common';
 import { loadEnvConfig } from './config/env';
+import { initSwagger } from './config/swagger';
 import securityPlugin from './plugins/security';
 import redisPlugin from './plugins/redis';
 import sessionPlugin from './plugins/session';
@@ -27,13 +28,22 @@ const setupServer = async (server: FastifyInstance, port: number): Promise<void>
   try {
     logger.info('Starting server setup...');
 
-    logger.info('Registering security plugin...');
-    // @ts-expect-error - Fastify plugin type inference issues
-    await server.register(securityPlugin, { logger });
-
+    // First, register Redis since it's a dependency for session
     logger.info('Registering Redis plugin...');
     // @ts-expect-error - Fastify plugin type inference issues
     await server.register(redisPlugin);
+
+    // Register Swagger before any middleware
+    logger.info('Initializing Swagger documentation...');
+    const swaggerResult = await initSwagger(server)();
+    if (swaggerResult._tag === 'Left') {
+      throw swaggerResult.left;
+    }
+
+    // Then register the other plugins
+    logger.info('Registering security plugin...');
+    // @ts-expect-error - Fastify plugin type inference issues
+    await server.register(securityPlugin, { logger });
 
     logger.info('Registering session plugin...');
     // @ts-expect-error - Fastify plugin type inference issues
@@ -78,14 +88,14 @@ const main = (): Promise<void> =>
     loadEnvConfig(),
     E.fold(
       (error) => {
-        logger.error({ err: error }, 'Failed to load environment configuration');
+    logger.error({ err: error }, 'Failed to load environment configuration');
         process.exit(1);
       },
       async (config) => {
         const server = createServer();
         await setupServer(server, config.PORT);
-      }
-    )
+  }
+)
   );
 
 process.on('unhandledRejection', (err) => {
